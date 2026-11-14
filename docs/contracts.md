@@ -357,16 +357,21 @@ transaction that updates the complaint and writes one history event.
 
 | From | To | Event type | Notes |
 |---|---|---|---|
-| `open` | `passed_on` | `passed_on` | Note required (who it goes to); partner optional (P1). A `partnerId` outside the caller's organization and region answers the same 404 as a missing one and is never stored. |
+| `open` | `passed_on` | `passed_on` | "Passed on to" text required (1 to 200 characters). A partner (`partnerId`) is **not built** (no picker; `passed_on_partner_id` is never set); when it is, a partner outside the caller's organization and region answers the same not-found as a missing one. |
 | `open` | `fixed` | `status_changed` | Sets `fixed_at`. |
 | `passed_on` | `fixed` | `status_changed` | Sets `fixed_at`. |
-| `fixed` | `open` | `reopened` | Clears `fixed_at`. Refused with 409 if the water point already has an active complaint. |
-| `passed_on` | `open` | `reopened` | **SPEC CHANGE, needs human approval in the S6 PR** (spec DB-3 and section 10 do not list it). Allowed only as a new history row triggered by a human; history is never overwritten. A note is required (why it is back). |
+| `fixed` | `open` | `reopened` | Clears `fixed_at` and the pass-on fields. **Rule: refused if the water point already has an active complaint. NOT YET BUILT: the code has no such check and the unique index (4.1 item 8) does not exist, so a reopen can today leave two active complaints on one water point. Do not assume it is enforced.** |
+| `passed_on` | `open` | `reopened` | **P1, not built, refused (`invalid`)** (human decision 2026-11-14; the spec does not list it, so it is still a spec change when built). It would be a new history row triggered by a human, with a required note; history is never overwritten. Until then a complaint passed on by mistake can only go to `fixed`; staff add a note, and the pass-on confirm dialog says it cannot be undone in this version (UX, `docs/ux-screen-notes.md`). |
 
-Any other pair, or a request whose `expectedStatus` is not the current status
-(a stale screen), answers 409 and changes nothing. `note` is 1 to 2000
-characters. `before_data` and `after_data` of `status_changed`, `passed_on` and
-`reopened` hold codes only (`{ "status": "open" }`), never note text.
+**Built as server actions (human decision 2026-11-14: the contract follows the
+code).** These writes are the server actions in "Complaint writes" (section 7),
+not HTTP routes; there are no routes 6.4 and 6.5 in this build. The stale check is
+the `version` (`updated_at` as UTC text to the microsecond), result `conflict`
+(no `expectedStatus`, no 409). A note is 1 to 1000 characters
+(`MAX_NOTE_LENGTH`) and "passed on to" is 1 to 200 (`MAX_PASSED_ON_TO_LENGTH`),
+both in `lib/config/limits.ts` and both still marked PROPOSED there. Result
+states: `saved`, `conflict`, `unauthenticated`, `denied`, `not_found`, `invalid`,
+`error`. Any other pair of statuses is `invalid` and changes nothing.
 
 **What is Built today differs from the rules above (D6, PR #37, checked when
 PR #34 was merged with main).** The built writes are the server actions in
@@ -392,7 +397,7 @@ add `review_cleared`, `role_changed`, `user_deactivated` there (the last two are
 already written by A1). The server writes `created` and `report_added` with the
 actor empty (shown as "system").
 
-### 5.10 Clearing "needs review" (to build in D6, P0 as one simple button)
+### 5.10 Clearing "needs review" (NOT BUILT: waits for W5; P0 as one simple button)
 Verdict: **P0**, because it is one POST, one history row and one flag, with no
 choices to make. `POST /api/reports/{id}/review/clear` (6.8): Responder and Org
 Admin only; the report must already be attached (`waterPointId` not null; so
@@ -412,7 +417,7 @@ verdict (section 9).
 
 ## 6. Web API (D6, D7, W5)
 
-All routes are **to build** (D6 complaints and reports, D7 live data, W5 reads).
+**None of the routes in this section exist yet** (checked 2026-11-14: `app/api` has only auth, health and the temporary capture route). It is the target design for D7 and W5. What is built instead: the signed-in screens read through `lib/data/complaints.ts` (section 7) and complaint status and note writes are server actions (5.8, 7); **6.4, 6.5 and 6.8 will not be built as routes in this build**, and 5.10 (clearing needs review) is not built (W5).
 Same server API for every client (spec section 5, rule 5). Scope comes only from
 the session (`organizationId`, `regionIds`), never from the request.
 
@@ -473,12 +478,12 @@ contact).
 and `languageSpoken` appear on detail reads only, never in lists. The reason for needs review is `needsReviewReason`, never null when
 `needsReview` is true.
 
-### 6.4 `POST /api/complaints/{id}/status` (D6)
+### 6.4 `POST /api/complaints/{id}/status` (NOT BUILT as a route: a server action, see 5.8)
 Responder, Org Admin. Body: `{ "toStatus", "expectedStatus", "note"?, "partnerId"? }`.
 Rules in 5.8. `note` is required for `passed_on` and for reopening from `passed_on` to `open`. 200 returns the updated
 complaint (6.3 shape). Errors: 400, 403, 404, 409.
 
-### 6.5 `POST /api/complaints/{id}/notes` (D6)
+### 6.5 `POST /api/complaints/{id}/notes` (NOT BUILT as a route: a server action, see 5.8)
 Responder, Org Admin. Body `{ "text" }` (1 to 2000 characters). 201 returns the
 note `{ id, complaintId, author, text, createdAt }`; writes a `note_added` event.
 `author` is the staff display name. A note on a record outside scope is 404.
@@ -562,7 +567,7 @@ mapping:
 | Route | Viewer | Responder | Org Admin |
 |---|---|---|---|
 | Every `GET` in section 6 | yes | yes | yes |
-| `POST .../status`, `.../notes`, `.../review/clear` | 403 | yes | yes |
+| Complaint status and notes (server actions; routes `POST .../status`, `.../notes`, `.../review/clear` are not built), review clear (not built, W5) | 403 / `denied` | yes | yes |
 
 - Not signed in: 401. In-scope Viewer writing: 403. Out of scope or missing: 404 (the same body as missing).
 - Role, organization, region and active are read from the database on every request. The session never carries trust from the browser.
@@ -819,7 +824,7 @@ read only through `lib/config/env.ts` (server-only).
 |---|---|---|---|
 | 1 | How long Vapi keeps the call, its recording (audio recording is ON) and its transcript | Humans (Security) | Read the Vapi account settings and terms; set retention or delete. Spec unknown 2 |
 | 2 | Whether a stored transcript may hold a volunteered name (red line 3 versus spec section 10). P0 stores none (human decision) | Humans, Security | Rule before any transcript is stored; then set a retention period (spec unknown 10) |
-| 3 | Whether `passed_on` back to `open` is allowed. Marked SPEC CHANGE in 5.8 | Humans | Approve in the S6 PR, and update spec DB-3 and section 10 |
+| 3 | `passed_on` back to `open`: decided P1 (2026-11-14), not built. When built it is a spec change (spec DB-3 and section 10 do not list it) | Humans | Approve with the P1 task, and update the spec then |
 | 4 | Whether clearing needs review is P0. Verdict in 5.10: P0 for attached reports only; matching an unattached one is P1 | Humans (Backend, Frontend propose) | Confirm in the S6 PR |
 | 5 | Which header type Vapi sends (only "Bearer credential" recorded) | Backend, Phone | D3 logs which matched (no value) on the first real call |
 | 6 | Vapi retries when the endpoint is down, slow or answers non-200 | Phone | Test with a failing endpoint (one paid call, a human's OK). Spec unknown 4 |
