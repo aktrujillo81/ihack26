@@ -364,8 +364,8 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
         waterPointId: event.waterPointId,
         type: event.eventType,
         actor,
-        before: event.beforeData,
-        after: event.afterData,
+        before: codesOnly(event.beforeData),
+        after: codesOnly(event.afterData),
         note: event.note,
         at: iso(event.createdAt),
       })),
@@ -373,6 +373,19 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
     };
     return { status: "ok", data: detail };
   });
+}
+
+/** Keys of history before/after data that are codes or ids. Anything else (such as old free text) is dropped before it reaches the browser. */
+const HISTORY_CODE_KEYS = ["status", "reportCount", "mergedIntoId", "noteId", "userId", "role", "active"] as const;
+
+export function codesOnly(data: unknown): Record<string, string | number | boolean | null> | null {
+  if (typeof data !== "object" || data === null || Array.isArray(data)) return null;
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const key of HISTORY_CODE_KEYS) {
+    const value = (data as Record<string, unknown>)[key];
+    if (value === null || ["string", "number", "boolean"].includes(typeof value)) out[key] = value as string | number | boolean | null;
+  }
+  return out;
 }
 
 /** Reports the system could not match or complete, oldest first. No transcripts. */

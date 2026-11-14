@@ -105,7 +105,11 @@ describe("a status change is written together with its history event", () => {
     expect(row).toMatchObject({ status: "passed_on", passedOnNote: "Demo Repair Co-op", passedOnPartnerId: null, fixedAt: null });
     const event = (await historyFor(id)).find((e) => e.eventType === "passed_on")!;
     expect(event.beforeData).toEqual({ status: "open" });
-    expect(event.afterData).toEqual({ status: "passed_on", passedOnNote: "Demo Repair Co-op" });
+    expect(event.afterData).toEqual({ status: "passed_on" });
+    // The typed text is on the complaint row only, never in history.
+    for (const e of await historyFor(id)) {
+      expect(JSON.stringify([e.beforeData, e.afterData])).not.toContain("Demo Repair Co-op");
+    }
   });
 
   it("reopen: back to open, clears the fixed time and the pass-on, and keeps the earlier history", async () => {

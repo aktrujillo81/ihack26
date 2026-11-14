@@ -47,10 +47,9 @@ export function historyText(event: HistoryEvent): string {
       return t("history.reportAdded");
     case "status_changed":
       return t("history.statusChanged", { from: statusText(field(event.before, "status")), to: statusText(field(event.after, "status")) });
-    case "passed_on": {
-      const who = field(event.after, "passedOnNote");
-      return t("history.passedOn", { who: typeof who === "string" && who.length > 0 ? who : t("common.unknown") });
-    }
+    case "passed_on":
+      // Codes only: who it was passed to is on the complaint row, not in history.
+      return t("history.passedOn");
     case "reopened":
       return t("history.reopened");
     case "note_added":

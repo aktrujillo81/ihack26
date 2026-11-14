@@ -204,7 +204,7 @@ export async function runDemoSeed(now: Date = new Date(), options: Pick<GuardOpt
         events.push({ ...base, actorUserId: null, eventType: "report_added", beforeData: { reportCount: i + 1 }, afterData: { reportCount: i + 2 }, createdAt: ago(r.hoursAgo) });
       });
       if (c.status === "passed_on") {
-        events.push({ ...base, actorUserId: staff.get("responder")!, eventType: "passed_on", beforeData: { status: "open" }, afterData: { status: "passed_on", passedOnNote: c.passedOnNote ?? null }, createdAt: ago(24) });
+        events.push({ ...base, actorUserId: staff.get("responder")!, eventType: "passed_on", beforeData: { status: "open" }, afterData: { status: "passed_on" }, createdAt: ago(24) });
       }
       if (c.status === "fixed" && c.fixedHoursAgo !== undefined) {
         events.push({ ...base, actorUserId: staff.get("responder")!, eventType: "status_changed", beforeData: { status: "open" }, afterData: { status: "fixed" }, createdAt: ago(c.fixedHoursAgo) });

@@ -230,7 +230,7 @@ export const mockHistoryEvents: HistoryEvent[] = [
   { id: "h-2", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "report_added", actor: null, before: { reportCount: 1 }, after: { reportCount: 2 }, note: null, at: "2026-11-12T09:00:00Z" },
   { id: "h-3", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "report_added", actor: null, before: { reportCount: 2 }, after: { reportCount: 3 }, note: null, at: "2026-11-13T07:00:00Z" },
   { id: "h-4", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "created", actor: null, before: null, after: { status: "open" }, note: null, at: "2026-11-10T14:00:00Z" },
-  { id: "h-5", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "passed_on", actor: "Demo Responder", before: { status: "open" }, after: { status: "passed_on", passedOnNote: "Demo Pump Repair Co-op" }, note: null, at: "2026-11-13T09:00:00Z" },
+  { id: "h-5", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "passed_on", actor: "Demo Responder", before: { status: "open" }, after: { status: "passed_on" }, note: null, at: "2026-11-13T09:00:00Z" },
   { id: "h-6", ...scope, complaintId: "c-4", waterPointId: "wp-4", type: "created", actor: null, before: null, after: { status: "open" }, note: null, at: "2026-11-09T10:00:00Z" },
   { id: "h-7", ...scope, complaintId: "c-4", waterPointId: "wp-4", type: "status_changed", actor: "Demo Responder", before: { status: "open" }, after: { status: "fixed" }, note: null, at: "2026-11-12T16:00:00Z" },
   { id: "h-8", ...scope, complaintId: null, waterPointId: "wp-9", type: "merged", actor: "Demo Responder", before: null, after: { mergedIntoId: "wp-1" }, note: null, at: "2026-11-12T08:00:00Z" },

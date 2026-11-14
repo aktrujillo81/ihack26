@@ -151,7 +151,7 @@ const en = {
   "history.created": "Complaint created",
   "history.reportAdded": "Report added",
   "history.statusChanged": "Status changed from {from} to {to}",
-  "history.passedOn": "Passed on to {who}",
+  "history.passedOn": "Passed on",
   "history.reopened": "Reopened",
   "history.noteAdded": "Note added",
   "history.other": "Change recorded",
