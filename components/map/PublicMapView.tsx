@@ -1,4 +1,5 @@
 import { TILE_SOURCE } from "@/lib/config/map";
+import { PUBLIC_MAP_INCLUDES_UNVERIFIED } from "@/lib/config/public-map";
 import { listPublicWaterPoints, type PublicScope } from "@/lib/data/complaints";
 import { t } from "@/lib/i18n/strings";
 
@@ -18,7 +19,7 @@ import { Renderer } from "./renderer";
  * (lib/config/public-map.ts); when it is null the map is empty.
  */
 export async function PublicMapView({ scope }: { scope: PublicScope | null }) {
-  const result = await listPublicWaterPoints(scope);
+  const result = await listPublicWaterPoints(scope, { includeUnverified: PUBLIC_MAP_INCLUDES_UNVERIFIED });
   if (result.status === "error") return <p role="alert">{t("common.error")}</p>;
   if (result.status === "empty") return <p>{t("map.empty")}</p>;
 
@@ -26,7 +27,7 @@ export async function PublicMapView({ scope }: { scope: PublicScope | null }) {
   return (
     <div>
       <Renderer pins={pins} tileSource={TILE_SOURCE} />
-      <MapLegend />
+      <MapLegend variant="public" includeUnverified={PUBLIC_MAP_INCLUDES_UNVERIFIED} />
       <PinList pins={pins} />
     </div>
   );

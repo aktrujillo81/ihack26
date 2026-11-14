@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { MapLoading } from "@/components/map/MapView";
+import { MapLoading } from "@/components/map/MapLoading";
 import { PublicMapView } from "@/components/map/PublicMapView";
 import { publicMapScope } from "@/lib/config/public-map";
 import { t } from "@/lib/i18n/strings";

@@ -23,3 +23,12 @@ export function publicMapScope(env: Record<string, string | undefined> = process
   if (!organizationId || regionIds.length === 0) return null;
   return { organizationId, regionIds };
 }
+
+/**
+ * PROPOSED, NOT APPROVED. Whether water points that nobody has verified yet are
+ * shown on the public map. Off by default: such a point comes straight from a
+ * caller's words and has an exact location, so a home or private well could be
+ * reported and published. A human decision (and ideally a per-point publish
+ * flag, D1) is needed before turning this on.
+ */
+export const PUBLIC_MAP_INCLUDES_UNVERIFIED = false;

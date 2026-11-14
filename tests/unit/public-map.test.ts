@@ -1,11 +1,15 @@
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { PUBLIC as PUBLIC_LEGEND } from "@/components/map/MapLegend";
+import { PinMarker, pinLabelLines } from "@/components/map/PinMarker";
 import { PublicMapView } from "@/components/map/PublicMapView";
 import { toPublicMapPins } from "@/components/map/publicPins";
 import { publicMapScope } from "@/lib/config/public-map";
 import { PUBLIC_PIN_KEYS, listPublicWaterPoints, type PublicPin, type PublicScope } from "@/lib/data/complaints";
 import { mockComplaints, mockNotes, mockReports, mockWaterPoints } from "@/lib/domain/mock";
+import { WATER_POINT_TYPES } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 
 const SCOPE: PublicScope = { organizationId: "org-demo", regionIds: ["region-demo"] };
@@ -185,5 +189,84 @@ describe("public map pins and page", () => {
       const source = readFileSync(file, "utf8");
       expect(source, file).not.toMatch(/getCurrentSession|requireSession|MOCK_CONTEXT|auth\/session|auth\/guards|next\/headers|cookies\(/);
     }
+  });
+});
+
+describe("hardening from the security review", () => {
+  it("type and status are checked at runtime: a leak hidden inside an allowed field would fail", async () => {
+    for (const pin of await pins()) {
+      expect(WATER_POINT_TYPES as readonly string[]).toContain(pin.type);
+      expect(["open", "passed_on", "fixed", "none"]).toContain(pin.status);
+      expect(Number.isFinite(pin.latitude) && Number.isFinite(pin.longitude)).toBe(true);
+      expect(typeof pin.unverified).toBe("boolean");
+    }
+  });
+
+  it("unverified points are not published by default, and only appear when explicitly turned on", async () => {
+    const extra = {
+      ...mockWaterPoints[0],
+      id: "wp-unverified-test",
+      latitude: -1.5,
+      longitude: 36.9,
+      verificationState: "unverified" as const,
+    };
+    mockWaterPoints.push(extra);
+    try {
+      const def = await listPublicWaterPoints(SCOPE);
+      const on = await listPublicWaterPoints(SCOPE, { includeUnverified: true });
+      if (def.status !== "ok" || on.status !== "ok") throw new Error("expected data");
+      expect(def.data.some((p) => p.unverified)).toBe(false);
+      expect(on.data.some((p) => p.unverified)).toBe(true);
+      expect(on.data.length).toBe(def.data.length + 1);
+    } finally {
+      mockWaterPoints.pop();
+    }
+  });
+
+  it("the order depends on public values only, not on internal ids", async () => {
+    const out = await pins();
+    const lat = out.map((p) => p.latitude);
+    expect(lat).toEqual([...lat].sort((a, b) => a - b));
+  });
+
+  it("the marker HTML and the accessible label of every pin hold no detail", async () => {
+    for (const pin of toPublicMapPins(await pins())) {
+      const marker = renderToStaticMarkup(createElement(PinMarker, { pin }));
+      const label = pinLabelLines(pin).join(". ");
+      for (const secret of everythingNonPublic()) {
+        expect(marker, secret).not.toContain(secret);
+        expect(label, secret).not.toContain(secret);
+      }
+      expect(marker).not.toMatch(/Reports: \d|Needs review|No water|Broken|Slow|Dirty/);
+      expect(label).toContain(t(pin.statusKey));
+      expect(label).toContain(t(pin.title ?? "common.unknown"));
+    }
+  });
+
+  it("the serialized pins sent to the browser carry only null or zero in the fields the public must not have", async () => {
+    for (const pin of toPublicMapPins(await pins())) {
+      const sent = JSON.parse(JSON.stringify(pin)) as Record<string, unknown>;
+      expect(sent.locationText).toBeNull();
+      expect(sent.complaintId).toBeNull();
+      expect(sent.problem).toBeNull();
+      expect(sent.needsReview).toBe(false);
+      expect(sent.reportCount).toBe(0);
+    }
+  });
+
+  it("the legend matches the pins: every public shape has the same color in the key", async () => {
+    for (const pin of toPublicMapPins(await pins())) {
+      const entry = PUBLIC_LEGEND.find((e) => e.shape === pin.shape);
+      expect(entry, pin.shape).toBeDefined();
+      expect(entry?.color, pin.shape).toBe(pin.color);
+      expect(entry?.key, pin.shape).toBe(pin.statusKey);
+    }
+  });
+
+  it("the public page does not import the signed-in map code", async () => {
+    const { readFileSync } = await import("node:fs");
+    expect(readFileSync("app/map/page.tsx", "utf8")).not.toContain('components/map/MapView"');
+    const view = readFileSync("components/map/PublicMapView.tsx", "utf8");
+    for (const forbidden of ['./MapView"', "listComplaints", "listWaterPoints", "getComplaint"]) expect(view).not.toContain(forbidden);
   });
 });

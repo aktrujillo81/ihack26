@@ -284,7 +284,10 @@ function toPublicPin(index: number, wp: WaterPoint & { latitude: number; longitu
  * SWAP POINT: with the real API this must be its own endpoint that selects
  * only these columns, not a filter applied after reading full rows.
  */
-export function listPublicWaterPoints(scope: PublicScope | null): Promise<DataResult<PublicPin[]>> {
+export function listPublicWaterPoints(
+  scope: PublicScope | null,
+  options: { includeUnverified?: boolean } = {},
+): Promise<DataResult<PublicPin[]>> {
   return guarded<PublicPin[]>(() => {
     if (
       !scope ||
@@ -303,9 +306,13 @@ export function listPublicWaterPoints(scope: PublicScope | null): Promise<DataRe
           wp.latitude !== null &&
           wp.longitude !== null &&
           wp.verificationState !== "merged" &&
-          wp.verificationState !== "archived",
+          wp.verificationState !== "archived" &&
+          // Unverified points come straight from a caller's words (a home could be reported as a water point).
+          // They are not published unless explicitly turned on.
+          (options.includeUnverified === true || wp.verificationState !== "unverified"),
       )
-      .sort((a, b) => a.id.localeCompare(b.id));
+      // Ordered by public values only (position, then type). Ordering by id would leak the order records were created in.
+      .sort((a, b) => a.latitude - b.latitude || a.longitude - b.longitude || a.type.localeCompare(b.type));
     return result(
       points.map((wp, i) =>
         toPublicPin(
