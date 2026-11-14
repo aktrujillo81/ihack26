@@ -6,6 +6,21 @@ const config = [
   ...nextTs,
   { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "db/migrations/**"] },
   {
+    // Test fixtures (mock data, the mock-backed copy of the data layer) are for tests only.
+    // Production code must never import anything under tests/, so it can never fall back to mock data.
+    files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "db/**/*.ts", "proxy.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/tests/*", "**/tests/*", "tests/*"], message: "Production code must not import from tests/ (mock data is for tests only)." },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // All user-facing text lives in lib/i18n/strings.ts (spec section 5, rule 4).
     // Components call t("key"); they never contain literal wording.
     files: ["app/**/*.tsx", "components/**/*.tsx"],

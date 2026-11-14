@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, notInArray, sql, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
+import { DATA_LIST_HARD_LIMIT } from "@/lib/config/ui";
 import { getDb } from "@/lib/db";
 import { complaints, historyEvents, notes, partners, reports, users, waterPoints } from "@/lib/db/schema";
 import type {
@@ -92,8 +93,8 @@ export interface ComplaintDetail {
   passedOnTo: PartnerView | null;
 }
 
-/** A report as shown in a list: no transcript (transcripts appear only on the detail page). */
-export type ReportListView = Omit<Report, "transcript">;
+/** A report as shown in a list: no transcript and no summary (both are caller-derived text and appear only on the detail page). */
+export type ReportListView = Omit<Report, "transcript" | "summary">;
 
 export interface NeedsReviewItem {
   report: ReportListView;
@@ -188,7 +189,7 @@ function toComplaint(row: ComplaintRow, version: string, reportFacts: ReportFact
   };
 }
 
-/** The columns a list needs from a report. Never `transcript` or `summary`. */
+/** The columns a list needs from a report. Never `transcript` or `summary` (caller-derived free text; the detail page only). */
 const reportFactColumns = {
   complaintId: reports.complaintId,
   problem: reports.problem,
@@ -212,7 +213,6 @@ const reportListColumns = {
   servesSchoolOrClinic: reports.servesSchoolOrClinic,
   duration: reports.duration,
   callerConfirmed: reports.callerConfirmed,
-  summary: reports.summary,
   languageSpoken: reports.languageSpoken,
   needsReview: reports.needsReview,
   receivedAt: reports.receivedAt,
@@ -235,7 +235,6 @@ function toReportListView(row: ReportListRow): ReportListView {
     servesSchoolOrClinic: row.servesSchoolOrClinic ?? "unknown",
     duration: row.duration,
     callerConfirmed: row.callerConfirmed ?? false,
-    summary: row.summary ?? "",
     languageSpoken: row.languageSpoken ?? "unknown",
     needsReview: row.needsReview,
     needsReviewReason: null,
@@ -264,7 +263,8 @@ export function listComplaints(ctx: DataContext): Promise<DataResult<ComplaintLi
       .select({ complaint: complaints, version: versionOf(complaints.updatedAt) })
       .from(complaints)
       .where(scope(complaints, ctx))
-      .orderBy(desc(complaints.priorityScore), desc(complaints.updatedAt));
+      .orderBy(desc(complaints.priorityScore), desc(complaints.updatedAt))
+      .limit(DATA_LIST_HARD_LIMIT);
     if (rows.length === 0) return empty;
 
     const complaintIds = rows.map((r) => r.complaint.id);
@@ -322,11 +322,16 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
         .where(and(eq(historyEvents.complaintId, id), scope(historyEvents, ctx)))
         .orderBy(asc(historyEvents.createdAt)),
       complaint.passedOnPartnerId
-        ? db.select().from(partners).where(and(eq(partners.id, complaint.passedOnPartnerId), scope(partners, ctx))).limit(1)
+        ? db
+            .select({ id: partners.id, organizationId: partners.organizationId, regionId: partners.regionId, name: partners.name, type: partners.type })
+            .from(partners)
+            .where(and(eq(partners.id, complaint.passedOnPartnerId), scope(partners, ctx)))
+            .limit(1)
         : Promise.resolve([]),
     ]);
 
-    const toPartnerView = ({ contact: _contact, ...rest }: typeof partners.$inferSelect): PartnerView => ({
+    // The contact column is not even loaded: only these named columns are selected.
+    const toPartnerView = (rest: { id: string; organizationId: string; regionId: string; name: string; type: string }): PartnerView => ({
       id: rest.id,
       organizationId: rest.organizationId,
       regionId: rest.regionId,
@@ -337,7 +342,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
     const detail: ComplaintDetail = {
       complaint: toComplaint(complaint, version, reportRows.map(toFacts)),
       waterPoint: pointRows[0] ? toWaterPoint(pointRows[0]) : null,
-      reports: reportRows.map((r) => ({ ...toReportListView(r), transcript: r.transcript })),
+      reports: reportRows.map((r) => ({ ...toReportListView(r), summary: r.summary ?? "", transcript: r.transcript })),
       notes: noteRows.map(({ note, author }) => ({
         id: note.id,
         organizationId: note.organizationId,
@@ -374,7 +379,8 @@ export function listNeedsReview(ctx: DataContext): Promise<DataResult<NeedsRevie
       .select(reportListColumns)
       .from(reports)
       .where(and(scope(reports, ctx), eq(reports.needsReview, true)))
-      .orderBy(asc(reports.receivedAt));
+      .orderBy(asc(reports.receivedAt))
+      .limit(DATA_LIST_HARD_LIMIT);
     return result(rows.map((r) => ({ report: toReportListView(r), candidates: [] })));
   });
 }
@@ -394,7 +400,8 @@ export function listNeedsLocation(ctx: DataContext): Promise<DataResult<WaterPoi
           notInArray(waterPoints.verificationState, ["merged", "archived"]),
         ),
       )
-      .orderBy(asc(waterPoints.createdAt));
+      .orderBy(asc(waterPoints.createdAt))
+      .limit(DATA_LIST_HARD_LIMIT);
     return result(rows.map(toWaterPoint));
   });
 }
@@ -405,7 +412,7 @@ export function listWaterPoints(ctx: DataContext, options: WaterPointOptions = {
     if (!usable(ctx)) return empty;
     const filters = [scope(waterPoints, ctx)];
     if (!options.includeInactive) filters.push(notInArray(waterPoints.verificationState, ["merged", "archived"]));
-    const rows = await getDb().select().from(waterPoints).where(and(...filters)).orderBy(asc(waterPoints.createdAt));
+    const rows = await getDb().select().from(waterPoints).where(and(...filters)).orderBy(asc(waterPoints.createdAt)).limit(DATA_LIST_HARD_LIMIT);
     return result(rows.map(toWaterPoint));
   });
 }
@@ -518,7 +525,8 @@ export function listPublicWaterPoints(
         verificationState: waterPoints.verificationState,
       })
       .from(waterPoints)
-      .where(and(...filters));
+      .where(and(...filters))
+      .limit(DATA_LIST_HARD_LIMIT);
     if (points.length === 0) return empty;
 
     const statuses = await db

@@ -130,9 +130,29 @@ it (**PROVISIONAL, waits for S6 and D4/D5**, see `docs/reviews/D1.md`):
 | A report's channel | enum `phone`, `web`, `other` | The app's list now includes `other`. |
 | A report's people affected, school or clinic | nullable | Null reads as `unknown`. |
 
-A note's or event's author name is shown only if that user belongs to the same
-organization (the schema does not forbid a note authored by another
-organization's user). The public map's read selects only the columns a pin needs.
+Things to know (found by the red-line-8 review of these reads):
+
+- **Lists never carry caller-derived text.** `transcript` and `summary` are
+  returned by the detail read only. A list, including the needs-review list,
+  has neither.
+- **The schema allows cross-scope links.** Only the (organization, region) pair
+  is tied to `regions` by a composite key. A report, note, history event or
+  complaint can point at another organization's complaint, water point, partner
+  or author. So the data layer filters EVERY table it reads, and tests insert such
+  rows on purpose (`tests/integration/data-fixtures.ts`). D1 should add
+  composite foreign keys (organization with each id column) so the database
+  refuses them; until then the filters are the only defence.
+- A note's or history event's author name is shown only if that user belongs to the
+  same organization. Names of staff in OTHER regions of the same organization are
+  shown (staff names, not caller data).
+- `before_data` and `after_data` are passed to the screen as stored; the screen
+  reads only `status` and `passedOnNote`. Whatever D6 writes there must be safe to
+  show (no contact values, no note text).
+- A complaint's shown problem, duration and so on are derived from ALL its
+  reports, so after a reopen they can differ from the stored score and reason next
+  to them. The order "slow before dirty" is a choice; the spec is silent.
+- Lists are cut off at `DATA_LIST_HARD_LIMIT` (1000, PROPOSED) until pagination
+  exists. The public map's read selects only the columns a pin needs.
 
 ## Tables
 

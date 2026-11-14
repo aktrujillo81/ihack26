@@ -37,7 +37,7 @@ const NOT_FOUND = { status: "error", error: "not_found_or_denied" } as const;
 describe("lists are scoped to the user's organization and regions", () => {
   it("one region sees only that region's complaints, most urgent first", async () => {
     const items = ok(await listComplaints(w.ctxA1));
-    expect(items.map((i) => i.complaint.id)).toEqual([w.c.cOpen.id, w.c.cPassed.id, w.c.cCrossPoint.id, w.c.cFixed.id, w.c.cNoReports.id]);
+    expect(items.map((i) => i.complaint.id)).toEqual([w.c.cOpen.id, w.c.cPassed.id, w.c.cCrossPoint.id, w.c.cFixed.id, w.c.cNoReports.id, w.c.cCrossPartner.id]);
     const scores = items.map((i) => i.complaint.priorityScore);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
   });
@@ -49,7 +49,8 @@ describe("lists are scoped to the user's organization and regions", () => {
   });
 
   it("the other organization sees only its own", async () => {
-    expect(ok(await listComplaints(w.ctxB)).map((i) => i.complaint.id)).toEqual([w.c.cB.id]);
+    // Organization B owns two complaints: its own, and one that points at one of A's water points.
+    expect(ok(await listComplaints(w.ctxB)).map((i) => i.complaint.id)).toEqual([w.c.cForeignOnOurPoint.id, w.c.cB.id]);
   });
 
   it("a real organization id with another organization's region sees nothing", async () => {
@@ -66,11 +67,14 @@ describe("lists are scoped to the user's organization and regions", () => {
 });
 
 describe("a bad context returns nothing, never everything", () => {
-  const bad: unknown[] = [
+  /** Built when a test runs (the world does not exist while the file is collected). */
+  const badContexts = (): unknown[] => [
     undefined,
     null,
     {},
-    { organizationId: w?.A.org.id },
+    { organizationId: w.A.org.id },
+    { regionIds: [w.A.region.id] },
+    { organizationId: w.A.org.id, regionIds: "not-an-array" },
     { organizationId: "not-a-uuid", regionIds: ["not-a-uuid"] },
     { organizationId: "", regionIds: [] },
     { organizationId: "00000000-0000-4000-8000-000000000000", regionIds: [] },
@@ -79,7 +83,7 @@ describe("a bad context returns nothing, never everything", () => {
   ];
 
   it("lists", async () => {
-    for (const ctx of bad) {
+    for (const ctx of badContexts()) {
       for (const read of [listComplaints, listNeedsReview, listNeedsLocation, listWaterPoints, getLastReportReceived]) {
         const r = await read(ctx as DataContext);
         expect(r.status, JSON.stringify(ctx)).toBe("empty");
@@ -88,14 +92,14 @@ describe("a bad context returns nothing, never everything", () => {
   });
 
   it("the detail read", async () => {
-    for (const ctx of bad) expect(await getComplaint(ctx as DataContext, w.c.cOpen.id), JSON.stringify(ctx)).toEqual(NOT_FOUND);
+    for (const ctx of badContexts()) expect(await getComplaint(ctx as DataContext, w.c.cOpen.id), JSON.stringify(ctx)).toEqual(NOT_FOUND);
   });
 });
 
 describe("lists carry no transcripts, summaries or caller details", () => {
   it("the complaint list has no transcript, no summary, no reports, and no spoken text from other records", async () => {
     const json = JSON.stringify(await listComplaints(w.ctxA1));
-    for (const secret of [SECRET.transcript1, SECRET.transcript2, SECRET.summary1, SECRET.noteText, SECRET.contact, SECRET.otherOrgReport, "SECRET-REGION-TWO-TRANSCRIPT"]) {
+    for (const secret of [SECRET.transcript1, SECRET.transcript2, SECRET.summary1, SECRET.reviewSummary, SECRET.noteText, SECRET.contact, SECRET.otherOrgReport, SECRET.crossReport, SECRET.crossNote, SECRET.partnerB, "SECRET-REGION-TWO-TRANSCRIPT"]) {
       expect(json, secret).not.toContain(secret);
     }
     for (const item of ok(await listComplaints(w.ctxA1))) expect(item).not.toHaveProperty("reports");
@@ -106,8 +110,12 @@ describe("lists carry no transcripts, summaries or caller details", () => {
     expect(reviews.map((i) => i.report.id)).toEqual([w.r.rReview.id]);
     const json = JSON.stringify(reviews);
     expect(json).not.toContain("SECRET-REVIEW-TRANSCRIPT");
+    expect(json).not.toContain(SECRET.reviewSummary);
     expect(json).not.toContain(SECRET.otherOrgReport);
-    for (const item of reviews) expect(item.report).not.toHaveProperty("transcript");
+    for (const item of reviews) {
+      expect(item.report).not.toHaveProperty("transcript");
+      expect(item.report).not.toHaveProperty("summary");
+    }
     expect(ok(await listNeedsReview(w.ctxB)).map((i) => i.report.complaintId)).toEqual([w.c.cB.id]);
   });
 
@@ -151,6 +159,27 @@ describe("the detail read", () => {
     expect(d.history.map((h) => h.type)).toEqual(["created", "status_changed", "note_added"]); // oldest first
     expect(d.waterPoint?.id).toBe(w.wp.wpOpen.id);
     expect(d.waterPoint?.latitude).toBeCloseTo(-1.2921, 4);
+  });
+
+  it("rows from other regions and organizations that point at this complaint are never shown", async () => {
+    const d = ok(await getComplaint(w.ctxA1, w.c.cOpen.id));
+    const json = JSON.stringify(d);
+    for (const secret of [SECRET.crossReport, SECRET.crossNote]) expect(json, secret).not.toContain(secret);
+    expect(d.reports).toHaveLength(2);
+    expect(d.notes).toHaveLength(2);
+    expect(d.history).toHaveLength(3);
+    // Two regions see the region-2 report, but still never the other organization's.
+    const both = ok(await getComplaint(w.ctxA1A2, w.c.cOpen.id));
+    expect(both.reports).toHaveLength(3);
+    expect(JSON.stringify(both)).not.toContain("8888");
+  });
+
+  it("a partner that belongs to another organization is never shown, even if the complaint points at it", async () => {
+    const d = ok(await getComplaint(w.ctxA1, w.c.cCrossPartner.id));
+    expect(d.complaint.status).toBe("passed_on");
+    expect(d.passedOnTo).toBeNull();
+    expect(JSON.stringify(d)).not.toContain(SECRET.partnerB);
+    expect(JSON.stringify(d)).not.toContain(SECRET.contact);
   });
 
   it("the partner has no contact field and its contact value never appears", async () => {
@@ -262,6 +291,9 @@ describe("the public read returns only the allowlisted fields", () => {
   it("status comes from complaints without exposing any", async () => {
     const statuses = ok(await listPublicWaterPoints(publicA())).map((p) => p.status).sort();
     expect(statuses).toEqual(["fixed", "none", "open", "open", "passed_on"]);
+    // Another organization has an OPEN complaint on our "fixed" water point. It must not change what we publish.
+    const fixedPin = ok(await listPublicWaterPoints(publicA())).find((p) => p.status === "fixed");
+    expect(fixedPin).toBeDefined();
   });
 
   it("the order depends on public values only, and keys are positions, not ids", async () => {

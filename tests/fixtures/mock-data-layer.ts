@@ -61,7 +61,7 @@ function toPartnerView({ contact: _contact, ...rest }: Partner): PartnerView {
   return rest;
 }
 
-function toReportListView({ transcript: _transcript, ...rest }: Report): ReportListView {
+function toReportListView({ transcript: _transcript, summary: _summary, ...rest }: Report): ReportListView {
   return rest;
 }
 

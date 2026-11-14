@@ -22,6 +22,10 @@ export const SECRET = {
   contact: "SECRET-PARTNER-CONTACT",
   noteText: "SECRET-NOTE-TEXT",
   otherOrgReport: "SECRET-OTHER-ORG-TRANSCRIPT",
+  reviewSummary: "SECRET-REVIEW-SUMMARY",
+  crossReport: "SECRET-CROSS-SCOPE-REPORT-TRANSCRIPT",
+  crossNote: "SECRET-CROSS-SCOPE-NOTE",
+  partnerB: "SECRET-PARTNER-OF-ANOTHER-ORG",
 };
 
 export async function buildWorld() {
@@ -80,6 +84,12 @@ export async function buildWorld() {
     .values({ ...scopeA1, name: "Demo Repair Co-op", type: "repair technician", contact: SECRET.contact })
     .returning();
 
+  // A partner that belongs to ANOTHER organization. The schema lets a complaint point at it.
+  const [partnerB] = await db
+    .insert(partners)
+    .values({ ...scopeB, name: SECRET.partnerB, type: "repair technician", contact: SECRET.contact })
+    .returning();
+
   const complaint = (scope: typeof scopeA1, waterPointId: string, over: Partial<typeof complaints.$inferInsert> = {}) =>
     db
       .insert(complaints)
@@ -95,6 +105,10 @@ export async function buildWorld() {
   const cCrossPoint = await complaint(scopeA1, wpA2.id, { status: "open", priorityScore: 3 });
   const cA2 = await complaint(scopeA2, wpA2.id, { status: "open", priorityScore: 9 });
   const cB = await complaint(scopeB, wpB.id, { status: "open", priorityScore: 20 });
+  // In-scope complaint on a point with no coordinates that is "passed on" to another organization's partner.
+  const cCrossPartner = await complaint(scopeA1, wpNoCoords.id, { status: "passed_on", priorityScore: 0, passedOnPartnerId: partnerB.id });
+  // ANOTHER organization's complaint that points at one of OUR water points. Our public status must not change.
+  const cForeignOnOurPoint = await complaint(scopeB, wpFixed.id, { status: "open", priorityScore: 50 });
 
   const report = (scope: typeof scopeA1, complaintId: string | null, waterPointId: string | null, over: Partial<typeof reports.$inferInsert> = {}) =>
     db
@@ -125,10 +139,20 @@ export async function buildWorld() {
   await report(scopeA1, cPassed.id, wpPassed.id, { problem: "dirty", peopleAffected: 40, servesSchoolOrClinic: false, duration: "today", receivedAt: new Date("2026-11-12T07:00:00Z") });
   await report(scopeA1, cFixed.id, wpFixed.id, { problem: "other", receivedAt: new Date("2026-11-09T07:00:00Z") });
   // Needs review, unmatched.
-  const rReview = await report(scopeA1, null, null, { needsReview: true, locationText: "unknown", transcript: "SECRET-REVIEW-TRANSCRIPT", receivedAt: new Date("2026-11-13T12:00:00Z") });
+  const rReview = await report(scopeA1, null, null, { needsReview: true, locationText: "unknown", summary: SECRET.reviewSummary, transcript: "SECRET-REVIEW-TRANSCRIPT", receivedAt: new Date("2026-11-13T12:00:00Z") });
   // Other region and organization.
   await report(scopeA2, cA2.id, wpA2.id, { problem: "broken", transcript: "SECRET-REGION-TWO-TRANSCRIPT", receivedAt: new Date("2026-11-14T07:00:00Z") });
   await report(scopeB, cB.id, wpB.id, { problem: "broken", transcript: SECRET.otherOrgReport, needsReview: true, receivedAt: new Date("2026-11-14T09:00:00Z") });
+
+  // Rows in OTHER scopes that point at our open complaint (the schema allows it). None may ever be shown.
+  await report(scopeA2, cOpen.id, wpOpen.id, { problem: "other", peopleAffected: 9999, servesSchoolOrClinic: false, duration: "today", transcript: SECRET.crossReport, receivedAt: new Date("2026-11-10T00:00:00Z") });
+  await report(scopeB, cOpen.id, wpOpen.id, { problem: "other", peopleAffected: 8888, transcript: SECRET.crossReport, receivedAt: new Date("2026-11-10T01:00:00Z") });
+  await db.insert(notes).values({ ...scopeB, complaintId: cOpen.id, authorUserId: staffB.id, body: SECRET.crossNote });
+  await db.insert(notes).values({ ...scopeA2, complaintId: cOpen.id, authorUserId: staffA.id, body: SECRET.crossNote });
+  await db.insert(historyEvents).values([
+    { ...scopeB, complaintId: cOpen.id, waterPointId: wpOpen.id, actorUserId: staffB.id, eventType: "status_changed", beforeData: { status: "open" }, afterData: { status: "fixed" }, createdAt: new Date("2026-11-12T11:00:00Z") },
+    { ...scopeA2, complaintId: cOpen.id, waterPointId: wpOpen.id, actorUserId: null, eventType: "created", createdAt: new Date("2026-11-12T12:00:00Z") },
+  ]);
 
   await db.insert(notes).values({ ...scopeA1, complaintId: cOpen.id, authorUserId: staffA.id, body: SECRET.noteText });
   // A note whose author belongs to ANOTHER organization (the schema allows it): that name must never be shown.
@@ -141,10 +165,10 @@ export async function buildWorld() {
   ]);
 
   return {
-    A, B, regionA2, staffA, staffB, partner,
+    A, B, regionA2, staffA, staffB, partner, partnerB,
     scopeA1, scopeA2, scopeB,
     wp: { wpOpen, wpPassed, wpFixed, wpNone, wpBare, wpUnverified, wpNoCoords, wpMerged, wpArchived, wpA2, wpB },
-    c: { cOpen, cPassed, cFixed, cNoReports, cCrossPoint, cA2, cB },
+    c: { cOpen, cPassed, cFixed, cNoReports, cCrossPoint, cCrossPartner, cForeignOnOurPoint, cA2, cB },
     r: { r1, r2, rReview },
     ctxA1: { organizationId: A.org.id, regionIds: [A.region.id] },
     ctxA1A2: { organizationId: A.org.id, regionIds: [A.region.id, regionA2.id] },

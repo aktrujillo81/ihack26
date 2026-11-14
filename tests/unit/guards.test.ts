@@ -10,7 +10,8 @@ import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 
-describe("lint guard: no hardcoded user-facing strings", () => {
+// Starting a full ESLint instance can take over the 5 second default when the machine is busy.
+describe("lint guard: no hardcoded user-facing strings", { timeout: 30_000 }, () => {
   const eslint = new ESLint({ cwd: root });
 
   async function messages(code: string, filePath: string) {

@@ -46,7 +46,8 @@ export function deriveComplaintFacts(reports: readonly ReportFacts[]): Complaint
   const school = reports.map((r) => r.servesSchoolOrClinic);
   return {
     problem: best(reports.map((r) => r.problem), PROBLEM_ORDER, "unknown"),
-    peopleAffected: people.length > 0 ? Math.max(...people) : "unknown",
+    // reduce, not Math.max(...people): a spread of a very large list can throw.
+    peopleAffected: people.length > 0 ? people.reduce((a, b) => (b > a ? b : a)) : "unknown",
     servesSchoolOrClinic: school.includes(true) ? true : school.includes(false) ? false : "unknown",
     duration: best(reports.map((r) => r.duration), DURATION_ORDER, "unknown"),
   };
