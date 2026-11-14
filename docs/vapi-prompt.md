@@ -4,6 +4,12 @@
 
 **Status of v2: LIVE since Sat 2026-11-14, about 3:56 AM Mountain Time** (Vapi version `v2`, 100% of traffic; Vapi kept the earlier assistant as `v1`). Anything changed in Vapi later must be changed here in the same PR.
 
+**Later changes (2026-11-14, Mountain Time):**
+- **v3** (about 4:33 AM): server URL set (temporary Cloudflare tunnel for the S5 test calls) with the `hackathon-webhook` Bearer credential; only `end-of-call-report` is sent.
+- **v4** (about 5:20 AM, 100% of traffic): End Call Phrases set to `people who may be able to help`, to end the call right after the closing line. Worked on test call 3 (call ended right after the closing line). Whether it cuts off the last words is still to be checked by ear.
+- Structured output `water_point_report` was recreated (same 9 fields, all required, `caller_confirmed` is true/false, the rest are text) and attached to Well Watch with "Where This Runs" on the output's own page. Preview on test calls returns all 9 fields.
+- **Resolved (test call 3, v4, 5:23 AM):** the recreated structured output ran. The payload's `artifact.structuredOutputs` held `water_point_report` with all 9 fields, and the assistant copy in the payload had `artifactPlan.structuredOutputIds` set. The earlier calls (1 and 2, v3) had `artifactPlan: null` and no extraction. The End Call Phrase ended the call by itself (`endedReason: assistant-said-end-call-phrase`).
+
 ## Version history
 | Version | State | What changed |
 |---|---|---|

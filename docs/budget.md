@@ -28,4 +28,6 @@
 ## Spend log
 | # | Date and time | Who | Purpose | Length | Cost | Balance after |
 |---|---|---|---|---|---|---|
-| | | | | | | |
+| 1 | 2026-11-14 04:36 (Mountain Time) | Andrew | First real test call (S5), via local tunnel capture | 1 m 33 s | $0.10 ($0.0988) | 4.90 |
+| 2 | 2026-11-14 05:03 (Mountain Time) | Andrew | Second test call (S5): checking structured extraction; none ran | 1 m 15 s | $0.08 ($0.0801) | 4.82 |
+| 3 | 2026-11-14 05:23 (Mountain Time) | Andrew | Third test call (S5), assistant v4: structured output ran, call ended itself | 1 m 17 s | $0.09 | 4.73 |
