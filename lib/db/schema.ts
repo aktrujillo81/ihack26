@@ -156,8 +156,9 @@ export const complaints = pgTable("complaints", {
   check("complaints_priority_score_nonnegative", sql`${table.priorityScore} >= 0`),
   check("complaints_report_count_nonnegative", sql`${table.reportCount} >= 0`),
   check("complaints_people_affected_nonnegative", sql`${table.peopleAffected} is null or ${table.peopleAffected} >= 0`),
-  // At most one active complaint per water point (contracts 4.1 item 8).
-  uniqueIndex("complaints_one_active_per_water_point_idx").on(table.waterPointId).where(sql`${table.status} in ('open', 'accepted', 'in_progress', 'passed_on')`),
+  // At most one active complaint per water point (contracts 4.1 item 8). Active = open, accepted,
+  // in_progress, passed_on; the list lives in the SQL helper from migration 0007 (see the note there).
+  uniqueIndex("complaints_one_active_per_water_point_idx").on(table.waterPointId).where(sql`"public"."complaint_status_is_active"(${table.status})`),
 ]);
 
 export const reports = pgTable("reports", {

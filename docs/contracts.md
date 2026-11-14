@@ -202,7 +202,7 @@ active: those live only in `users`.
 - `reports`: one caller submission. Stores no caller name or phone number. `organization_id`, `region_id`, optional `complaint_id` and `water_point_id` (both null while unattached), `channel`, the extracted fields, `transcript` (always null in P0), `needs_review`, `needs_review_reason` (enum of the seven codes in 5.2, null; a check refuses `needs_review` true with no reason), `provider_call_ref` (text, null; unique per organization where not null), `ended_reason` (text, null; a check allows only `customer-ended-call`, `assistant-said-end-call-phrase`, `other`), `received_at` (the three new columns are Built, migration 0003). A unique constraint on (`organization_id`, `region_id`, `id`) is the target of `report_candidates`' scoped foreign key.
 - `complaints`: the current issue for a water point: `status`, `priority_score`, `priority_reason`, `report_count`, `needs_review`, the most severe values over its reports `problem` (default `unknown`, not null), `people_affected` (null), `serves_school_or_clinic` (null), `duration` (default `unknown`, not null) (Built, migration 0003; written by D5, rules in 5.5), optional `passed_on_partner_id` and `passed_on_note`, `fixed_at`.
 - `report_candidates` (Built, migration 0003): water points that fit an ambiguous report. `id`, `organization_id`, `region_id`, `report_id`, `water_point_id`, timestamps. Composite foreign keys (`organization_id`, `region_id`, `report_id`) to `reports` and (`organization_id`, `region_id`, `water_point_id`) to `water_points`, so a pair across organizations or regions is refused; unique (`report_id`, `water_point_id`). Not history: a row is removed only when its report is attached, and a merge repoints rows to the survivor (behaviour is D4; the table allows both).
-- At most one complaint per `water_point_id` with `status` `open` or `passed_on` (partial unique index `complaints_one_active_per_water_point_idx`). Fixed complaints may repeat.
+- At most one active complaint per `water_point_id`: `status` `open`, `accepted`, `in_progress` or `passed_on` (partial unique index `complaints_one_active_per_water_point_idx`, predicate is the SQL function `complaint_status_is_active`, migration 0007). `fixed`, `denied` and `completed` complaints may repeat.
 - Channels: `phone`, `web`, `other`. Problems: `no_water`, `broken`, `dirty`, `slow`, `other`, `unknown`. Durations: `today`, `few_days`, `week_or_more`, `unknown`. Complaint statuses: `open`, `passed_on`, `fixed`.
 - Stored values for missing data: the four NOT NULL columns (`location_text`, `water_point_type`, `problem`, `duration`) store the text or enum value `unknown`. No NOT NULL column becomes nullable. `people_affected`, `serves_school_or_clinic`, `caller_confirmed`, `summary`, `language_spoken` are null when unknown.
 
@@ -919,7 +919,7 @@ exclude archived notes, while `note_archived` history preserves the event.
 Editing archives the old note, inserts the replacement, and records
 `note_edited`; note text is never copied to history or logs.
 
-Migration: `db/migrations/0004_complaint_workflow.sql`.
+Migration: `db/migrations/0007_complaint_workflow.sql` (renumbered from 0004 when merged after the technician migrations).
 
 ## 9. Unknowns and open questions
 
