@@ -80,6 +80,20 @@ test("ambiguous report lists candidates and never picks one", async () => {
   assert.deepEqual(ambiguous?.candidates.map((c) => c.id).sort(), ["wp-7", "wp-8"]);
 });
 
+test("list views never carry transcripts; only the detail page does", async () => {
+  const review = await listNeedsReview(MOCK_CONTEXT);
+  assert.equal(review.status, "ok");
+  if (review.status !== "ok") return;
+  assert.ok(review.data.every((i) => !("transcript" in i.report)));
+  const detail = await getComplaint(MOCK_CONTEXT, "c-1");
+  assert.ok(detail.status === "ok" && detail.data.reports.some((r) => r.transcript !== null));
+});
+
+test("a water point in another region is not attached to an in-scope complaint", async () => {
+  // Same organization, but region-demo is not in this user's regions: the complaint is hidden too.
+  assert.deepEqual(await getComplaint(otherRegion, "c-1"), { status: "error", error: "not_found_or_denied" });
+});
+
 test("needs-location excludes pinned, merged and archived points", async () => {
   const r = await listNeedsLocation(MOCK_CONTEXT);
   assert.equal(r.status, "ok");

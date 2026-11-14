@@ -21,7 +21,6 @@ import type { Complaint, HistoryEvent, LastReportReceived, Note, Partner, Report
 import {
   mockComplaints,
   mockHistoryEvents,
-  mockLastReportReceived,
   mockNotes,
   mockPartners,
   mockReports,
@@ -74,8 +73,11 @@ export interface ComplaintDetail {
   passedOnTo: PartnerView | null;
 }
 
+/** A report as shown in a list: no transcript (transcripts appear only on the detail page). */
+export type ReportListView = Omit<Report, "transcript">;
+
 export interface NeedsReviewItem {
-  report: Report;
+  report: ReportListView;
   /** Several possible matches are listed, never resolved to one. */
   candidates: WaterPoint[];
 }
@@ -108,6 +110,20 @@ function toPartnerView({ contact: _contact, ...rest }: Partner): PartnerView {
   return rest;
 }
 
+function toReportListView({ transcript: _transcript, ...rest }: Report): ReportListView {
+  return rest;
+}
+
+/** A related record is returned only if it is in the user's scope; otherwise it is treated as absent. */
+function scopedById<T extends { id: string; organizationId: string; regionId: string }>(
+  ctx: DataContext,
+  items: T[],
+  id: string | null,
+): T | null {
+  const found = byId(items, id);
+  return found && inScope(ctx, found) ? found : null;
+}
+
 /** Complaints in the user's regions, most urgent first. */
 export function listComplaints(ctx: DataContext): Promise<DataResult<ComplaintListItem[]>> {
   return guarded(() =>
@@ -115,7 +131,7 @@ export function listComplaints(ctx: DataContext): Promise<DataResult<ComplaintLi
       mockComplaints
         .filter((c) => inScope(ctx, c))
         .sort((a, b) => b.priorityScore - a.priorityScore || b.updatedAt.localeCompare(a.updatedAt))
-        .map((complaint) => ({ complaint, waterPoint: byId(mockWaterPoints, complaint.waterPointId) })),
+        .map((complaint) => ({ complaint, waterPoint: scopedById(ctx, mockWaterPoints, complaint.waterPointId) })),
     ),
   );
 }
@@ -129,13 +145,13 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
       status: "ok",
       data: {
         complaint,
-        waterPoint: byId(mockWaterPoints, complaint.waterPointId),
-        reports: mockReports.filter((r) => r.complaintId === id).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt)),
-        notes: mockNotes.filter((n) => n.complaintId === id).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-        history: mockHistoryEvents.filter((h) => h.complaintId === id).sort((a, b) => a.at.localeCompare(b.at)),
+        waterPoint: scopedById(ctx, mockWaterPoints, complaint.waterPointId),
+        reports: mockReports.filter((r) => r.complaintId === id && inScope(ctx, r)).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt)),
+        notes: mockNotes.filter((n) => n.complaintId === id && inScope(ctx, n)).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+        history: mockHistoryEvents.filter((h) => h.complaintId === id && inScope(ctx, h)).sort((a, b) => a.at.localeCompare(b.at)),
         passedOnTo: (() => {
-          const partner = byId(mockPartners, complaint.passedOnPartnerId);
-          return partner && inScope(ctx, partner) ? toPartnerView(partner) : null;
+          const partner = scopedById(ctx, mockPartners, complaint.passedOnPartnerId);
+          return partner ? toPartnerView(partner) : null;
         })(),
       },
     };
@@ -150,10 +166,10 @@ export function listNeedsReview(ctx: DataContext): Promise<DataResult<NeedsRevie
         .filter((r) => r.needsReview && inScope(ctx, r))
         .sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
         .map((report) => ({
-          report,
+          report: toReportListView(report),
           candidates: report.candidateWaterPointIds
-            .map((id) => byId(mockWaterPoints, id))
-            .filter((wp): wp is WaterPoint => wp !== null && inScope(ctx, wp)),
+            .map((id) => scopedById(ctx, mockWaterPoints, id))
+            .filter((wp): wp is WaterPoint => wp !== null),
         })),
     ),
   );
@@ -175,6 +191,7 @@ export function listNeedsLocation(ctx: DataContext): Promise<DataResult<WaterPoi
   );
 }
 
+/** Water points in the user's regions. Merged and archived points are hidden unless `includeInactive`. */
 export function listWaterPoints(ctx: DataContext, options: WaterPointOptions = {}): Promise<DataResult<WaterPoint[]>> {
   return guarded(() =>
     result(
@@ -187,7 +204,11 @@ export function listWaterPoints(ctx: DataContext, options: WaterPointOptions = {
   );
 }
 
-/** When the last report arrived. `empty` means none has ever arrived. */
+/**
+ * When the last report arrived, from the user's own scope only. `empty` means
+ * none has ever arrived. Assumes every timestamp is an ISO string in UTC ("Z"),
+ * so string order is time order; the real API must guarantee that.
+ */
 export function getLastReportReceived(ctx: DataContext): Promise<DataResult<LastReportReceived>> {
   return guarded<LastReportReceived>(() => {
     const latest = mockReports
@@ -195,10 +216,7 @@ export function getLastReportReceived(ctx: DataContext): Promise<DataResult<Last
       .map((r) => r.receivedAt)
       .sort()
       .at(-1);
-    if (!latest) return { status: "empty" };
-    // Prefer the recorded value when it is present and in range (PR-8).
-    const recorded = mockLastReportReceived.receivedAt;
-    return { status: "ok", data: { receivedAt: recorded && recorded >= latest ? recorded : latest } };
+    return latest ? { status: "ok", data: { receivedAt: latest } } : { status: "empty" };
   });
 }
 
