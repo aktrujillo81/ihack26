@@ -212,7 +212,7 @@ describe("/map is the public map and the signed-in map is /dashboard/map", () =>
   });
 
   it("nothing under /map is public: only the exact path is", () => {
-    for (const path of ["/map/extra", "/map/c-1", "/map/../admin", "/map/./x", "//map", "/mapx", "/Map", "/map;x", "/map%2f", "/map/%2e%2e/admin"]) {
+    for (const path of ["/map/extra", "/map/c-1", "/map/../admin", "/map/./x", "//map", "/map//", "/map///", "/mapx", "/Map", "/map;x", "/map%2f", "/map/%2e%2e/admin"]) {
       expect(isPublicPath(path), path).toBe(false);
       expect(accessForPath(path, undefined), path).toBe("denied");
       expect(accessForPath(path, "org_admin"), path).toBe("denied");

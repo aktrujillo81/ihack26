@@ -35,6 +35,12 @@ export interface RouteRule {
  * public. "/map" is the PUBLIC status-only map (no session, no detail); the
  * signed-in map lives at "/dashboard/map". A path must never be in both this
  * list and ROUTE_RULES (a test checks that).
+ *
+ * PROPOSED, NOT APPROVED: "/map" being public. The public read-only map is
+ * listed as cut from this build in docs/spec.md section 4. A human must approve
+ * it and record the decision in docs/decisions.md; until then, remove "/map"
+ * from this list to make it signed-in-only. (The page also shows nothing unless
+ * the PUBLISHED_MAP_* settings are set.)
  */
 export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health", "/map"];
 
@@ -56,7 +62,9 @@ const PLAIN_PATH = /^\/[A-Za-z0-9\-_.~/]*$/;
 function normalize(pathname: string): string | null {
   const path = pathname.split(/[?#]/)[0] ?? "";
   if (!PLAIN_PATH.test(path)) return null;
-  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+  // Repeated slashes anywhere (including at the end, "/map//") are refused, not collapsed.
+  if (path.includes("//")) return null;
+  return path.length > 1 ? path.replace(/\/$/, "") : path;
 }
 
 export function isPublicPath(pathname: string): boolean {
