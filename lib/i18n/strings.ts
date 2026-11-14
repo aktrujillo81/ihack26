@@ -120,6 +120,7 @@ const en = {
   "detail.noteLabel": "Note",
   "detail.notAvailable": "This action is not available yet.",
   "detail.invalidInput": "Please check what you entered.",
+  "detail.saved": "Saved.",
 
   // Map
   "map.empty": "No water points with a location yet.",

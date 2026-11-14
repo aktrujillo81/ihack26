@@ -7,6 +7,8 @@ import type { PlainKey } from "../i18n/strings";
 
 export type ActionState =
   | { status: "idle" }
+  /** Reserved for D6. Nothing returns this yet, because nothing is written. */
+  | { status: "saved" }
   | { status: "unauthenticated" }
   | { status: "denied" }
   | { status: "not_found" }
@@ -21,6 +23,8 @@ export function actionMessageKey(state: ActionState): PlainKey | null {
   switch (state.status) {
     case "idle":
       return null;
+    case "saved":
+      return "detail.saved";
     case "unauthenticated":
       return "signIn.expired";
     case "denied":

@@ -4,6 +4,7 @@ import { AuthError, requireActionInScope, requireSession, toDataContext } from "
 import { getComplaint } from "../data/complaints";
 import { COMPLAINT_STATUSES, type ComplaintStatus } from "../domain/types";
 import type { Action } from "../permissions/matrix";
+import { MAX_COMPLAINT_ID_LENGTH, MAX_NOTE_LENGTH, MAX_PASSED_ON_TO_LENGTH } from "../config/limits";
 import type { ActionState } from "./state";
 import { ALLOWED_TRANSITIONS } from "./transitions";
 
@@ -16,6 +17,11 @@ import { ALLOWED_TRANSITIONS } from "./transitions";
  * A Viewer is refused whatever the payload. Another organization's record is
  * reported as not found, the same as a missing one.
  *
+ * PROVISIONAL: the outcome set, the transitions (./transitions.ts), the length limits
+ * (lib/config/limits.ts, PROPOSED) and the rule that "passed_on" needs the
+ * pass_on action while every other change needs change_status. docs/contracts.md
+ * defines none of them yet.
+ *
  * NOTHING IS WRITTEN. The complaint API (D6) and the history events do not
  * exist yet, so a fully authorized and valid request returns `not_available`.
  * There are no fake writes and the mock data is never changed.
@@ -23,9 +29,6 @@ import { ALLOWED_TRANSITIONS } from "./transitions";
  * WIRING POINT (D6): replace the marked line with the real write, in one
  * transaction with its history event (red line 9: history is never overwritten).
  */
-const MAX_ID = 100;
-const MAX_TEXT = 1000;
-const MAX_WHO = 200;
 
 const isText = (value: unknown, max: number): value is string =>
   typeof value === "string" && value.trim().length > 0 && value.length <= max;
@@ -40,7 +43,7 @@ async function authorize(raw: unknown, action: Action, complaintId: unknown): Pr
     return { ok: false, state: { status: "unauthenticated" } };
   }
   // The id is untrusted. A malformed id cannot match a record, so it is "not found".
-  if (typeof complaintId !== "string" || complaintId.length === 0 || complaintId.length > MAX_ID) {
+  if (typeof complaintId !== "string" || complaintId.length === 0 || complaintId.length > MAX_COMPLAINT_ID_LENGTH) {
     return { ok: false, state: { status: "not_found" } };
   }
   const found = await getComplaint(toDataContext(session), complaintId);
@@ -67,7 +70,7 @@ export async function changeComplaintStatus(
 
     const target = COMPLAINT_STATUSES.find((s) => s === input.status);
     if (!target || auth.current === undefined || !ALLOWED_TRANSITIONS[auth.current].includes(target)) return { status: "invalid" };
-    if (target === "passed_on" && !isText(input.passedOnTo, MAX_WHO)) return { status: "invalid" };
+    if (target === "passed_on" && !isText(input.passedOnTo, MAX_PASSED_ON_TO_LENGTH)) return { status: "invalid" };
 
     // WIRING POINT (D6): write the new status and its history event here. Never overwrite history.
     return { status: "not_available" };
@@ -80,7 +83,7 @@ export async function addComplaintNote(raw: unknown, input: { complaintId: unkno
   try {
     const auth = await authorize(raw, "add_note", input.complaintId);
     if (!auth.ok) return auth.state;
-    if (!isText(input.text, MAX_TEXT)) return { status: "invalid" };
+    if (!isText(input.text, MAX_NOTE_LENGTH)) return { status: "invalid" };
 
     // WIRING POINT (D6): save the note and its history event here.
     return { status: "not_available" };

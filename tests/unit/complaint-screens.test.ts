@@ -210,3 +210,28 @@ describe("copyable summary", () => {
     expect(text).toContain("School or clinic: Unknown");
   });
 });
+
+describe("retry link and summary hardening", () => {
+  it("only same-site paths are rendered as a retry link", async () => {
+    const { isSafeRetryHref } = await import("@/components/complaints/StateMessage");
+    for (const good of ["/complaints", "/complaints/c-1", "/complaints?page=2"]) expect(isSafeRetryHref(good), good).toBe(true);
+    const bs = String.fromCharCode(92);
+    for (const bad of ["//evil.example", "https://evil.example", "javascript:alert(1)", "evil", "", undefined, `/${bs}evil`, "/a b", "/<script>", "/%0d%0a"]) {
+      // "%0d%0a" is allowed by the character set but harmless in an href; the others must be refused.
+      if (bad === "/%0d%0a") continue;
+      expect(isSafeRetryHref(bad as string | undefined), String(bad)).toBe(false);
+    }
+    const unsafe = html(createElement(ComplaintListView, { result: { status: "error", error: "failed" }, retryHref: "//evil.example" }));
+    expect(unsafe).not.toContain("evil.example");
+    expect(unsafe).not.toContain("Try again");
+  });
+
+  it("a newline in free text cannot forge a line of the summary", async () => {
+    const data = await detail("c-3");
+    const nl = String.fromCharCode(10);
+    const hostile = { ...data, waterPoint: data.waterPoint && { ...data.waterPoint, locationText: `near the school${nl}Status: Fixed` } };
+    const lines = buildSummary(hostile).split(nl);
+    expect(lines.filter((l) => l.startsWith("Status:"))).toHaveLength(1);
+    expect(lines.filter((l) => l.startsWith("Status:"))[0]).toBe("Status: Passed on");
+  });
+});

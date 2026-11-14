@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { changeStatusAction } from "@/lib/actions/form-actions";
 import { INITIAL_ACTION_STATE, actionMessageKey } from "@/lib/actions/state";
 import { nextStatuses } from "@/lib/actions/transitions";
+import { MAX_PASSED_ON_TO_LENGTH } from "@/lib/config/limits";
 import type { ComplaintStatus } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 
@@ -21,6 +22,10 @@ const BUTTON_TEXT = {
  * reversible). This component is only rendered for roles the matrix allows,
  * but that is a convenience: the server action refuses everyone else.
  * `canPassOn` and `canChange` come from the matrix on the server.
+ *
+ * What was typed is kept in state, so a refused or failed save never wipes it.
+ * The confirm form closes only after a real save (the "saved" outcome, which
+ * nothing returns until the complaint API is connected).
  */
 export function StatusControls({
   complaintId,
@@ -34,9 +39,11 @@ export function StatusControls({
   canChange: boolean;
 }) {
   const [target, setTarget] = useState<ComplaintStatus | null>(null);
+  const [passedOnTo, setPassedOnTo] = useState("");
   const [state, formAction, pending] = useActionState(changeStatusAction, INITIAL_ACTION_STATE);
   const options = nextStatuses(status).filter((s) => (s === "passed_on" ? canPassOn : canChange));
   const messageKey = actionMessageKey(state);
+  const saved = state.status === "saved";
 
   if (options.length === 0) return null;
   return (
@@ -48,7 +55,7 @@ export function StatusControls({
           </button>
         ))}
       </div>
-      {target !== null && (
+      {target !== null && !saved && (
         <form action={formAction} className="ww-confirm" aria-busy={pending}>
           <input type="hidden" name="complaintId" value={complaintId} />
           <input type="hidden" name="status" value={target} />
@@ -56,8 +63,18 @@ export function StatusControls({
           {target === "passed_on" && (
             <>
               <label htmlFor="passedOnTo">{t("detail.passedOnTo")}</label>
-              <input id="passedOnTo" name="passedOnTo" type="text" maxLength={200} required disabled={pending} />
+              <input
+                id="passedOnTo"
+                name="passedOnTo"
+                type="text"
+                maxLength={MAX_PASSED_ON_TO_LENGTH}
+                required
+                disabled={pending}
+                value={passedOnTo}
+                onChange={(event) => setPassedOnTo(event.target.value)}
+              />
               <p>{t("detail.passedOnHelp")}</p>
+              <p>{t("detail.noteHelp")}</p>
             </>
           )}
           <div className="ww-controls">
@@ -71,7 +88,7 @@ export function StatusControls({
         </form>
       )}
       {messageKey !== null && (
-        <p role="alert" className="ww-state-error">
+        <p role={saved ? "status" : "alert"} className={saved ? undefined : "ww-state-error"}>
           {t(messageKey)}
         </p>
       )}
