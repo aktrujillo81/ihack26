@@ -6,7 +6,8 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/config/auth";
 import { seedEnv } from "@/lib/config/env";
 import { getDb } from "@/lib/db";
-import { authAccount, authUser, organizations, regions, users } from "@/lib/db/schema";
+import { DEFAULT_CONFIGURATION } from "@/lib/config/intake";
+import { authAccount, authUser, configuration, organizations, regions, users } from "@/lib/db/schema";
 import { SEED_ACCOUNTS, SEED_ORGANIZATION, SEED_REGION, type SeedAccount } from "./data";
 
 export class SeedConfigError extends Error {}
@@ -59,6 +60,15 @@ export async function runSeed(passwords = readSeedPasswords()): Promise<void> {
       .select({ id: regions.id })
       .from(regions)
       .where(and(eq(regions.organizationId, org.id), eq(regions.slug, SEED_REGION.slug)));
+
+    // Default configuration rows (contracts 8), including the one `intake.phone` row that scopes the Vapi line.
+    // Never overwritten: a changed value stays. Only written when the key is missing for this scope.
+    for (const [key, value] of Object.entries(DEFAULT_CONFIGURATION)) {
+      await tx
+        .insert(configuration)
+        .values({ organizationId: org.id, regionId: region.id, key, value })
+        .onConflictDoNothing({ target: [configuration.organizationId, configuration.regionId, configuration.key] });
+    }
 
     for (const a of SEED_ACCOUNTS) {
       const email = a.email.toLowerCase();
