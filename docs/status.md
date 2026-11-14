@@ -2,18 +2,18 @@
 
 Read this first in every session. The Orchestrator keeps it current.
 
-**Last updated:** Sat 2026-11-14, by the Orchestrator.
+**Last updated:** Sat 2026-11-14, about 11:50 AM Mountain Time (webhook live check on the host).
 **Deadline:** 4:00 PM Saturday. Feature freeze time: **unknown** (proposed: 1:30 PM Mountain; the humans set it).
 **Vapi balance:** 4.73 credits of 5.00 (3 paid calls, $0.27). Floor until rehearsals: 2.25. Only Andrew places paid calls, each with a human's OK.
 
 ## Report
 ```
-DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, contract-follow-code documentation (#41), shared UI pieces (#43), app shell (#47), technician complaint-ticket follow-up, and the responsive layout pass on this branch. PR #45 merged D3b's schema-independent helpers only; D3b save is not done. Evidence: merged PRs and task review files in docs/.
-IN PROGRESS: D3a (PR #42), W1 prep (PR #28, open), and the D3/D4/D5 schema work (PR #39, open).
-BLOCKED: D3b save implementation until #39 and #42 are merged. D4, D5, D6, D7, W2 to W5 real data, and Q1 to Q8 remain downstream of the data path.
+DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, contract-follow-code documentation (#41), shared UI pieces (#43), and app shell (#47). D3a webhook (#50) and D3b save (#53). Evidence: merged PRs in docs/changelog.md.
+IN PROGRESS: PR #44 (open). D3a (#50) and D3b save (#53) are merged and deployed.
+BLOCKED: real phone data until a human switches the Vapi server URL.
 NEEDS A HUMAN: see "Needs a human" below.
-NEXT: merge #39 and #42, then Andrew builds the real D3b save on `feat/d3b-save-impl` from `C:\Users\aktru\projects\hackathon-d3b`. That save must use D3a's frozen type, not the provisional helper type from #45.
-D3a UPDATE (this branch): webhook built and reviewed; `saveReport` is intentionally a failing D3b stub until D3b replaces it.
+NEXT: a human switches the Vapi server URL to `https://wellwatch.verilen.com/api/vapi/webhook` (see "Needs a human" 1), then one paid test call with a human's OK.
+WEBHOOK UPDATE (11:47 AM): D3a (#50) and D3b save (#53) are merged and deployed on the host. The authenticated check stored a row (details under "Release and demo readiness").
 ```
 
 ## Tasks
@@ -35,22 +35,18 @@ D3a UPDATE (this branch): webhook built and reviewed; `saveReport` is intentiona
 | W1 wiring, real reads, demo seed, D6 complaint writes | Merged | PR #33, #35, #36, #37. D6 differs from the contract: `docs/contracts.md` 5.8 and unknown 18 |
 | Shared UI pieces | Done | PR #43 |
 | App shell | Done | PR #47 |
-| D3a webhook | In progress | PR #42; freezes the final `ValidatedReport` in `lib/ingest/types.ts` |
+| D3a webhook | Done, deployed | PR #50 (was #42). Running on the host since 11:47 AM |
 | D3b helpers | Merged, **not the save** | PR #45: input caps, alias map, provisional input type, fake-report builders, and 38 tests |
-| D3b save | **Blocked, not started** | Future branch `feat/d3b-save-impl`, Andrew's folder `C:\Users\aktru\projects\hackathon-d3b`; waits for #39 and #42. Delete the provisional `lib/ingest/report-input.ts` type when #42 lands and use D3a's type. |
-| D4, D5, W5, D7 | Not started | Still downstream of the D3a/D3b data path |
-| D3a | Built on this branch | Authenticated, bounded, normalized webhook; `saveReport` is intentionally a failing D3b stub |
-| D3b, D4, D5, W5, D7 | Not started | D3b must land before any Vapi URL switch |
+| D3b save | Done, deployed | PR #53. Authenticated sample POST stored a report, water point, complaint and 2 history events; a repeat was answered 200 and not stored |
+| D4, D5, W5, D7 | Not started | The data path (D3a, D3b) is now live |
 
 ## Open PRs (limit: five)
 | PR | Branch | Owner | Note |
 |---|---|---|---|
-| #28 | `chore/w1-prep` | JerrZane | 12-hour session cap, public `/map` vs `/dashboard/map` |
-| #39 | `feat/schema-d3-d4-d5` | unknown | Schema prerequisite for D3b save; not merged |
-| #42 | `feat/d3a-vapi-webhook-impl` | unknown | D3a prerequisite; not merged |
+| #44 | `fix/history-codes-only` | aktrujillo81 | unknown |
 
 ## Needs a human
-1. **Vapi server URL.** Do not switch it until D3b is deployed and the authenticated webhook check returns 200 with a stored row. The target is `https://wellwatch.verilen.com/api/vapi/webhook`.
+1. **Vapi server URL.** Ready to switch: D3b is deployed and the authenticated check returned 200 with a stored row. In the Vapi dashboard, set the assistant's server URL to `https://wellwatch.verilen.com/api/vapi/webhook`, attach the custom Bearer credential whose token equals `VAPI_WEBHOOK_SECRET` (in the dashboard, not through the API), and keep server messages to `end-of-call-report` only. Then one paid test call with a human's OK.
 2. **Feature freeze time.** Not set.
 3. **Public map (PR #22).** Merged, but the spec lists it as cut. Approve the spec change or turn the page off.
 4. **Retention.** How long transcripts are kept (spec unknown 10), and whether Vapi's audio recording stays on (Vapi's own retention is unknown).
@@ -61,13 +57,16 @@ D3a UPDATE (this branch): webhook built and reviewed; `saveReport` is intentiona
 | Check | State |
 |---|---|
 | Public URL works from outside the venue network | unknown (not checked today) |
-| Host has pulled `main`; app restarts after a reboot | unknown |
-| `VAPI_WEBHOOK_SECRET`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, seed passwords set on the host | unknown |
-| **Vapi server URL points at the current public URL** | **No.** It points at a closed tunnel. See "Needs a human" 1 |
-| Capture route removed | Yes in D3a branch; human deploy still required |
+| Host has pulled `main`; app restarts after a reboot | Pulled and rebuilt at `f254216` (11:47 AM). `npm run start` runs detached (`setsid nohup`, log in `~/.cache/wellwatch-next.log`), **not** as a service: it does not come back after a reboot |
+| Database the public site uses | **Development, 127.0.0.1:5434** (`.env.local` wins over `.env`), with the invented demo data. Decided by the humans for the demo (`docs/decisions.md`). Real call reports land next to demo rows |
+| `intake.phone` row on the database the site uses | Yes, `npm run db:seed` on 5434 at 11:45 AM. It was missing before, so every report got 503 `no_scope` |
+| Webhook check on the public URL | No secret: 401. Ignored type: 200. Sample payload: 200 and stored (one sample complaint now exists on 5434). Repeat: 200, not stored |
+| `VAPI_WEBHOOK_SECRET`, `VAPI_CALL_REF_KEY`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, seed passwords set on the host | Yes in the host's `.env.local` (names checked, not values). The host's `.env` (production) has no `VAPI_CALL_REF_KEY` |
+| **Vapi server URL points at the current public URL** | **No.** It points at a closed tunnel. The server side is ready. See "Needs a human" 1 |
+| Capture route removed | Yes, deployed |
 | Vapi call limits set (120 s, 20 s silence) | Yes (`docs/vapi-prompt.md`) |
 | Vapi balance checked before rehearsals and before judging | 4.73 after call 3 |
-| Demo accounts and starter data on the host | unknown (seed exists: `npm run db:seed`) |
+| Demo accounts and starter data on the host | Yes, on 5434 (`db:seed` and `db:seed:demo`) |
 | Database backup before the demo | Not yet |
 | Backup video on two devices | Not yet (Q7) |
 | Space cleaned before 5 PM Saturday | Not yet |

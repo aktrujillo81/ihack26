@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   AuthError,
@@ -18,6 +18,15 @@ import { t } from "@/lib/i18n/strings";
 const NOW = Date.now();
 const FUTURE = new Date(NOW + 8 * 60 * 60 * 1000).toISOString();
 const PAST = new Date(NOW - 24 * 60 * 60 * 1000).toISOString();
+
+// Freeze the clock so guards called without a `now` argument see NOW, not the real time.
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 const session = (role: Role, extra: Record<string, unknown> = {}) => ({
   userId: "u-1",

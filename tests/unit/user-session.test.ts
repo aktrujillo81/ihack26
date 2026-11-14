@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   requireAction,
@@ -13,6 +13,15 @@ import { ACTIONS, PERMISSIONS } from "@/lib/permissions/matrix";
 
 const NOW = Date.now();
 const FUTURE = new Date(NOW + 8 * 60 * 60 * 1000).toISOString();
+
+// Freeze the clock so guards called without a `now` argument see NOW, not the real time.
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 /** Copied from the D1 draft: `pgEnum("user_role", [...])` in origin/feat/database-migrations lib/db/schema.ts. */
 const D1_USER_ROLES = ["org_admin", "responder", "viewer", "technician"] as const;
