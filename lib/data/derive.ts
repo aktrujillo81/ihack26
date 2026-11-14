@@ -11,7 +11,7 @@
  *
  * `unknown` never counts as severe and never beats a known value.
  */
-import type { Duration, PeopleAffected, Problem, ServesSchoolOrClinic } from "../domain/types";
+import { NEEDS_REVIEW_REASONS, type Duration, type NeedsReviewReason, type PeopleAffected, type Problem, type ServesSchoolOrClinic } from "../domain/types";
 
 /** Most severe first. no_water and broken are the red problems (spec section 7). */
 const PROBLEM_ORDER: readonly Problem[] = ["no_water", "broken", "slow", "dirty", "other", "unknown"];
@@ -64,3 +64,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** True only for a uuid. Used before any value from a URL or a session reaches a uuid column. */
 export const isUuid = (value: unknown): value is string => typeof value === "string" && UUID.test(value);
+
+/** The highest-priority stored reason among a complaint's reports (contracts 5.2 order), or null. */
+export function topReviewReason(reasons: readonly (NeedsReviewReason | null)[]): NeedsReviewReason | null {
+  for (const reason of NEEDS_REVIEW_REASONS) if (reasons.includes(reason)) return reason;
+  return null;
+}

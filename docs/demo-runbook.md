@@ -43,7 +43,7 @@ Needs Node 20.12 or newer and `npm install` done.
    - `POSTGRES_PORT=5434` and a `DATABASE_URL` that points at `127.0.0.1:5434`.
      Check the port in the URL before every database command. `db:local` falls
      back to 5433 if `POSTGRES_PORT` is unset: set it.
-   - `BETTER_AUTH_URL=http://127.0.0.1:6543`, and a `BETTER_AUTH_SECRET` of 32 or
+   - `BETTER_AUTH_URL=http://127.0.0.1:3162`, and a `BETTER_AUTH_SECRET` of 32 or
      more random characters.
    - `SEED_ADMIN_PASSWORD`, `SEED_RESPONDER_PASSWORD`, `SEED_VIEWER_PASSWORD`,
      each 12 to 128 characters. Choose them yourself; they are only ever in this
@@ -57,7 +57,7 @@ Needs Node 20.12 or newer and `npm install` done.
    ```
    `db:seed:demo` is safe to run twice (a marker stops the second run). To start
    over, stop `db:local` and delete `.pgdata/`. History is never deleted by the seed.
-4. Terminal 2: `npm run dev`, then open `http://127.0.0.1:6543`.
+4. Terminal 2: `npm run dev`, then open `http://127.0.0.1:3162`.
 
 Every later start is just steps 2 and 4.
 
@@ -127,7 +127,7 @@ Day before:
 - [ ] Phone number and Vapi assistant working (only with a human's OK to place a paid call; budget in `docs/budget.md`).
 
 Right before:
-- [ ] `npm run db:local` running; `npm run dev` running; page loads at `http://127.0.0.1:6543`.
+- [ ] `npm run db:local` running; `npm run dev` running; page loads at `http://127.0.0.1:3162`.
 - [ ] Responder signed in on the projector window; Viewer signed in in a private window.
 - [ ] Riverside complaint is still **open** (reopen it if a rehearsal fixed it).
 - [ ] Browser zoom, notifications off, internet checked (map tiles).

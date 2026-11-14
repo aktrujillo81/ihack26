@@ -164,9 +164,9 @@ export async function applyStatusChange(input: ChangeStatusInput): Promise<Write
         complaintId: row.id,
         actorUserId,
         eventType: reopening ? "reopened" : to === "passed_on" ? "passed_on" : "status_changed",
-        // Only fields that are safe to show on the timeline: statuses, and who it was passed to.
+        // History holds codes only: statuses. The typed pass-on text lives only on the complaint row.
         beforeData: { status: row.status },
-        afterData: to === "passed_on" ? { status: to, passedOnNote: note } : { status: to },
+        afterData: { status: to },
         createdAt: clockNow,
       });
       return { status: "saved", version: updated.version };

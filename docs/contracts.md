@@ -392,16 +392,21 @@ both in `lib/config/limits.ts` and both still marked PROPOSED there. Result
 states: `saved`, `conflict`, `unauthenticated`, `denied`, `not_found`, `invalid`,
 `error`. Any other pair of statuses is `invalid` and changes nothing.
 
-**OPEN, owner: the humans with Security, deadline: before real use (not only
-before the demo).** The built code copies the "passed on to" text into
-`history_events.after_data.passedOnNote`. This **breaks the rule that history
-never holds note text** (`before_data`/`after_data` hold codes only). The text is
-typed by staff and `history_events` is append-only, so anything personal typed
-there can never be removed (the copy in `complaints.passed_on_note` can be
-cleared, and is on reopen). The timeline (`components/complaints/format.ts`)
-reads it. Options: B, keep the text only in `complaints.passed_on_note` and store
-codes in history (Security's recommendation); C, accept it with the form warning;
-A, codes and partner id only (needs the partner directory). Not decided.
+**What is Built today differs from the rules above (D6, PR #37, checked when
+PR #34 was merged with main).** The built writes are the server actions in
+"Complaint writes" (section 7), not the HTTP routes 6.4 and 6.5. The differences
+below are **open: a human decides which side changes** (section 9); until then
+the code is what runs and this table is what the contract wants.
+
+| Topic | Contract (5.8, 6.4, 6.5) | Built (#37) |
+|---|---|---|
+| Transport | `POST /api/complaints/{id}/status` and `/notes` | Server actions, no HTTP route |
+| Stale check | `expectedStatus`, 409 | `version` (`updated_at`), result `conflict` |
+| `passed_on` to `open` | Allowed, with a note (spec change, awaiting approval) | Refused (`invalid`), because the spec does not list it |
+| `fixed` to `open` | 409 if the water point already has an active complaint | No such check; the unique index in 4.1 item 8 does not exist yet |
+| Pass-on note | 1 to 2000 characters, never in `before_data`/`after_data` | Max 200 characters, kept on the complaint row only. History holds codes only (decided 2026-11-14, built) |
+| Note text | 1 to 2000 characters | 1 to 1000 characters |
+| Partner | `partnerId` optional | Not set (no picker) |
 
 ### 5.9 History event types
 `created`, `report_added`, `status_changed`, `passed_on`, `reopened`,
@@ -529,6 +534,13 @@ active one reports `fixed`.
 **`candidates`** is the one name for possible matches everywhere (6.6, 6.7), with
 the shape `[{ "id", "type", "locationText" }]`, in-scope only.
 
+**Built instead (D7, smallest version):** the signed-in complaint list calls
+`router.refresh()` every `LIST_REFRESH_SECONDS` (15, `lib/config/ui.ts`), paused
+while the tab is hidden, with one extra refresh when the tab becomes visible. It
+adds no endpoint and no data shape; the server components re-read the list under
+the session's scope. `GET /api/live` below is still **not built**, and nothing
+reads `polling.intervalSeconds` yet.
+
 `GET /api/live` (D7, polling): `{ "serverTime", "lastReportReceivedAt" (or null if
 none ever), "staleAfterMinutes", "pollIntervalSeconds", "version" }`. `version`
 is the latest `updatedAt` among the user's scope records (complaints, water
@@ -610,7 +622,7 @@ list sessions, get-session, and the rest). Bodies, cookies and tokens are never 
 
 - **Cookie:** `better-auth.session_token` (signed, HttpOnly, SameSite=Lax, Path=/, Max-Age 43200). In production, or whenever `BETTER_AUTH_URL` is `https://`, it is `__Secure-better-auth.session_token` with `Secure`. No cookie cache (`session_data` cookie is never set).
 - **Session length:** 12 hours from sign-in (`SESSION_LIFETIME_SECONDS` in `lib/config/auth.ts`, the one source for this value). Never extended by use. Every session row is capped at that lifetime when it is created.
-- **Origins:** `BETTER_AUTH_URL` (the public hostname, `https://bg.verilen.com` on the host), plus `http://127.0.0.1:6543` only when `NODE_ENV=development`. The Origin check is forced on in every environment.
+- **Origins:** `BETTER_AUTH_URL` (the public hostname, `https://wellwatch.verilen.com` on the host), plus `http://127.0.0.1:3162` only when `NODE_ENV=development`. The Origin check is forced on in every environment.
 - **Rate limit:** on in every environment. Sign-in: 5 per 60 seconds per client IP, then 429. The client IP is taken only from `cf-connecting-ip` (a single valid IP). With no such header: `127.0.0.1` in development and tests; in production one shared bucket for all such requests. In-memory, per server process (resets on restart).
 - **Accounts:** sign-up is disabled (also for direct server calls). Accounts come only from `npm run db:seed`. Password length 12 to 128.
 
@@ -644,8 +656,21 @@ Without a session cookie: any other page redirects (307) to `/sign-in`, any
 other `/api/*` path answers `401 {"error":"unauthorized"}`. With a cookie the
 request reaches the page, which refuses it if the session is not valid (the
 page redirects to `/sign-in?reason=expired`). Redirect targets are fixed paths;
-nothing from the request is copied into them. `/needs-review` and
-`/needs-location` are denied by default and have no pages yet (W5).
+nothing from the request is copied into them. `/needs-review` is a read-only
+page (W5, smallest version, below). `/needs-location` is denied by default and
+has no page yet.
+
+**`/needs-review` (built, W5 smallest version).** A signed-in page, any role
+(`view`), that lists the in-scope reports with `needs_review = true`, oldest
+first, from `listNeedsReview` in `lib/data/complaints.ts`. It shows only the
+reason code as words ("Needs review: unusable_location"), the received time,
+the problem and the spoken location, and a count. No transcript, summary,
+language, caller detail or action; no candidate picker (`candidates` stays
+empty). It is a page, not the `GET /api/needs-review` route in 6.7, which is
+still not built. The nav shows a link to it. Reports with no water point or
+complaint (reasons `malformed_payload`, `no_structured_data`,
+`processing_error`, `unusable_location`, `ambiguous_match`) are visible only
+here.
 
 Sign-out is a server action (`lib/auth/sign-out.ts`): it ends the session on the
 server and goes to `/sign-in`. Sign-in is a server action that calls
@@ -669,7 +694,7 @@ it (**PROVISIONAL, waits for S6 and D4/D5**, see `docs/reviews/D1.md`):
 | The screens need | D1 has | What is done |
 |---|---|---|
 | A complaint's problem, people affected, school or clinic, duration | Only on `reports`, not on `complaints` | Derived at read time: the most severe known values across the complaint's reports (spec section 7). No reports: all unknown. |
-| A review reason, and the candidate water points for an ambiguous match | No column | Reason is null, candidates empty. W5 needs a column or a table. |
+| A review reason, and the candidate water points for an ambiguous match | `reports.needs_review_reason`; `report_candidates` | The stored reason is read for reports and for the `/needs-review` page. A complaint has no reason column: its `needsReviewReason` is the highest-priority (5.2 order) reason among its reports, or null. Candidates stay empty until the picker is built. |
 | A description of each history event | `event_type`, `before_data`, `after_data`, `note` | The screen builds the sentence from those (translatable). Unknown event types show "Change recorded". |
 | The name of a water point | `location_text` (spoken) and the type only | No name. The public map labels a point by its type. |
 | A version for the overwrite check (D6) | `updated_at` | `updated_at` as UTC text to the microsecond (`version`). |
@@ -693,7 +718,7 @@ Things to know (found by the red-line-8 review of these reads):
   same organization. Names of staff in OTHER regions of the same organization are
   shown (staff names, not caller data).
 - `before_data` and `after_data` are passed to the screen as stored; the screen
-  reads only `status` and `passedOnNote`. Whatever D6 writes there must be safe to
+  reads only `status`. Whatever D6 writes there must be safe to
   show (no contact values, no note text).
 - A complaint's shown problem, duration and so on are derived from ALL its
   reports, so after a reopen they can differ from the stored score and reason next
@@ -739,20 +764,19 @@ request.
 - **Same transaction:** the change and its `history_events` row are written
   together; if either fails both are rolled back (`error`).
 - **History event:** `status_changed`, `passed_on` or `reopened`, with
-  `before_data {status}` and `after_data {status[, passedOnNote]}`; `note_added`
+  `before_data {status}` and `after_data {status}` (codes only); `note_added`
   with `after_data {noteId}` (no note text). Actor is the signed-in user.
   Reopen clears `fixed_at` and the pass-on fields.
 - **Append-only (red line 9):** the write code only inserts into `history_events`
   and the database trigger refuses update and delete. Both are tested.
-- `passedOnNote` is free text typed by staff and is copied into the history
-  event, so the form tells staff not to type caller names or numbers (red line 3).
-  Nothing can check this automatically.
+- `passedOnNote` is free text typed by staff. It is stored on the complaint row only and is never copied into
+  `before_data`/`after_data` (decided 2026-11-14, built); the form still tells staff not to type caller names or numbers (red line 3).
 - The author must be an active user of the same organization and in one of the
   session's regions; the role is taken from the validated session.
 - Errors log the fixed code `[data] write_failed` only. The page is refreshed
   after `saved`.
 - Not done: setting `passed_on_partner_id` (no partner picker yet), and `review`
-  actions (W5).
+  actions (clearing needs review, 5.10).
 
 Tested in `tests/integration/complaint-writes.test.ts` (Postgres) and
 `tests/unit/complaint-actions.test.ts` (what the actions pass to the write).
@@ -868,4 +892,4 @@ read only through `lib/config/env.ts` (server-only).
 | 15 | Whether the stale-report threshold (15 minutes) is right | UX, humans | Approve or change `ui.staleReportMinutes` |
 | 16 | Several phone lines mapped to several organizations or regions | Backend | Future work; one `intake.phone` row now |
 | 17 | The map provider and tile terms | Frontend, humans | Spec unknown 9 |
-| 18 | The pass-on text copied into `history_events.after_data.passedOnNote` against the "history holds codes only" rule in 5.8 (the other differences were settled on 2026-11-14: the contract follows the code). The reopen active-complaint check is NOT YET BUILT (needs the unique index, 4.1 item 8) | Humans, Security | Choose B, C or A (text in 5.8) before real use; build the reopen check with the schema PR's index |
+| 18 | The differences between 5.8/6.4/6.5 and the built complaint writes (#37): transport, `passed_on` to `open`, the active-complaint check on reopen, note lengths, and pass-on text stored in `after_data` | Humans (Backend, Security) | Pass-on text in `after_data` is closed: history holds codes only (decided 2026-11-14, built). Other rows still open: decide per row in the table after 5.8 |

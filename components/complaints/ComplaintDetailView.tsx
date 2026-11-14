@@ -85,7 +85,12 @@ export function ComplaintDetailView({
         </div>
       </header>
 
-      {complaint.needsReview && <p className="ww-banner">{t("detail.needsReviewBanner")}</p>}
+      {complaint.needsReview && (
+        <p className="ww-banner">
+          {complaint.needsReviewReason ? `${t("common.needsReviewWithReason", { reason: complaint.needsReviewReason })}. ` : ""}
+          {t("detail.needsReviewBanner")}
+        </p>
+      )}
       {unverified && <p className="ww-banner ww-banner-unverified">{t("detail.unverifiedBanner")}</p>}
 
       <div className="ww-detail-grid">

@@ -18,6 +18,9 @@ import {
   type DataContext,
 } from "@/lib/data/complaints";
 
+import { getDb } from "@/lib/db";
+import { historyEvents } from "@/lib/db/schema";
+
 import { SECRET, buildWorld, type World } from "./data-fixtures";
 import { resetDb } from "./helpers";
 
@@ -119,6 +122,23 @@ describe("lists carry no transcripts, summaries or caller details", () => {
     expect(ok(await listNeedsReview(w.ctxB)).map((i) => i.report.complaintId)).toEqual([w.c.cB.id]);
   });
 
+  it("the needs-review rows carry their stored reason, and another organization sees none of them", async () => {
+    const own = ok(await listNeedsReview(w.ctxA1));
+    expect(own.map((i) => i.report.needsReviewReason)).toEqual(["unusable_location"]);
+    const other = JSON.stringify(ok(await listNeedsReview(w.ctxB)));
+    expect(other).not.toContain(w.r.rReview.id);
+    expect(other).not.toContain("unusable_location");
+    expect(other).not.toContain("SECRET-REVIEW-TRANSCRIPT");
+    // A user with no usable scope sees nothing at all.
+    expect(ok(await listNeedsReview(w.ctxB)).every((i) => i.report.organizationId === w.B.org.id)).toBe(true);
+  });
+
+  it("a complaint shows the highest-priority stored reason among its reports", async () => {
+    const detail = ok(await getComplaint(w.ctxA1, w.c.cOpen.id));
+    const reasons = detail.reports.map((r) => r.needsReviewReason);
+    expect(detail.complaint.needsReviewReason === null || reasons.includes(detail.complaint.needsReviewReason)).toBe(true);
+  });
+
   it("no returned object has a phone, email or contact key, at any depth", async () => {
     const all = JSON.stringify([
       await listComplaints(w.ctxA1A2),
@@ -187,6 +207,28 @@ describe("the detail read", () => {
     expect(d.passedOnTo).toMatchObject({ name: "Demo Repair Co-op", type: "repair technician" });
     expect(d.passedOnTo).not.toHaveProperty("contact");
     expect(JSON.stringify(d)).not.toContain(SECRET.contact);
+  });
+
+  it("history sends codes only: an old passed_on row with free text yields no passedOnNote and no such text", async () => {
+    await getDb().insert(historyEvents).values({
+      organizationId: w.A.org.id,
+      regionId: w.A.region.id,
+      complaintId: w.c.cPassed.id,
+      waterPointId: null,
+      actorUserId: null,
+      eventType: "passed_on",
+      beforeData: { status: "open", passedOnNote: "Old Before Text" },
+      afterData: { status: "passed_on", passedOnNote: "Demo Repair Co-op" },
+      createdAt: new Date("2026-11-10T09:00:00Z"),
+    });
+    const d = ok(await getComplaint(w.ctxA1, w.c.cPassed.id));
+    const event = d.history.find((h) => h.type === "passed_on")!;
+    expect(event.after).toEqual({ status: "passed_on" });
+    expect(event.before).toEqual({ status: "open" });
+    // The partner name may appear elsewhere in the detail (from the complaint row), but never in history.
+    expect(JSON.stringify(d.history)).not.toContain("Demo Repair Co-op");
+    expect(JSON.stringify(d.history)).not.toContain("passedOnNote");
+    expect(JSON.stringify(d.history)).not.toContain("Old Before Text");
   });
 
   it("a note's author is shown only if the author is in this organization", async () => {

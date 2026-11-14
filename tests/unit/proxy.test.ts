@@ -8,7 +8,7 @@ import { PUBLIC_PATHS, ROUTE_RULES, SELF_AUTHENTICATING_PREFIXES, isSelfAuthenti
 
 const COOKIE = "better-auth.session_token=anything";
 const request = (path: string, cookie?: string) =>
-  new NextRequest(`http://127.0.0.1:6543${path}`, cookie ? { headers: { cookie } } : undefined);
+  new NextRequest(`http://127.0.0.1:3162${path}`, cookie ? { headers: { cookie } } : undefined);
 
 describe("without a session cookie, only the public and self-authenticating routes get through", () => {
   it("the public routes pass", () => {

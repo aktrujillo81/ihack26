@@ -11,6 +11,7 @@ import type {
   Complaint,
   HistoryEvent,
   LastReportReceived,
+  NeedsReviewReason,
   Note,
   Partner,
   Report,
@@ -18,7 +19,7 @@ import type {
   WaterPointType,
 } from "@/lib/domain/types";
 
-import { deriveComplaintFacts, isUuid, toCoordinate, type ReportFacts } from "./derive";
+import { deriveComplaintFacts, isUuid, toCoordinate, topReviewReason, type ReportFacts } from "./derive";
 
 /**
  * The data layer for the web app: every screen reads data through this file.
@@ -171,7 +172,7 @@ function toWaterPoint(row: WaterPointRow): WaterPoint {
   };
 }
 
-function toComplaint(row: ComplaintRow, version: string, reportFacts: ReportFacts[]): Complaint {
+function toComplaint(row: ComplaintRow, version: string, reportFacts: ReportFacts[], reportReasons: readonly (NeedsReviewReason | null)[] = []): Complaint {
   const facts = deriveComplaintFacts(reportFacts);
   return {
     id: row.id,
@@ -184,7 +185,8 @@ function toComplaint(row: ComplaintRow, version: string, reportFacts: ReportFact
     priorityScore: row.priorityScore,
     scoreReason: row.priorityReason,
     needsReview: row.needsReview,
-    needsReviewReason: null,
+    // The complaint stores no reason: it is the highest-priority reason among its reports (null if none is stored).
+    needsReviewReason: row.needsReview ? topReviewReason(reportReasons) : null,
     passedOnPartnerId: row.passedOnPartnerId,
     passedOnNote: row.passedOnNote,
     version,
@@ -200,6 +202,7 @@ const reportFactColumns = {
   peopleAffected: reports.peopleAffected,
   servesSchoolOrClinic: reports.servesSchoolOrClinic,
   duration: reports.duration,
+  needsReviewReason: reports.needsReviewReason,
 };
 
 /** A report for a list: every column except `transcript`. */
@@ -219,6 +222,7 @@ const reportListColumns = {
   callerConfirmed: reports.callerConfirmed,
   languageSpoken: reports.languageSpoken,
   needsReview: reports.needsReview,
+  needsReviewReason: reports.needsReviewReason,
   receivedAt: reports.receivedAt,
 };
 
@@ -241,7 +245,7 @@ function toReportListView(row: ReportListRow): ReportListView {
     callerConfirmed: row.callerConfirmed ?? false,
     languageSpoken: row.languageSpoken ?? "unknown",
     needsReview: row.needsReview,
-    needsReviewReason: null,
+    needsReviewReason: row.needsReviewReason,
     candidateWaterPointIds: [],
     receivedAt: iso(row.receivedAt),
   };
@@ -279,15 +283,17 @@ export function listComplaints(ctx: DataContext): Promise<DataResult<ComplaintLi
     ]);
     const pointById = new Map(points.map((p) => [p.id, p]));
     const factsByComplaint = new Map<string, ReportFacts[]>();
+    const reasonsByComplaint = new Map<string, (NeedsReviewReason | null)[]>();
     for (const f of facts) {
       if (f.complaintId === null) continue;
       factsByComplaint.set(f.complaintId, [...(factsByComplaint.get(f.complaintId) ?? []), toFacts(f)]);
+      reasonsByComplaint.set(f.complaintId, [...(reasonsByComplaint.get(f.complaintId) ?? []), f.needsReviewReason]);
     }
     return result(
       rows.map(({ complaint, version }) => {
         const point = pointById.get(complaint.waterPointId);
         return {
-          complaint: toComplaint(complaint, version, factsByComplaint.get(complaint.id) ?? []),
+          complaint: toComplaint(complaint, version, factsByComplaint.get(complaint.id) ?? [], reasonsByComplaint.get(complaint.id) ?? []),
           waterPoint: point ? toWaterPoint(point) : null,
         };
       }),
@@ -344,7 +350,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
     });
 
     const detail: ComplaintDetail = {
-      complaint: toComplaint(complaint, version, reportRows.map(toFacts)),
+      complaint: toComplaint(complaint, version, reportRows.map(toFacts), reportRows.map((r) => r.needsReviewReason)),
       waterPoint: pointRows[0] ? toWaterPoint(pointRows[0]) : null,
       reports: reportRows.map((r) => ({ ...toReportListView(r), summary: r.summary ?? "", transcript: r.transcript })),
       notes: noteRows.map(({ note, author }) => ({
@@ -364,8 +370,8 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
         waterPointId: event.waterPointId,
         type: event.eventType,
         actor,
-        before: event.beforeData,
-        after: event.afterData,
+        before: codesOnly(event.beforeData),
+        after: codesOnly(event.afterData),
         note: event.note,
         at: iso(event.createdAt),
       })),
@@ -373,6 +379,19 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
     };
     return { status: "ok", data: detail };
   });
+}
+
+/** Keys of history before/after data that are codes or ids. Anything else (such as old free text) is dropped before it reaches the browser. */
+const HISTORY_CODE_KEYS = ["status", "reportCount", "mergedIntoId", "noteId", "userId", "role", "active"] as const;
+
+export function codesOnly(data: unknown): Record<string, string | number | boolean | null> | null {
+  if (typeof data !== "object" || data === null || Array.isArray(data)) return null;
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const key of HISTORY_CODE_KEYS) {
+    const value = (data as Record<string, unknown>)[key];
+    if (value === null || ["string", "number", "boolean"].includes(typeof value)) out[key] = value as string | number | boolean | null;
+  }
+  return out;
 }
 
 /** Reports the system could not match or complete, oldest first. No transcripts. */

@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 127.0.0.1 -p 6543",
+    "dev": "next dev -H 127.0.0.1 -p 3162",
     "build": "next build",
-    "start": "next start -H 127.0.0.1 -p 6543",
+    "start": "next start -H 127.0.0.1 -p 3162",
     "lint": "eslint .",
     "check:hex": "node scripts/check-no-raw-hex.mjs",
     "typecheck": "tsc --noEmit",
@@ -17,7 +17,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --conditions=react-server db/seed/index.ts",
     "db:seed:demo": "tsx --conditions=react-server db/seed/demo-index.ts",
-    "db:cleanup-sessions": "tsx --conditions=react-server db/cleanup-sessions.ts"
+    "db:cleanup-sessions": "tsx --conditions=react-server db/cleanup-sessions.ts",
+    "notify:complete": "node scripts/notify-command-complete.mjs",
+    "notify:command": "node scripts/run-with-notifications.mjs"
   },
   "engines": {
     "node": ">=20.12"

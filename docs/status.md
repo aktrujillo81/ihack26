@@ -12,7 +12,7 @@ DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, c
 IN PROGRESS: PR #44 (open). D3a (#50) and D3b save (#53) are merged and deployed.
 BLOCKED: real phone data until a human switches the Vapi server URL.
 NEEDS A HUMAN: see "Needs a human" below.
-NEXT: a human switches the Vapi server URL to `https://bg.verilen.com/api/vapi/webhook` (see "Needs a human" 1), then one paid test call with a human's OK.
+NEXT: a human switches the Vapi server URL to `https://wellwatch.verilen.com/api/vapi/webhook` (see "Needs a human" 1), then one paid test call with a human's OK.
 WEBHOOK UPDATE (11:47 AM): D3a (#50) and D3b save (#53) are merged and deployed on the host. The authenticated check stored a row (details under "Release and demo readiness").
 ```
 
@@ -46,7 +46,7 @@ WEBHOOK UPDATE (11:47 AM): D3a (#50) and D3b save (#53) are merged and deployed 
 | #44 | `fix/history-codes-only` | aktrujillo81 | unknown |
 
 ## Needs a human
-1. **Vapi server URL.** Ready to switch: D3b is deployed and the authenticated check returned 200 with a stored row. In the Vapi dashboard, set the assistant's server URL to `https://bg.verilen.com/api/vapi/webhook`, attach the custom Bearer credential whose token equals `VAPI_WEBHOOK_SECRET` (in the dashboard, not through the API), and keep server messages to `end-of-call-report` only. Then one paid test call with a human's OK.
+1. **Vapi server URL.** Ready to switch: D3b is deployed and the authenticated check returned 200 with a stored row. In the Vapi dashboard, set the assistant's server URL to `https://wellwatch.verilen.com/api/vapi/webhook`, attach the custom Bearer credential whose token equals `VAPI_WEBHOOK_SECRET` (in the dashboard, not through the API), and keep server messages to `end-of-call-report` only. Then one paid test call with a human's OK.
 2. **Feature freeze time.** Not set.
 3. **Public map (PR #22).** Merged, but the spec lists it as cut. Approve the spec change or turn the page off.
 4. **Retention.** How long transcripts are kept (spec unknown 10), and whether Vapi's audio recording stays on (Vapi's own retention is unknown).

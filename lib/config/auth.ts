@@ -22,7 +22,7 @@ export const SIGN_IN_RATE_LIMIT = { windowSeconds: 60, max: 5 } as const;
 export const CLIENT_IP_HEADER = "cf-connecting-ip";
 
 /** The local `npm run dev` origin, trusted in development only. */
-export const DEV_ORIGIN = "http://127.0.0.1:6543";
+export const DEV_ORIGIN = "http://127.0.0.1:3162";
 
 /** Better Auth's mount point, served by app/api/auth/[...all]/route.ts. */
 export const AUTH_BASE_PATH = "/api/auth";
