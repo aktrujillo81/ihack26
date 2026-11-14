@@ -1,0 +1,100 @@
+WELL WATCH — 90-SECOND DEMO SCRIPT
+
+SETUP BEFORE STARTING
+
+- Open the responder dashboard on the projector.
+- Sign in as a Responder before the judges arrive.
+- Keep the phone number visible for the judge.
+- Have the Viewer account ready in a second browser or private window.
+- Confirm the phone line, database, and dashboard are working.
+
+0:00–0:10 — OPENING
+
+Say:
+“A broken water point can leave a community without water before an
+organization knows there is a problem. Well Watch turns a short phone call
+into a report an NGO coordinator can see, prioritize, and follow up on.”
+
+0:10–0:15 — SHOW THE DASHBOARD
+
+Say:
+“This is the NGO coordinator dashboard. It shows each active complaint, its
+priority, why it received that priority, its status, and whether it needs
+human review.”
+
+0:15–0:45 — JUDGE CALLS
+
+Invite the judge to call the number and say:
+“I am calling about a hand pump in Riverside village, near the market. There
+is no water. About one hundred and fifty people use it. A school uses it too.
+It has been a week.”
+
+While the call runs, say:
+“The assistant asks one question at a time, confirms the important details,
+and does not ask for the caller’s name or phone number. It does not give water
+safety advice or promise a repair.”
+
+0:45–0:55 — SHOW THE NEW COMPLAINT
+
+When the complaint appears, say:
+“The report now appears here. The priority is explained rather than hidden:
+there is no water, many people are affected, a school depends on it, and it
+has been broken for a week.”
+
+If it is a new water point, say:
+“Because this is a new location, it is marked unverified and appears in Needs
+location instead of being silently placed on the map.”
+
+0:55–1:05 — VERIFY LOCATION AND MAP
+
+Open the complaint and place or show the map pin.
+
+Say:
+“A responder confirms the location. The point is now visible on the map as an
+open problem. The label and shape communicate the status too, so color is not
+the only signal.”
+
+1:05–1:17 — RECORD THE HAND-OFF
+
+Choose a seeded partner and add a short note.
+
+Say:
+“The coordinator records that the complaint was passed on to a partner. This
+is a tracked hand-off, not an automatic dispatch and not a message sent by the
+system.”
+
+1:17–1:25 — MARK FIXED
+
+Mark the complaint fixed.
+
+Say:
+“Once the repair is confirmed, the coordinator marks it fixed. The map status
+changes and the timeline keeps every step.”
+
+1:25–1:30 — SHOW PERMISSIONS AND CLOSE
+
+Show the same complaint while signed in as a Viewer, or show the disabled and
+denied edit state.
+
+Say:
+“A Viewer can see reports in their region but cannot change them. Well Watch
+keeps people in control while making reports visible and actionable.”
+
+
+FALLBACK IF THE LIVE CALL FAILS
+
+Say:
+“We have a recorded backup of this same end-to-end flow.”
+
+Then play the backup video and point out: phone report, new complaint,
+priority reason, needs-location state, recorded hand-off, fixed status, and
+Viewer edit denial.
+
+
+DEMO GUARDRAILS
+
+- Do not say a repair is guaranteed or scheduled.
+- Do not say water is safe or unsafe.
+- Do not display caller names, phone numbers, raw payloads, or secrets.
+- Do not claim a partner received a message; say the hand-off was recorded.
+- If the location is ambiguous, say the report is honestly marked Needs review.
