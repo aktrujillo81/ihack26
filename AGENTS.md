@@ -55,6 +55,12 @@ Work runs in three rounds: Plan, Build, Review. Before any doc is written or any
 
 <!-- BEGIN:nextjs-agent-rules -->
 
+## UI work
+- Read `docs/style-guide.md` and match `docs/design/` before any UI change.
+- Use `--ww-*` tokens only (`app/tokens.css`). No raw hex colors in components. `npm run check:hex` enforces it.
+- Status is always shape + word + color. Never color alone (red line 11).
+- Run the PR checklist in section 13 of the guide before opening a UI PR.
+
 ## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.

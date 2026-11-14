@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start -H 127.0.0.1 -p 6543",
     "lint": "eslint .",
+    "check:hex": "node scripts/check-no-raw-hex.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:up": "docker compose up -d db",
