@@ -3,7 +3,7 @@ PRIORITY: P0 (critical path: nothing connects a phone call to a complaint until 
 SPEC REFERENCE: PI-*, PR-*; `docs/contracts.md` sections 1, 2, 3, 5.1, 5.2, 8
 GOAL: `POST /api/vapi/webhook` receives Vapi's end-of-call report, authenticates it, finds the `water_point_report` output, redacts and validates it, and hands a closed, validated report to D3b's save function. Removes the temporary capture route. Adds the seed rows D3 needs.
 AGENTS: Backend (lead), Security / Data Handling, Phone / AI Prompter (values, aliases, `docs/vapi-prompt.md`), UX and Frontend (read only)
-DEPENDS ON: schema PR #39 (migration 0003) merged; contracts PR #41. D3b (Andrew) builds the save function behind the type D3a freezes.
+DEPENDS ON: contracts PR #41. Schema PR #39 is not needed to build D3a (the stub stores nothing); it is needed before D3b. D3b (Andrew) builds the save function behind the type D3a freezes.
 
 ## What D3a builds (rules are in contracts section 2 and 5.1; do not restate them in code comments, point to them)
 1. The route, in the order of contracts section 2: secret first, size limit while streaming, scope from the one `intake.phone` row, parse, find the structured output, normalize, hand over, respond. Response codes and fixed log codes exactly as section 2.
@@ -25,6 +25,22 @@ DEPENDS ON: schema PR #39 (migration 0003) merged; contracts PR #41. D3b (Andrew
 3. The single paid end-to-end call comes after D3b replaces the stub (Andrew, with a human's OK, a written script; about $0.14 for 90 s, about $0.18 at the 120 s cap; log it as spend entry 4 in `docs/budget.md`). Pass: a complaint with `hand_pump`, and a replayed delivery does not duplicate it. If it fails, replay the cleaned sample by curl, not another call.
 4. Contracts must say: "last report received" moves only on a **stored** report (never on 401, 413, 500 or 503, and no separate "webhook received" timestamp); the indicator is the staff's only signal of a failed delivery and the fixed log codes are the operator's.
 5. Demo day: seed and sample data must not be taken for live calls; the indicator reads real rows only.
+
+## Names and build order (Backend's gate reply; final unless Backend finds a clash)
+- `ValidatedReport` in `lib/ingest/types.ts` (type only). `saveReport(report: ValidatedReport): Promise<{ ok: true; repeat: boolean } | { ok: false; reason: "store_failed" }>` in `lib/ingest/save-report.ts` (D3b owns it; D3a ships the stub returning `{ ok: false, reason: "store_failed" }`). Normalizer and alias map in `lib/ingest/normalize.ts`; handler factory in `lib/ingest/webhook.ts` (the route file stays thin); defaults module `lib/config/intake.ts`, shared with the seed; env var `VAPI_CALL_REF_KEY`.
+- `receivedAt` is not in the type: the database default is used. A missing `endedReason` is null; an unknown value is `other`. Aliases: `handpump` to `hand_pump` and `bore_hole` to `borehole` only (exact-match map, each written into contracts 5.1). No yes/no alias (5.1 already accepts `"true"`/`true`).
+- `needsReviewReason` is set by the route from 5.1 in the 5.2 priority order; the type allows the later D3b reasons.
+- **Commits, in this order:** (1) types, stub, env var name, contracts text for the type: pushed first, `typecheck` green, so D3b can start; (2) defaults module and seed rows; (3) route and normalizer; (4) tests; (5) capture removal; (6) docs.
+- Capture removal. Delete: `app/api/vapi/capture/route.ts`, `lib/vapi/capture.ts`, `lib/config/vapi-capture.ts`, `tests/unit/vapi-capture.test.ts`. Edit: `lib/permissions/routes.ts` (comment only; keep the `/api/vapi/` prefix), `tests/unit/page-guards.test.ts`, `permissions.test.ts`, `proxy.test.ts` (capture paths become the webhook path; keep the prefix-list assertion), `docs/contracts.md`, `docs/vapi-prompt.md`, `docs/status.md`, `docs/changelog.md`, `docs/demo-runbook.md`, `docs/samples/README.md`. History files (decisions, reviews, S-task briefs, budget, spec) stay as they are. "No reference remains" means no code or test reference, docs history excepted. Humans delete `docs/samples/raw/capture-*.json` (gitignored); that is a PR checklist item, not an assistant's job.
+
+## Extra requirements (Security, UX, Phone gate replies)
+- One shared secret helper: hash both sides with SHA-256, then `timingSafeEqual`; a test proves it is used. Rate limit checked first, only failed attempts count; a valid secret from another IP is unaffected.
+- Size: count bytes while streaming and abort at the limit; also check `content-length` early but never rely on it alone. Test a chunked body without `content-length`.
+- HMAC key unset or shorter than 32 characters: answer 503 `store_failed`, never store with a null ref. The raw call id never reaches logs, errors, or the type; a test scans logs and the handed-over object for it.
+- `JSON.parse` and the handler sit in try/catch with no `console.error(err)`. Cap text AFTER scrubbing; the scrub also catches digits split by newlines and non-breaking spaces. Allowlist only: no other body field is copied.
+- Tests added: raw id absent from logs, no key gives 503, chunked oversize.
+- The seed (or a note for D4/W5) gives demo complaints with `needsReview` set, so the Needs review and Needs location lists have real rows. Check whether the demo seed already does after #39.
+- Publish in contracts for W5 and D7: the type, the reason values, the `endedReason` rule, the allowed values and aliases, and that "last report received" is `max(reports.received_at)` in scope.
 
 ## Rules
 - Local database only (port 5434). Never `db:migrate`, never write to production (5433). No paid Vapi call (only Andrew, with a human's OK).
