@@ -1,0 +1,116 @@
+WELL WATCH — PITCH OUTLINE AND DEVPOST DRAFT
+
+PITCH OUTLINE
+
+1. The problem
+Rural water points such as wells, hand pumps, taps, and boreholes can fail
+without the people able to coordinate a repair finding out quickly. A report
+that is not seen or followed up is not useful.
+
+2. The idea
+Well Watch lets a person report a water-point problem with a basic phone. An
+AI assistant asks a few short questions, then the report becomes a prioritized
+complaint that NGO coordinators can review, track, pass on, and mark fixed.
+
+3. Who it serves
+- Callers: people using a basic phone, possibly with weak signal and limited
+  time. They do not need an account.
+- Responders: NGO coordinators who need enough location and urgency context to
+  decide what happens next.
+- Builders: the team maintaining the system, who need clear contracts,
+  privacy safeguards, and simple operations.
+
+4. How it works
+- A caller reports the village, a nearby landmark, water-point type, problem,
+  people affected, school or clinic impact, and duration.
+- The assistant confirms the important details and records unknown answers as
+  unknown instead of guessing.
+- The system matches the report to a known water point when confident, or
+  creates an unverified point and asks for human review when it is not.
+- The NGO dashboard shows urgency, reason for priority, location, report
+  count, status, and history.
+- A responder can record that a complaint was passed on and later mark it
+  fixed or reopen it.
+
+5. What makes it responsible
+- No caller names or phone numbers are stored or shown.
+- The product gives no water-safety advice and makes no repair promises.
+- Ambiguous locations are marked for review rather than guessed.
+- A human confirms every action; nothing is dispatched automatically.
+- Color is never the only signal for status or urgency.
+
+6. The ask / vision
+Well Watch is a one-district pilot designed to make spoken reports visible,
+actionable, and traceable. The data model supports future organizations,
+regions, languages, and intake channels without changing the core workflow.
+
+
+DEVPOST DRAFT
+
+Project name: Well Watch
+
+Tagline:
+Turn a phone call about a broken water point into a visible, prioritized,
+trackable report for NGO coordinators.
+
+Inspiration:
+Rural water infrastructure can fail long before the people who can coordinate
+a response hear about it. We wanted to make reporting possible for someone
+with a basic phone, while giving responders enough context to decide what to
+do next.
+
+What it does:
+Well Watch accepts a phone report about a well, hand pump, tap, or borehole.
+The voice assistant collects a location description, the problem, impact, and
+duration. The report is turned into a complaint that NGO staff can view in a
+web dashboard. The dashboard shows priority, why that priority was assigned,
+status, location, report count, and history. Staff can record a hand-off to a
+partner and mark the complaint fixed.
+
+How we built it:
+The web application is built with Next.js and a self-hosted PostgreSQL
+database. It is exposed through a Cloudflare Tunnel. Vapi provides the
+phone-based voice assistant. The project uses a documented data contract,
+server-side access checks, database migrations, and a structured task plan.
+
+Challenges we ran into:
+- Designing for callers who may have weak signal, limited time, or only a
+  basic phone.
+- Capturing useful location information without pretending that an uncertain
+  match is correct.
+- Protecting caller privacy while keeping reports useful for responders.
+- Keeping the phone workflow short while still gathering enough information to
+  prioritize a complaint.
+- Building a workflow that records a hand-off without promising that a repair
+  will happen.
+
+Accomplishments that we are proud of:
+- A phone-first reporting path that does not require an app or account.
+- Honest unknown and needs-review states instead of silent failures.
+- Clear, human-controlled complaint tracking from report through fixed status.
+- Privacy and accessibility safeguards built into the design from the start.
+
+What we learned:
+We learned that reliable reporting is as much about honest uncertainty and
+clear follow-through as it is about collecting data. A system can be useful
+without automatically deciding or promising what happens next.
+
+What's next for Well Watch:
+- Validate the flow with partner organizations and responders.
+- Add more languages after testing the English pilot.
+- Add supported intake channels such as a public web form.
+- Improve water-point verification and map placement tools.
+- Add organization onboarding, filters, analytics, and carefully governed
+  exports.
+
+DEMO ACCURACY NOTE
+
+Real in the demo: the phone conversation, structured extraction, the report
+pipeline, complaint creation, scoring, accounts and roles, dashboard, map, and
+history.
+
+Recorded but not a real external message: passing a complaint to a partner.
+It records who and when; it does not contact that partner.
+
+Not built: notifying the caller, automatic dispatch, real repair-provider
+integrations, water-safety advice, and a public map.
