@@ -527,7 +527,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"complaints\".\"status\" in ('open', 'accepted', 'in_progress', 'passed_on')",
+          "where": "\"public\".\"complaint_status_is_active\"(\"complaints\".\"status\")",
           "concurrently": false,
           "method": "btree",
           "with": {}

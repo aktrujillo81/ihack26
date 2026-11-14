@@ -14,7 +14,7 @@ BLOCKED: real phone data until a human switches the Vapi server URL.
 NEEDS A HUMAN: see "Needs a human" below.
 NEXT: a human switches the Vapi server URL to `https://wellwatch.verilen.com/api/vapi/webhook` (see "Needs a human" 1), then one paid test call with a human's OK.
 WEBHOOK UPDATE (11:47 AM): D3a (#50) and D3b save (#53) are merged and deployed on the host. The authenticated check stored a row (details under "Release and demo readiness").
-NGO WORKFLOW UPDATE: Human-approved workflow extension is implemented in this branch: statuses, provider assignment, location editing/verification, and note edit/archive. Migration `0004_complaint_workflow.sql` must be applied before deployment.
+NGO WORKFLOW UPDATE: Human-approved workflow extension is implemented in this branch: statuses, provider assignment, location editing/verification, and note edit/archive. Migration `0007_complaint_workflow.sql` must be applied before deployment (`npm run db:migrate`).
 ```
 
 ## Tasks
