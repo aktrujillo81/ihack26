@@ -58,10 +58,12 @@ ACCEPTANCE CRITERIA
 - `docs/contracts.md` states the function name, input type and return shape (match, new or needs-review outcome).
 - Four reviews at PASS (Backend, Security, Phone / AI Prompter, UX) and a human merges.
 
-OPEN QUESTIONS (need a human; the Orchestrator does not choose)
-1. **One transaction or two.** The humans' brief says ONE transaction. Contracts section 2 step 6 and `processing_error` (5.2) say: store the report, then match and score in a second step, so a scoring failure keeps the report. Backend and UX both warn that one transaction without a fallback silently drops the report (red line 7). Options: (a) two steps (Backend's recommendation); (b) one transaction plus a fallback write outside it that stores the report with `processing_error`; (c) one transaction and drop `processing_error` (changes contracts 2 and 5.2). Until decided, build nothing that depends on it.
-2. Who owns schema items 5 to 8 and 11, and in which PR.
-3. HMAC key env var name; whether `receivedAt` is passed in or the database default is used (Backend and UX suggest the database default); how a missing `endedReason` is stored.
-4. Which `history_events` get which event (`created` for the complaint, `report_added` for the report) and the `before_data`/`after_data` shape: unknown (contracts 5.9 gives names only).
-5. Alias for the extractor saying "handpump" (`hand_pump`), "bore_hole", "yes"/"no": D3a (Backend) or accept `invalid_fields`.
-6. Whether the shared `organization/region` default exists for a malformed payload (so it still reaches the review list): confirm the `intake.phone` row.
+DECIDED BY THE HUMANS (2026-11-14, `docs/decisions.md`)
+1. **Two steps.** Step 1 (one transaction): duplicate check, insert the report, history `report_added` is NOT written yet if the report stays unattached. Step 2 (second transaction): match (D4), complaint and score (D5), attach, history. If step 2 fails, the report from step 1 stays, flagged `processing_error`, and counts as received. Acceptance test: force a failure in step 2 and see the report kept with `processing_error` and no partial complaint or history. The function may be one exported function with two phases or two functions: Backend names them.
+2. **Schema first.** Items 1 to 3, 5 to 8 and 11 come from the schema PR (`docs/tasks/D3-schema.md`), merged before D3b starts. D3b makes no schema edits.
+3. **Alias** `handpump` to `hand_pump` is D3a's (before the report reaches D3b).
+
+OPEN QUESTIONS (unknown; Backend answers, a human if it is a choice)
+1. HMAC key env var name; whether `receivedAt` is passed in or set by the database default (Backend and UX suggest the database default); how a missing `endedReason` is stored.
+2. Which `history_events` get which event (`created` for the complaint, `report_added` for the report) and the `before_data`/`after_data` shape: unknown (contracts 5.9 gives names only).
+3. The `intake.phone` row and the default config keys must exist (seed, contracts 4.1 item 4) so a malformed payload still gets an organization and region: who adds them is unknown (D3a or the schema PR).
