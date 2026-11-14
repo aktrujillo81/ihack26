@@ -18,7 +18,7 @@ Status: W1 is blocked, W2 and W3 wait for W1's session seam, and the map (W4) co
 | `/complaints` list screen: `ComplaintList({ ctx })` | Session seam | Columns provisional (DB-1). States per UX notes. Priority has a number and a text reason. No transcripts. |
 | `/complaints/[id]` detail: `ComplaintDetail({ ctx, id, role })` | Session seam | Not-found and denied use one identical message (`detail.notFoundOrDenied`). Copy summary never includes transcripts. |
 | Status, note and pass-on actions | D6, session seam | Server-enforced role check, confirm dialog, history event |
-| `/map` page: `<Suspense fallback={<MapLoading />}><MapView ctx={ctx} /></Suspense>` | Session seam | Component exists. Page and nav link only. |
+| `/dashboard/map` page (signed-in): `<Suspense fallback={<MapLoading />}><MapView ctx={ctx} /></Suspense>` | Session seam | Component exists. Page and nav link only. `/map` is the separate public, status-only map (already built) and stays public. |
 | Map pin click opens the complaint | Route for detail | `complaintId` is already on authenticated pins (MP-7, P1) |
 | Needs-location count link | Route for the Needs location list (W5) | Currently plain text; target route unknown |
 | Live updates | D7 (unknown mechanism; default is polling) | Not built |

@@ -35,11 +35,17 @@ const isNonEmptyString = (value: unknown): value is string => typeof value === "
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 /**
- * PROPOSED, NOT APPROVED: the longest a session may last from now (AC-7). A
- * session claiming to expire later is refused. The real value belongs in
- * configuration and is unknown.
+ * The longest a session may last from now (AC-7). A session claiming to expire
+ * later is refused. 12 hours, the humans' decision (2026-11-14: staff sessions
+ * last 12 hours, one config value; recorded in docs/decisions.md on the A1
+ * branch, feat/auth-roles). The auth library's own session length must be set
+ * at or below this, or its sessions will be refused here.
+ *
+ * PROVISIONAL: the single source of truth for the length is A1's config value
+ * (lib/config/auth.ts on that branch). When A1 is on main, import it instead of
+ * repeating the number here.
  */
-export const MAX_SESSION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
+export const MAX_SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000;
 
 /**
  * Strictly validates an untrusted value. Returns a session only if every field
