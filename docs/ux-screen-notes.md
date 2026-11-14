@@ -25,6 +25,8 @@
 | `common.loading` | Loading… |
 | `common.error` | Something went wrong. Please try again. |
 | `common.retry` | Try again |
+| `common.confirm` | Confirm |
+| `common.cancel` | Cancel |
 | `common.denied` | You don't have permission to do that. |
 | `common.unknown` | Unknown |
 | `common.unverified` | Unverified |
@@ -90,7 +92,7 @@
 | Needs review | Banner: "Needs review: the system couldn't match this to a water point with confidence." (`detail.needsReviewBanner`) |
 | Unverified | Banner: "This water point has not been verified yet." (`detail.unverifiedBanner`) |
 | Viewer | Status controls and note box are not rendered. The server still refuses any attempt. |
-| Status change | Confirm dialog: "Change status to {status}?" (`detail.confirmStatus`), buttons "Confirm" and "Cancel". |
+| Status change | Confirm dialog: "Change status to {status}?" (`detail.confirmStatus`), buttons "Confirm" (`common.confirm`) and "Cancel" (`common.cancel`). |
 | Pass on (note field) | "Who is it passed to?" (`detail.passedOnTo`). This records a step only. Nothing is sent. Helper text: "This records the hand-off. It does not send a message." (`detail.passedOnHelp`) |
 | Fixed | Button "Mark fixed" (`detail.markFixed`). After fixing, "Reopen" is available (`detail.reopen`). |
 | Save failed | "Your change was not saved. Please try again." (`detail.saveFailed`). The screen keeps the user's text. |
@@ -147,7 +149,7 @@
 | Loading | "Checking for reports…" (`lastReport.loading`) |
 | Normal | "Last report received {time ago}, at {exact time}" (`lastReport.ago`). The exact time is always in the text, not only on hover. |
 | Empty (none ever) | "No reports received yet." (`lastReport.none`) |
-| Stale | After a configured number of hours (the threshold is configuration, value unknown): "Last report received {time ago}. If you expected more, check that the phone line is working." (`lastReport.stale`). A warning icon plus text, not color alone. |
+| Stale | After a configured time without a report (the threshold is configuration; a default of 15 minutes is PROPOSED, not approved): "Last report received {time ago}. If you expected more, check that the phone line is working." (`lastReport.stale`). A warning icon plus text, not color alone. |
 | Error | "Couldn't check for new reports." (`lastReport.error`) |
 | Live | Updates without refresh. |
 
@@ -162,7 +164,7 @@
 ## 5. Open items and unknowns
 1. **Map provider and tile terms:** the default is Leaflet with OpenStreetMap, unconfirmed with the team. Tile usage terms have not been checked. (Spec Open Question 3.)
 2. **`docs/contracts.md`:** missing. All field names and the reason codes in Needs review are provisional.
-3. **Stale threshold:** the number of hours before "last report received" warns is unknown. It must live in configuration.
+3. **Stale threshold:** how long without a report before "last report received" warns is unknown. A default of 15 minutes is PROPOSED in `lib/config/ui.ts` and needs a human decision. It must live in configuration.
 4. **Needs review reasons:** the exact reason values are unknown until the contracts exist.
 5. **Score reason format:** whether the backend returns a ready-made sentence or parts is unknown.
 6. **Spoken wording:** the words said on the call belong to the Phone / AI Prompter and are not set here.
