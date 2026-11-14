@@ -155,6 +155,19 @@
 | Error | "Couldn't check for new reports." (`lastReport.error`) |
 | Live | Updates without refresh. |
 
+### PROPOSED wording for the complaint screens (not in the first draft)
+| Key | Wording |
+|---|---|
+| `list.col.waterPoint` / `problem` / `people` / `schoolClinic` / `duration` / `reports` / `priority` / `status` / `updated` | Water point / Problem / People affected / School or clinic / How long / Reports / Priority / Status / Last update |
+| `common.timeUtc` | {time} UTC |
+| `detail.reportsTitle` / `notesTitle` / `timelineTitle` | Reports / Notes / Timeline |
+| `detail.passOn` | Pass on |
+| `detail.addNote` / `detail.noteLabel` | Add note / Note |
+| `detail.notAvailable` | This action is not available yet. (Shown until the complaint API is connected; nothing is saved.) |
+| `detail.invalidInput` | Please check what you entered. |
+
+Status changes allowed (spec DB-3 and section 10): Open to Passed on or Fixed, Passed on to Fixed, Fixed back to Open. Passed on back to Open is not listed in the spec and is refused (unknown). Passing on needs a note of who it is passed to (free text until the partner directory exists, P1-2).
+
 ## 4. Role differences
 | Screen | Viewer | Responder | Org Admin |
 |---|---|---|---|
