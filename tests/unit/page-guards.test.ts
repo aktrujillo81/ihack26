@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   readSessionFromHeaders: vi.fn(),
   cookieNames: new Set<string>(),
+  pathname: "/complaints" as string | null,
   redirect: vi.fn((to: string) => {
     throw Object.assign(new Error("NEXT_REDIRECT"), { to });
   }),
@@ -23,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/adapter", () => ({ readSessionFromHeaders: mocks.readSessionFromHeaders, signInWithPassword: vi.fn() }));
 vi.mock("@/lib/auth/sign-out", () => ({ signOutAction: vi.fn() }));
 vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound, usePathname: () => mocks.pathname }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ has: (name: string) => mocks.cookieNames.has(name) }),
   headers: async () => new Headers(),
@@ -173,10 +174,42 @@ describe("the protected layout and navigation", () => {
     expect(html).not.toContain("needs-location");
   });
 
+  it("marks only the current page with aria-current, and a detail page keeps Complaints current", () => {
+    const html = (path: string | null) => {
+      mocks.pathname = path;
+      return renderToStaticMarkup(createElement(AppNav, { role: "responder" }));
+    };
+    const current = (out: string) => [...out.matchAll(/<a [^>]*aria-current="page"[^>]*href="([^"]+)"|<a [^>]*href="([^"]+)"[^>]*aria-current="page"/g)].map((m) => m[1] ?? m[2]);
+    expect(current(html("/complaints"))).toEqual(["/complaints"]);
+    expect(current(html("/complaints/0b7e1f2c-1111-4222-8333-444455556666"))).toEqual(["/complaints"]);
+    expect(current(html("/dashboard/map"))).toEqual(["/dashboard/map"]);
+    expect(current(html("/somewhere-else"))).toEqual([]);
+    expect(current(html(null))).toEqual([]);
+    mocks.pathname = "/complaints";
+  });
+
+  it("shows the brand, the Workspace group and the user's role; no Administration group, no count badges", () => {
+    const html = renderToStaticMarkup(createElement(AppNav, { role: "responder" }));
+    expect(html).toContain(t("app.subtitle"));
+    expect(html).toContain(t("nav.workspace"));
+    expect(html).toContain(t("nav.signedInAs"));
+    expect(html).toContain(t("role.responder"));
+    expect(html).not.toContain("Administration");
+    expect(html).not.toMatch(/ww-nav-badge|ww-badge/);
+    // The sign-out control is icon-only and named.
+    expect(html).toMatch(/aria-label="Sign out"/);
+  });
+
+  it("each role shows its own role name, and the role label is never taken from anywhere but the role", () => {
+    for (const role of ROLES) expect(renderToStaticMarkup(createElement(AppNav, { role })), role).toContain(t(`role.${role}`));
+  });
+
   it("an unknown or missing role gets no links (default deny)", () => {
     for (const role of [undefined, null, "", "admin", 1]) {
       const html = renderToStaticMarkup(createElement(AppNav, { role }));
       expect(html, String(role)).not.toContain("<a ");
+      expect(html, String(role)).not.toContain(t("nav.workspace"));
+      expect(html, String(role)).not.toContain(t("nav.signedInAs"));
     }
   });
 

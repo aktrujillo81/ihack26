@@ -33,6 +33,8 @@
 | `common.needsReview` | Needs review |
 | `common.sampleData` | Sample data (PROVISIONAL, from docs/design/) |
 | `priority.high`, `priority.medium`, `priority.low` | High, Medium, Low (PROVISIONAL, from docs/design/) |
+| `app.subtitle`, `nav.workspace`, `nav.signedInAs`, `role.org_admin`, `role.responder`, `role.viewer` | Operations console, Workspace, Signed in as, Org Admin, Responder, Viewer (PROVISIONAL, from docs/design/operations-console.html) |
+| `page.complaints.subtitle`, `page.map.subtitle` | Page subtitles (PROVISIONAL; the map one is written here, not in the design) |
 | `common.needsLocation` | Needs location |
 | `status.open` | Open |
 | `status.passed_on` | Passed on |

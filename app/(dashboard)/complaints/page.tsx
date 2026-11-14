@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { ComplaintList } from "@/components/complaints/ComplaintList";
 import { StateMessage } from "@/components/complaints/StateMessage";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { requirePageSession } from "@/lib/auth/page-guard";
 import { toDataContext } from "@/lib/auth/guards";
 import { t } from "@/lib/i18n/strings";
@@ -17,7 +18,7 @@ export default async function ComplaintsPage() {
   const session = await requirePageSession();
   return (
     <main>
-      <h1>{t("nav.complaints")}</h1>
+      <PageHeader title={t("nav.complaints")} subtitle={t("page.complaints.subtitle")} />
       <Suspense fallback={<StateMessage state={{ status: "loading" }} emptyKey="list.empty" />}>
         <ComplaintList ctx={toDataContext(session)} retryHref="/complaints" />
       </Suspense>

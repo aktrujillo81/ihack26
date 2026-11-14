@@ -26,3 +26,15 @@ export const COMPLAINT_LIST_PAGE_SIZE = 50;
  * need a decision before the data can grow that large.
  */
 export const DATA_LIST_HARD_LIMIT = 1000;
+
+/**
+ * PROVISIONAL, NOT APPROVED. Where a complaint's numeric priority score becomes
+ * High, Medium or Low. The score is NOT 1 to 5: spec section 7 adds weights
+ * (problem +3 or +1, school or clinic +3, people +1 or +2, duration +1 or +2,
+ * extra reports up to +3), so it runs from about 1 to 13. The spec gives no
+ * cutoffs for the words, so these are a proposal for the team to confirm:
+ * High at 7 or more (for example no water + a school), Medium at 4 to 6, Low
+ * below 4. Used only by `priorityLevel` in lib/domain/priority.ts.
+ */
+export const PRIORITY_HIGH_FROM_SCORE = 7;
+export const PRIORITY_MEDIUM_FROM_SCORE = 4;
