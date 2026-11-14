@@ -51,3 +51,4 @@ This file was created on 2026-11-14 during S6. Rows up to PR #32 were filled in 
 - Vapi sent the Bearer credential. The capture route, which fails closed, saved all three bodies.
 - Cost so far is billed by the second ($0.0988 for 93 s, $0.0801 for 75 s, about $0.09 for 78 s). This does not prove Vapi never rounds up.
 - v4's End Call Phrase ended call 3 right after the closing line (`endedReason: assistant-said-end-call-phrase`).
+ - D3b: implemented the two-phase validated-report save, matching, complaint scoring, privacy scrub, duplicate handling, and failure retention.

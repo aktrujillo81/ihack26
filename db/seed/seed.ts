@@ -6,7 +6,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/config/auth";
 import { seedEnv } from "@/lib/config/env";
 import { getDb } from "@/lib/db";
-import { authAccount, authUser, organizations, regions, users } from "@/lib/db/schema";
+import { authAccount, authUser, configuration, organizations, regions, users } from "@/lib/db/schema";
 import { SEED_ACCOUNTS, SEED_ORGANIZATION, SEED_REGION, type SeedAccount } from "./data";
 
 export class SeedConfigError extends Error {}
@@ -59,6 +59,11 @@ export async function runSeed(passwords = readSeedPasswords()): Promise<void> {
       .select({ id: regions.id })
       .from(regions)
       .where(and(eq(regions.organizationId, org.id), eq(regions.slug, SEED_REGION.slug)));
+
+    await tx
+      .insert(configuration)
+      .values({ organizationId: org.id, regionId: region.id, key: "intake.phone", value: { enabled: true } })
+      .onConflictDoNothing({ target: [configuration.organizationId, configuration.regionId, configuration.key] });
 
     for (const a of SEED_ACCOUNTS) {
       const email = a.email.toLowerCase();
