@@ -143,3 +143,33 @@ describe("a session built from a D1 row works with the guards, server-side", () 
     expect(failure(() => requireAction(none, "view"))).toBe("unauthenticated");
   });
 });
+
+describe("hardening from the security review", () => {
+  it("accepts the expiry as a valid Date (the auth library may return one) and as an ISO string", () => {
+    const asDate = sessionFromUser(row(), new Date(FUTURE), NOW);
+    expect(asDate?.expiresAt).toBe(new Date(FUTURE).toISOString());
+    expect(sessionFromUser(row(), FUTURE, NOW)?.expiresAt).toBe(FUTURE);
+  });
+
+  it("refuses an invalid Date, and a Date that is past or too far away", () => {
+    expect(sessionFromUser(row(), new Date("not a date"), NOW)).toBeNull();
+    expect(sessionFromUser(row(), new Date(NOW - 1000), NOW)).toBeNull();
+    expect(sessionFromUser(row(), new Date("2099-01-01T00:00:00Z"), NOW)).toBeNull();
+  });
+
+  it("ids must be uuids: whitespace-only, padded and other formats are refused", () => {
+    const good = "0b6f1d1e-0000-4000-8000-000000000001";
+    for (const bad of ["   ", " " + good, good + " ", "org-demo", "1", good.toUpperCase().slice(0, 35), good + "0"]) {
+      expect(sessionFromUser(row({ id: bad }), FUTURE, NOW), `id ${JSON.stringify(bad)}`).toBeNull();
+      expect(sessionFromUser(row({ organizationId: bad }), FUTURE, NOW), `org ${JSON.stringify(bad)}`).toBeNull();
+      expect(sessionFromUser(row({ regionId: bad }), FUTURE, NOW), `region ${JSON.stringify(bad)}`).toBeNull();
+    }
+    expect(sessionFromUser(row({ id: good.toUpperCase() }), FUTURE, NOW)).not.toBeNull();
+  });
+
+  it("does not check that the region belongs to the organization (D1 gap): a mismatched row still maps", () => {
+    // This documents a known gap, not a feature. D1 must enforce it with a composite foreign key.
+    const mismatched = row({ organizationId: "0b6f1d1e-0000-4000-8000-0000000000a9" });
+    expect(sessionFromUser(mismatched, FUTURE, NOW)?.organizationId).toBe("0b6f1d1e-0000-4000-8000-0000000000a9");
+  });
+});

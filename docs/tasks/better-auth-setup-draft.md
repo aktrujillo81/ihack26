@@ -16,6 +16,9 @@ D1 only says `auth_subject` is "the external/auth-library subject identifier". P
 
 - **Seed:** create the Better Auth user first (server-side `auth.api.signUpEmail`, see section 8), take the returned user id, then insert the D1 `users` row with that id as `auth_subject`, plus organization, region, role and `active = true`.
 - **Request:** `auth.api.getSession({ headers: await headers() })` gives the Better Auth session and its `user.id`. Look up the D1 row `where auth_subject = user.id`. Build our session with `sessionFromUser(row, session.expiresAt)` (`lib/auth/user-session.ts`). No row, or `active` not true, means no session.
+- **The lookup must be strict (security review):** check the id is a non-empty string before querying (a query on `undefined` could match the wrong row; how the pinned Drizzle version treats `eq(col, undefined)` is **UNVERIFIED**). Ask for at most two rows and accept the result only if exactly one comes back. D1's unique index on `auth_subject` makes duplicates impossible, but do not rely on that alone.
+- **Expiry type is UNVERIFIED:** Better Auth's `session.expiresAt` is probably a `Date`. `sessionFromUser` accepts a valid `Date` or a strict ISO string and refuses anything else, so a wrong guess locks everyone out rather than letting anyone in.
+- The adapter **must** look the user up on every request. Nothing enforces this yet.
 - A Better Auth user with no D1 row can sign in to Better Auth but gets **no** application session. That is the safe default.
 
 ## 3. Packages and versions
@@ -55,7 +58,11 @@ import { getDb } from "@/lib/db";
 import * as appSchema from "@/lib/db/schema";
 import * as authSchema from "@/lib/db/auth-schema";
 
+// DRAFT. Also needs `import "server-only"` at the top. Calling getDb() at module load may break the
+// generate step if the database URL is missing: UNVERIFIED, make it lazy if so.
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: [process.env.BETTER_AUTH_URL ?? ""], // CSRF: only our own origin
   database: drizzleAdapter(getDb(), {
     provider: "pg",
     schemaName: "auth",
@@ -63,7 +70,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: { enabled: true, disableSignUp: true }, // accounts come from the seed script
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days; must not exceed MAX_SESSION_LIFETIME_MS (lib/auth/session.ts)
+    expiresIn: 60 * 60 * 24 * 6, // 6 days: below MAX_SESSION_LIFETIME_MS (7 days, lib/auth/session.ts) so clock skew or a sliding refresh never trips the cap
     cookieCache: { enabled: false }, // default; keeps revocation immediate
   },
   rateLimit: {
@@ -85,6 +92,8 @@ import { auth } from "@/lib/auth/auth";
 export const { GET, POST } = toNextJsHandler(auth);
 ```
 
+**Restrict what this catch-all exposes (security review).** It mounts every Better Auth endpoint (change email, change password, update user, list sessions, reset password if enabled), not only sign-in and sign-out. Wrap the handler in an allowlist of paths (sign-in with email, sign-out, get-session) and return 404 for everything else, and explicitly leave reset-password and email-change disabled. D1 `users.email` is a second copy of the email and will drift if Better Auth's email changes; decide which one wins (UNVERIFIED).
+
 ## 6. Environment variables (names only; values never in the repo)
 - `BETTER_AUTH_SECRET`: at least 32 characters. Generate with `openssl rand -base64 32` or `npx auth@<version> secret`. Fallback name `AUTH_SECRET`. The docs say production throws if it is unset. Rotation uses `BETTER_AUTH_SECRETS`.
 - `BETTER_AUTH_URL`: the public base URL. Set it explicitly (the docs advise against inferring it). Base path defaults to `/api/auth`.
@@ -96,12 +105,16 @@ export const { GET, POST } = toNextJsHandler(auth);
 - **Revocation:** sign-out ends the current session (`auth.api.signOut({ headers: await headers() })` on the server, with `nextCookies()` for cookies). Revoking others: `revokeSession`, `revokeOtherSessions`, `revokeSessions`.
 - **Rate limit defaults:** enabled in production only, window 10 s, max 100; `/sign-in/email` is 3 per 10 s. Default storage is **memory**: per process, lost on restart, and the docs say it may not suit serverless. One self-hosted Next.js server makes this acceptable; `storage: "database"` needs another table and `drizzle-kit generate`.
 - **Server-side calls are not rate limited.** If our sign-in server action calls `auth.api.signInEmail` directly, the limit does not apply. Either route sign-in through the HTTP handler, or add our own limiter (by client address and by email) in `attemptSignIn` before calling Better Auth, plus a lockout. We still need to build this.
-- **Client address:** by default Better Auth reads `X-Forwarded-For`; the docs say to set `advanced.ipAddress.ipAddressHeaders` or `trustedProxies` for your proxy, or clients can spoof it. Our app is public through a Cloudflare Tunnel. Which header the tunnel sets and whether it can be spoofed is **UNVERIFIED**. Check before relying on `cf-connecting-ip`.
+- **Client address:** by default Better Auth reads `X-Forwarded-For`; the docs say to set `advanced.ipAddress.ipAddressHeaders` or `trustedProxies` for your proxy, or clients can spoof it. Our app is public through a Cloudflare Tunnel. Which header the tunnel sets and whether it strips client-supplied copies is **UNVERIFIED**. `cf-connecting-ip` is only trustworthy if the Next.js server is reachable **only through the tunnel** (bound to localhost, as `npm run start` does with `-H 127.0.0.1`, and not exposed on the LAN or internet). Make that a requirement, and do **not** add `x-forwarded-for` as a fallback header, or a client can set it and dodge the per-address limit. What bucket is used when no address is found is **UNVERIFIED**: test it.
+- **What the limit does not give us:** the `/sign-in/email` rule (3 per 10 s) is the library default, so setting it adds nothing; it is per address only, so there is no per-account lockout and a distributed guesser is not slowed. **A per-account lockout is a requirement before any real password exists.** Memory storage also resets on restart.
+- **Session rows hold the signer's IP address and user agent** (staff data, not caller data). Retention is **unknown**: decide it.
 
 ## 8. Seed script, sign-up, hashing
 - `disableSignUp: true` stops public sign-up. **UNVERIFIED:** whether it also blocks `auth.api.signUpEmail` from a server script. Test it. If it does, the seed script can run with sign-up temporarily enabled in its own config, or use the Admin plugin's `create-admin` (heavier; avoid).
 - Seed order: for each demo account, create the Better Auth user (name, email, password), then insert the D1 `users` row with `auth_subject` = the new Better Auth user id. Accounts needed: one per role, plus a user with **no region** to exercise the denied state (D1 requires `region_id`, so that test user needs a different approach: see open items).
-- Demo passwords must **never** be committed. Read them from the environment or generate them at seed time and print them once.
+- Demo passwords must **never** be committed. Read them from the environment, or generate strong random ones at seed time (the 8-character minimum is weak for anything reachable from the internet) and show them once. Printing to a terminal puts them in shell history and logs, so say so in the script's output.
+- The seed script must refuse to run when `NODE_ENV=production` or against the production database unless an explicit flag is passed. If `disableSignUp` blocks `signUpEmail`, do **not** leave sign-up enabled in the shared config: use a separate seed-only config.
+- If the D1 insert fails after the Better Auth user was created, an orphan Better Auth user remains. It is harmless (no D1 row means no application session) but the script should clean it up.
 - Password hashing: scrypt by default; min 8, max 128 characters.
 
 ## 9. Reading the session in routes
@@ -126,6 +139,22 @@ export const { GET, POST } = toNextJsHandler(auth);
 - Node minimum version.
 - A "user with no region" cannot exist under D1's `region_id NOT NULL`. The denied state needs a different trigger (a user whose region is archived or missing in `regions`, or a test double). Decide with the schema owner.
 - D1's `users.active` is the deactivation switch: the adapter refuses inactive users, but nothing sets it yet (user management is cut from this build).
+
+## 12. Security review findings (red line 8) and what belongs to whom
+Review of this branch against the D1 draft schema. No blocker in the code here; these need action elsewhere before W1 is applied.
+
+**For D1 (the schema owner), BLOCKS applying W1:**
+1. **Region is not tied to organization.** `users.region_id` only references `regions.id`; nothing checks that the region's `organization_id` equals the user's `organization_id`. The same gap exists on every scoped table (water points, complaints, reports, notes, history events, configuration, partners). A wrong seed row (organization A user, organization B region) would produce a session for organization A scoped to organization B's region, and `inScope` could not detect it. Fix in D1: a composite unique key `regions(id, organization_id)` and composite foreign keys `(region_id, organization_id)` on the scoped tables, or at least on `users`, plus a test. `sessionFromUser` does not and cannot check this (a test documents the gap).
+2. **No `active` or archived flag on organizations or regions**, so "deactivate an organization" or "archived region as the denied state" does not exist in D1. Record it as unknown or add the columns.
+3. **Append-only history (red line 9):** whether D1 prevents UPDATE and DELETE on `history_events` (grants or triggers) is unknown.
+
+**For the W1 apply PR (listed above and in the checklist):** strict `auth_subject` lookup; the path allowlist on the auth route; per-account lockout; origin reachable only through the tunnel; seed-script guards; `trustedOrigins`; every route handler, page and action calls a guard (add a test or lint that lists unguarded routes); one generic sign-in message and status for all failures (unknown email, wrong password, inactive user, no D1 row), timing unknown.
+
+**Separate database role for Better Auth (recommended):** the `auth` Postgres schema is name isolation only, not an access boundary. It holds password hashes and session tokens, and the app uses one database role. A separate role, or at minimum never importing the auth schema into the app's data layer (only the adapter gets it), limits a query bug. Review every `drizzle-kit` migration: with a wrong or missing `schemaFilter` it can propose changes to tables it does not own.
+
+**Hosting assumption (reconciled):** this draft assumes one self-hosted server behind a Cloudflare Tunnel, as recorded in `docs/decisions.md` (2026-11-14) and `AGENTS.md` ("No Supabase, no Vercel"). The rate limiting, client-address and secrets advice depends on that. If hosting changes, redo sections 6 to 7.
+
+**Not covered by tests yet:** the real lookup. Tests so far cover the pure mapper and the guards. Cross-organization isolation through a real Better Auth session needs the W1 apply PR.
 
 ## Sources (Better Auth docs, read 2026-11-14)
 installation, adapters/drizzle, concepts/database, concepts/cli, integrations/next, authentication/email-password, concepts/session-management, concepts/users-accounts, concepts/rate-limit, reference/options (all under https://www.better-auth.com/docs/).
