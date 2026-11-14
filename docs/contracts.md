@@ -104,7 +104,7 @@ section 9).
 
 ### Repeat deliveries
 `provider_call_ref` = HMAC-SHA-256 of `message.call.id` with a server-only key
-(new environment variable, name to be added to `.env.example` in D3; a separate
+(environment variable `VAPI_CALL_REF_KEY`, in `.env.example`; a separate
 secret, not `BETTER_AUTH_SECRET` or `VAPI_WEBHOOK_SECRET`, at least 32
 characters; never in the browser or logs). Rotating the key breaks dedupe for
 calls already stored (a repeat of an old call would be stored again). It is `null` when the id is missing or not a string. Unique
@@ -148,6 +148,21 @@ stored report is this, plus ids and timestamps.
 }
 ```
 This is what the sample normalizes to (example only, placeholders from the sample).
+
+### The validated report type (task D3a, Built; frozen for D3b)
+`ValidatedReport` in `lib/ingest/types.ts` (type only) is the closed hand-over
+from the webhook to the save function. The JSON above plus the scope and the
+call reference:
+`organizationId`, `regionId` (from the `intake.phone` row, never the request),
+`providerCallRef` (keyed HMAC or null), `channel`, `locationText`,
+`waterPointType`, `problem`, `peopleAffected`, `servesSchoolOrClinic`,
+`duration`, `callerConfirmed`, `summary`, `languageSpoken`, `transcript` (always
+null), `endedReason`, `needsReview`, `needsReviewReason`. It has no free-form
+field, no raw body, no raw call id, no caller name or number, and **no
+`receivedAt`**: the database default of `reports.received_at` is used.
+- `endedReason`: null when Vapi sent none; a value that is not `customer-ended-call` or `assistant-said-end-call-phrase` is `other` (never a crash).
+- `needsReviewReason` is set by the webhook in the 5.2 priority order for what it can see: `malformed_payload`, `no_structured_data`, `unusable_location`, `invalid_fields`, `not_confirmed`. The type also allows `processing_error` and `ambiguous_match`, which later steps set. `needsReview` is true exactly when the reason is not null.
+- The save function, `saveReport(report: ValidatedReport): Promise<{ ok: true; repeat: boolean } | { ok: false; reason: "store_failed" }>` in `lib/ingest/save-report.ts`, is owned by D3b. D3a ships a **stub** that always returns `{ ok: false, reason: "store_failed" }`, so the webhook answers 503 `{ "ok": false }` and nothing is stored (never a silent success). D3b replaces the body.
 
 ---
 
@@ -809,7 +824,9 @@ enums in this build; changing one needs a migration and a change to this file.
 `DATABASE_URL`, `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`,
 `SEED_ADMIN_PASSWORD`, `SEED_RESPONDER_PASSWORD`, `SEED_VIEWER_PASSWORD`,
 `VAPI_WEBHOOK_SECRET` (plus the Vapi and public-map names in `.env.example`).
-**To add in D3:** the server-only key for the call reference HMAC. Secrets are
+`VAPI_CALL_REF_KEY` (task D3a): the server-only key for the call reference HMAC,
+a separate secret of at least 32 characters; empty placeholder in `.env.example`.
+Unset or shorter than 32: the webhook answers 503 and stores nothing. Secrets are
 read only through `lib/config/env.ts` (server-only).
 
 ---
