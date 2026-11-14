@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { addNoteAction } from "@/lib/actions/form-actions";
 import { INITIAL_ACTION_STATE, actionMessageKey, type ActionState } from "@/lib/actions/state";
 import { MAX_NOTE_LENGTH } from "@/lib/config/limits";
@@ -44,9 +45,9 @@ export function NoteForm({ complaintId }: { complaintId: string }) {
         onChange={(event) => setText(event.target.value)}
       />
       <p>{t("detail.noteHelp")}</p>
-      <button type="submit" disabled={pending}>
+      <Button type="submit" variant="primary" disabled={pending}>
         {t("detail.addNote")}
-      </button>
+      </Button>
       {messageKey !== null && (
         <p role={saved ? "status" : "alert"} className={saved ? "ww-saved" : "ww-state-error"}>
           {t(messageKey)}
