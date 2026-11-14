@@ -68,4 +68,3 @@ NEXT: merge #39 and #42, then Andrew builds the real D3b save on `feat/d3b-save-
 | Database backup before the demo | Not yet |
 | Backup video on two devices | Not yet (Q7) |
 | Space cleaned before 5 PM Saturday | Not yet |
- - D3b save implementation is built on this branch; integration coverage includes privacy, duplicates, ambiguity, fixed-code logs, and processing failure retention.

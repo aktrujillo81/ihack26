@@ -39,6 +39,21 @@ describe("saveReport", () => {
     for (const phone of planted.phones) expect(text).not.toContain(phone);
   });
 
+  it("preserves location text and matching keys", async () => {
+    const scope = await configuredScope();
+    const first = buildFakeReport({ organizationId: scope.org.id, regionId: scope.region.id, locationText: "Riverside Village near the market" });
+    const second = buildFakeReport({ organizationId: scope.org.id, regionId: scope.region.id, locationText: "Greenfield Church" });
+    await saveReport(first);
+    await saveReport(second);
+    const storedReports = await getDb().select({ locationText: reports.locationText }).from(reports);
+    const storedPoints = await getDb().select({ locationText: waterPoints.locationText, locationKey: waterPoints.locationKey }).from(waterPoints);
+    expect(storedReports.map((row) => row.locationText)).toEqual(expect.arrayContaining([first.locationText, second.locationText]));
+    expect(storedPoints).toEqual(expect.arrayContaining([
+      { locationText: first.locationText, locationKey: "riverside village near the market" },
+      { locationText: second.locationText, locationKey: "greenfield church" },
+    ]));
+  });
+
   it("makes a duplicate a no-op and returns repeat", async () => {
     const scope = await configuredScope();
     const report = buildFakeReport({ organizationId: scope.org.id, regionId: scope.region.id });

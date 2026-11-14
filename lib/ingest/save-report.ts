@@ -102,9 +102,9 @@ export async function saveReport(report: ValidatedReport): Promise<SaveReportRes
 function cleanReport(report: ValidatedReport): ValidatedReport {
   const text = capFreeText(
     {
-      locationText: scrubIdentityLikeText(scrubNumbers(report.locationText)),
+      locationText: scrubNumbers(report.locationText),
       summary: report.summary === null ? "" : scrubIdentityLikeText(scrubNumbers(report.summary)),
-      languageSpoken: report.languageSpoken === null ? null : scrubIdentityLikeText(scrubNumbers(report.languageSpoken)),
+      languageSpoken: report.languageSpoken === null ? null : scrubNumbers(report.languageSpoken),
     },
     DEFAULT_TEXT_MAX_LENGTH,
   );
