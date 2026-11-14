@@ -296,16 +296,34 @@ flagged, never dropped), 3 notes, 2 partners (no contact details) and the histor
 events. Times are "hours before the run", so the demo looks recent. Scores follow
 the spec's formula (a unit test recomputes them). No caller details: no names, phone
 numbers or emails (tests scan the data and the stored rows). No credentials.
-- **Refuses production:** before the database module is even loaded it refuses any
-  `DATABASE_URL` on port **5433**, any host that is not this machine, and
-  `NODE_ENV=production`, with exit code 1 and a message that never prints the
-  connection string. There is no override. Use `npm run db:local` (port 5434).
+- **Refuses anything but the development database (an allowlist):** it accepts a
+  `DATABASE_URL` only if it is a plain URL with host `127.0.0.1`, `localhost` or
+  `[::1]`, the port written and exactly **5434**, and **no query string and no
+  fragment**. It also refuses if `PGHOST`, `PGHOSTADDR`, `PGPORT`, `PGSERVICE` or
+  `PGSERVICEFILE` is set, and any run with `NODE_ENV=production`. This matters
+  because the database driver also honors `?port=` and `?host=` in the URL and
+  the `PG*` variables, and reads `#` differently from the URL parser, so a check
+  of the URL's port alone can be fooled into connecting to 5433. Both the command
+  line (before the database module is loaded) and `runDemoSeed` itself check the
+  same `DATABASE_URL`, so neither can be skipped. Exit code 1, and a message that
+  never prints the connection string. There is no override, and 5433 can never be
+  allowed. Use `npm run db:local` (port 5434).
+- **Will not guess the organization:** it finds "Demo Organization" by name (names
+  are not unique in D1). It stops if two active organizations have that name, or
+  if the organization already holds water points, complaints, reports, notes or
+  partners that this seed did not write.
 - **Idempotent:** a marker row (`demo_seed`) in `configuration` stops a second run,
   including two at the same moment. It never deletes anything (history is
   append-only, red line 9). To start over, delete the local `.pgdata/` folder.
 - It needs the demo organization, region and accounts from `npm run db:seed`, and
   stops with that instruction if they are missing.
-- Note for A1's owner: `npm run db:seed` itself has no port guard.
+- **Invented, including the history:** every row is made up, and the history
+  events carry made-up past times and the demo responder as the actor. Nothing
+  marks a row as demo except the organization's name and the "Demo" partner
+  names, so do not point real Vapi calls at this organization. The coordinates are
+  invented values in a real region (the real district is unknown).
+- Note for A1's owner: `npm run db:seed` itself has no port guard, and it writes
+  password hashes, so it is the more dangerous command.
 
 ## Environment variables (names only)
 `DATABASE_URL`, `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`,

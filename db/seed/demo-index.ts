@@ -40,7 +40,7 @@ async function main() {
     } else {
       const c = result.counts;
       console.log(
-        `[db:seed:demo] Done: ${c.waterPoints} water points, ${c.complaints} complaints, ${c.reports} reports, ${c.notes} notes, ${c.partners} partners, ${c.historyEvents} history events.`,
+        `[db:seed:demo] Done in organization ${result.organizationId}: ${c.waterPoints} water points, ${c.complaints} complaints, ${c.reports} reports, ${c.notes} notes, ${c.partners} partners, ${c.historyEvents} history events. All invented; history times are made up.`,
       );
     }
     process.exit(0);

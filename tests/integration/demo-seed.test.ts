@@ -28,6 +28,9 @@ async function demoContext(): Promise<DataContext> {
   return { organizationId: org.id, regionIds: [region.id] };
 }
 
+/** The seed accepts only port 5434 by default; the tests also use the throwaway Postgres CI starts on 5432. 5433 can never be allowed. */
+const TEST_PORTS = { allowedPorts: ["5434", "5432"] } as const;
+
 let ctx: DataContext;
 let other: Awaited<ReturnType<typeof createOrg>>;
 
@@ -42,8 +45,8 @@ describe("the demo seed", () => {
 
   it("refuses to run before the accounts exist, and says what to do", async () => {
     await resetDb();
-    await expect(runDemoSeed()).rejects.toThrow(DemoSeedError);
-    await expect(runDemoSeed()).rejects.toThrow(/npm run db:seed/);
+    await expect(runDemoSeed(new Date(), TEST_PORTS)).rejects.toThrow(DemoSeedError);
+    await expect(runDemoSeed(new Date(), TEST_PORTS)).rejects.toThrow(/npm run db:seed/);
     // Put the world back for the tests below.
     other = await createOrg("Unrelated Org");
     await runSeed();
@@ -51,7 +54,7 @@ describe("the demo seed", () => {
   });
 
   it("seeds everything once, then says it is already there", async () => {
-    const first = await runDemoSeed();
+    const first = await runDemoSeed(new Date(), TEST_PORTS);
     expect(first.status).toBe("seeded");
     if (first.status === "seeded") {
       expect(first.counts).toMatchObject({
@@ -71,7 +74,7 @@ describe("the demo seed", () => {
       p: (await getDb().select().from(partners)).length,
     });
     const before = await counts();
-    expect(await runDemoSeed()).toEqual({ status: "already_seeded" });
+    expect(await runDemoSeed(new Date(), TEST_PORTS)).toEqual({ status: "already_seeded" });
     expect(await counts()).toEqual(before);
     expect(before).toMatchObject({ wp: DEMO_POINTS.length, c: DEMO_COMPLAINTS.length, r: DEMO_REPORTS.length, n: DEMO_NOTES.length, p: DEMO_PARTNERS.length });
   });
@@ -81,17 +84,71 @@ describe("the demo seed", () => {
     other = await createOrg("Unrelated Org");
     await runSeed();
     ctx = await demoContext();
-    const results = await Promise.all([runDemoSeed(), runDemoSeed(), runDemoSeed()]);
+    const results = await Promise.all([runDemoSeed(new Date(), TEST_PORTS), runDemoSeed(new Date(), TEST_PORTS), runDemoSeed(new Date(), TEST_PORTS)]);
     expect(results.filter((r) => r.status === "seeded")).toHaveLength(1);
     expect((await getDb().select().from(waterPoints)).length).toBe(DEMO_POINTS.length);
+  });
+
+  it("refuses by itself when the database URL is unsafe, before it touches the database", async () => {
+    const original = process.env.DATABASE_URL;
+    try {
+      for (const url of [
+        "postgres://u:p@127.0.0.1:5433/x",
+        "postgres://u:p@127.0.0.1:5434/x?port=5433",
+        "postgres://u:p@127.0.0.1:5434#@prod-host:5433/x",
+        "postgres://u:p@127.0.0.1/x",
+      ]) {
+        process.env.DATABASE_URL = url;
+        await expect(runDemoSeed(new Date(), TEST_PORTS), url).rejects.toThrow(/Refusing to seed/);
+      }
+    } finally {
+      process.env.DATABASE_URL = original;
+    }
+    // Nothing was written by those refused attempts.
+    const [{ n }] = (await getDb().execute(sql`select count(*)::int as n from configuration where key = 'demo_seed'`)) as unknown as { n: number }[];
+    expect(n).toBe(1);
+  });
+
+  it("refuses to guess when two active organizations share the demo name", async () => {
+    await resetDb();
+    await createOrg("Demo Organization");
+    await createOrg("Demo Organization");
+    await expect(runDemoSeed(new Date(), TEST_PORTS)).rejects.toThrow(/More than one active organization/);
+    expect((await getDb().select().from(waterPoints)).length).toBe(0);
+    other = await createOrg("Unrelated Org");
+    await resetDb();
+    other = await createOrg("Unrelated Org");
+    await runSeed();
+    ctx = await demoContext();
+    expect(await runDemoSeed(new Date(), TEST_PORTS)).toMatchObject({ status: "seeded" });
+  });
+
+  it("refuses to fill an organization that already holds data it did not write", async () => {
+    await resetDb();
+    other = await createOrg("Unrelated Org");
+    await runSeed();
+    ctx = await demoContext();
+    const scope = { organizationId: ctx.organizationId, regionId: ctx.regionIds[0] };
+    await getDb().insert(waterPoints).values({ ...scope, locationText: "A real point", waterPointType: "well" });
+    await expect(runDemoSeed(new Date(), TEST_PORTS)).rejects.toThrow(/already has data/);
+    expect((await getDb().select().from(waterPoints)).length).toBe(1);
+    expect((await getDb().select().from(configuration).where(eq(configuration.key, "demo_seed"))).length).toBe(0);
+    // Put the world back for the tests below.
+    await resetDb();
+    other = await createOrg("Unrelated Org");
+    await runSeed();
+    ctx = await demoContext();
+    expect(await runDemoSeed(new Date(), TEST_PORTS)).toMatchObject({ status: "seeded" });
   });
 
   it("leaves a marker row, and writes nothing to another organization", async () => {
     const markers = await getDb().select().from(configuration).where(eq(configuration.key, "demo_seed"));
     expect(markers).toHaveLength(1);
     expect(markers[0].organizationId).toBe(ctx.organizationId);
-    const [{ n }] = (await getDb().execute(sql`select count(*)::int as n from water_points where organization_id = ${other.org.id}`)) as unknown as { n: number }[];
-    expect(n).toBe(0);
+    for (const table of ["water_points", "complaints", "reports", "notes", "partners", "history_events", "configuration"]) {
+      const [{ n }] = (await getDb().execute(sql.raw(`select count(*)::int as n from ${table} where organization_id = '${other.org.id}'`))) as unknown as { n: number }[];
+      expect(n, table).toBe(0);
+    }
     for (const read of [listComplaints, listWaterPoints, listNeedsReview, listNeedsLocation, getLastReportReceived]) {
       expect((await read({ organizationId: other.org.id, regionIds: [other.region.id] })).status).toBe("empty");
     }

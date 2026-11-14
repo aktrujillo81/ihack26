@@ -5,6 +5,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { complaints, configuration, historyEvents, notes, organizations, partners, regions, reports, users, waterPoints } from "@/lib/db/schema";
 import { SEED_ACCOUNTS, SEED_ORGANIZATION, SEED_REGION } from "./data";
+import { assertDevelopmentDatabase, type GuardOptions } from "./guard";
 import { DEMO_COMPLAINTS, DEMO_NOTES, DEMO_PARTNERS, DEMO_POINTS, DEMO_REPORTS } from "./demo-data";
 
 export class DemoSeedError extends Error {}
@@ -15,7 +16,7 @@ export const DEMO_VERSION = 1;
 
 const HOUR_MS = 60 * 60 * 1000;
 
-export type DemoSeedResult = { status: "seeded"; counts: Record<string, number> } | { status: "already_seeded" };
+export type DemoSeedResult = { status: "seeded"; organizationId: string; counts: Record<string, number> } | { status: "already_seeded" };
 
 /**
  * Adds the demo water points, complaints, reports, notes, partners and history
@@ -24,21 +25,30 @@ export type DemoSeedResult = { status: "seeded"; counts: Record<string, number> 
  * (history is append-only, red line 9), so to start over, delete the local
  * development database (`.pgdata/`), not the production one.
  *
- * Refusing to run against production is the caller's job (db/seed/guard.ts);
- * this function writes to whatever database `getDb()` is connected to.
+Refusing to run against production is done HERE as well as in the command line
+ * (db/seed/guard.ts), so no other caller can skip it: it checks the same
+ * `DATABASE_URL` the database module connects with, before connecting. By default
+ * only the development database (port 5434) is accepted; the integration tests
+ * pass their own allowed ports. 5433 can never be allowed.
  */
-export async function runDemoSeed(now: Date = new Date()): Promise<DemoSeedResult> {
+export async function runDemoSeed(now: Date = new Date(), options: Pick<GuardOptions, "allowedPorts"> = {}): Promise<DemoSeedResult> {
+  assertDevelopmentDatabase(process.env.DATABASE_URL, { allowedPorts: options.allowedPorts });
   const ago = (hours: number) => new Date(now.getTime() - hours * HOUR_MS);
 
   return getDb().transaction(async (tx) => {
     // One demo seed at a time.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext('wellwatch_demo_seed'))`);
 
-    const [org] = await tx
+    // The organization is found by NAME, and names are not unique in D1. More than one match could mean
+    // a real organization was given this name, so refuse instead of picking one.
+    const matches = await tx
       .select({ id: organizations.id })
       .from(organizations)
-      .where(and(eq(organizations.name, SEED_ORGANIZATION.name), isNull(organizations.archivedAt)))
-      .limit(1);
+      .where(and(eq(organizations.name, SEED_ORGANIZATION.name), isNull(organizations.archivedAt)));
+    if (matches.length > 1) {
+      throw new DemoSeedError("More than one active organization has the demo organization's name. Refusing to guess which one to fill.");
+    }
+    const [org] = matches;
     if (!org) throw new DemoSeedError("The demo organization does not exist. Run `npm run db:seed` first.");
     const [region] = await tx
       .select({ id: regions.id })
@@ -54,6 +64,13 @@ export async function runDemoSeed(now: Date = new Date()): Promise<DemoSeedResul
       .where(and(eq(configuration.organizationId, org.id), eq(configuration.regionId, region.id), eq(configuration.key, DEMO_MARKER_KEY)))
       .limit(1);
     if (marker) return { status: "already_seeded" } as const;
+
+    // A demo organization starts empty. If it already holds data that this seed did not write, it may be a
+    // real organization that shares the name: refuse instead of mixing invented rows into it.
+    for (const table of [waterPoints, complaints, reports, notes, partners] as const) {
+      const [existing] = await tx.select({ id: table.id }).from(table).where(eq(table.organizationId, org.id)).limit(1);
+      if (existing) throw new DemoSeedError("The demo organization already has data. Refusing to add demo rows to it.");
+    }
 
     // Staff who wrote notes and made changes: the seeded demo accounts.
     const staff = new Map<"responder" | "admin", string>();
@@ -185,6 +202,7 @@ export async function runDemoSeed(now: Date = new Date()): Promise<DemoSeedResul
 
     return {
       status: "seeded",
+      organizationId: org.id,
       counts: {
         partners: DEMO_PARTNERS.length,
         waterPoints: DEMO_POINTS.length,
