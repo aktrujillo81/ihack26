@@ -13,7 +13,7 @@
 | **Total** | **$5.00** | **about 55 minutes** |
 
 ## Rules
-1. Before any paid call, set the maximum call length (90 seconds) and the silence timeout. A capped call costs about $0.14 at most, or about $0.18 for a full two minutes.
+1. Before any paid call, set the maximum call length and the silence timeout. Set on 2026-11-14: **120 seconds** and **20 seconds** (see `docs/vapi-prompt.md`). A call capped at 120 seconds costs about $0.18 at most. A call of about 90 seconds costs about $0.14.
 2. Only one task places paid test calls: the Phone / AI Prompter's. Every other developer works from the saved sample payload in `docs/samples/` and never calls the number. There are five developers, so this matters.
 3. A human must say OK before each paid call. The Orchestrator never approves one.
 4. Capture one real payload, remove personal data, and reuse it for all endpoint and web app development.
