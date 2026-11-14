@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { changeStatusAction } from "@/lib/actions/form-actions";
 import { INITIAL_ACTION_STATE, actionMessageKey, type ActionState } from "@/lib/actions/state";
 import { nextStatuses } from "@/lib/actions/transitions";
@@ -62,12 +63,12 @@ export function StatusControls({
 
   if (options.length === 0 && messageKey === null) return null;
   return (
-    <div>
+    <div className="ww-status-controls">
       <div className="ww-controls">
         {options.map((option) => (
-          <button key={option} type="button" onClick={() => setTarget(option)} disabled={pending}>
+          <Button key={option} variant={option === "fixed" ? "primary" : "secondary"} onClick={() => setTarget(option)} disabled={pending}>
             {t(BUTTON_TEXT[option])}
-          </button>
+          </Button>
         ))}
       </div>
       {target !== null && (
@@ -94,12 +95,12 @@ export function StatusControls({
             </>
           )}
           <div className="ww-controls">
-            <button type="submit" disabled={pending}>
+            <Button type="submit" variant="primary" disabled={pending}>
               {t("common.confirm")}
-            </button>
-            <button type="button" onClick={() => setTarget(null)} disabled={pending}>
+            </Button>
+            <Button onClick={() => setTarget(null)} disabled={pending}>
               {t("common.cancel")}
-            </button>
+            </Button>
           </div>
         </form>
       )}

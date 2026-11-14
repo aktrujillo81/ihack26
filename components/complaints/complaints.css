@@ -1,15 +1,6 @@
-/* Complaint screens: readable from across a room. Meaning is always in text, never in color alone. */
-.ww-badge {
-  display: inline-block;
-  margin: 2px 6px 2px 0;
-  padding: 2px 8px;
-  border: 2px solid currentColor;
-  font-weight: 700;
-}
-.ww-badge-review {
-  border-style: dashed;
-}
-/* Error box: the words carry the meaning. Hairline border, tokens only. */
+/* Shared by the complaint screens: states, messages, banners and the forms' layout. Meaning is in words, never in color alone. Tokens only. */
+
+/* Error box: the words carry the meaning. Hairline border. */
 .ww-state-error {
   padding: var(--ww-space-4);
   border: 1px solid var(--ww-control-border);
@@ -35,85 +26,96 @@
   color: var(--ww-ink-2);
   font-size: var(--ww-text-body);
 }
-/* A saved message is a bordered box with text, like an error. The words carry the meaning, not the color. */
+
+/* A saved message is a bordered box with text, like an error. The words carry the meaning. */
 .ww-saved {
-  padding: 10px 12px;
-  border: 3px solid currentColor;
-  font-size: 20px;
-  font-weight: 700;
+  margin: var(--ww-space-3) 0 0;
+  padding: var(--ww-space-3) var(--ww-space-4);
+  border: 1px solid var(--ww-fixed-border);
+  border-radius: var(--ww-radius-control);
+  background: var(--ww-fixed-bg);
+  color: var(--ww-fixed-text);
+  font-size: var(--ww-text-label);
+  font-weight: 600;
 }
+.ww-note-form .ww-state-error,
+.ww-status-controls .ww-state-error {
+  margin-top: var(--ww-space-3);
+}
+
+/* Banners at the top of a detail page: a bordered panel with words. */
 .ww-banner {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 3px solid currentColor;
-  font-size: 20px;
-  font-weight: 700;
+  margin: 0;
+  padding: var(--ww-space-3) var(--ww-space-4);
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-tile);
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font-size: var(--ww-text-label);
+  font-weight: 500;
 }
 .ww-banner-unverified {
   border-style: dashed;
 }
-.ww-section {
-  margin: 20px 0;
-}
-.ww-section h2 {
-  font-size: 24px;
-}
+
+/* Status buttons, the confirm step and the note form. The buttons themselves are the shared Button. */
 .ww-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 12px 0;
-}
-.ww-controls button,
-.ww-note-form button,
-.ww-confirm button,
-.ww-copy {
-  padding: 10px 16px;
-  border: 3px solid currentColor;
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.ww-controls button:disabled,
-.ww-note-form button:disabled,
-.ww-confirm button:disabled {
-  cursor: progress;
-  opacity: 0.7;
+  gap: var(--ww-space-3);
 }
 .ww-note-form,
 .ww-confirm {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ww-space-2);
   max-width: 640px;
 }
 .ww-confirm {
-  padding: 12px;
-  border: 3px solid currentColor;
+  min-width: 300px;
+  margin-top: var(--ww-space-3);
+  padding: var(--ww-space-4);
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-tile);
+  background: var(--ww-panel);
+}
+.ww-confirm p,
+.ww-note-form p {
+  margin: 0;
 }
 .ww-note-form label,
 .ww-confirm label {
-  font-size: 20px;
-  font-weight: 700;
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+  font-weight: 500;
+}
+.ww-note-form p:not([role]),
+.ww-confirm p:not([role]) {
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
 }
 .ww-note-form textarea,
 .ww-confirm input {
-  padding: 8px 10px;
-  border: 3px solid currentColor;
-  font-size: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--ww-space-2) var(--ww-space-3);
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-control);
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font: inherit;
+  font-size: var(--ww-text-label);
 }
-.ww-transcript {
-  margin: 6px 0;
-  padding: 8px 10px;
-  border: 2px solid currentColor;
-  white-space: pre-wrap;
-  font-size: 18px;
+.ww-confirm input {
+  height: var(--ww-control-height);
+  padding-block: 0;
 }
-.ww-list-plain {
-  padding: 0;
-  list-style: none;
+.ww-note-form .ww-btn {
+  align-self: flex-start;
 }
-.ww-list-plain li {
-  margin: 8px 0;
-  font-size: 20px;
+/* The confirm question is the main line, not helper text. */
+.ww-confirm p:first-of-type:not([role]) {
+  color: var(--ww-ink);
+  font-size: var(--ww-text-label);
+  font-weight: 500;
 }
