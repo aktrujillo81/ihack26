@@ -38,3 +38,4 @@ One line per real team decision: date, decision, and why.
 - 2026-11-14: Complaint location editing includes a Leaflet picker. A responder or Org Admin may click the map or drag the marker to populate latitude and longitude, then must explicitly save; the server remains the source of truth for validation and authorization.
  - 2026-11-14: The location picker defaults to the Kenya demo-region center `(-1.2888, 36.815)` when a complaint has no coordinates; saved complaint coordinates still take precedence.
 - 2026-11-14: The signed-in dashboard map uses the same Kenya demo-region center `(-1.2888, 36.815)` as its initial view. When pins exist, the map fits to those pins.
+- 2026-11-14: Removed the "Sample data" tag from the dashboard page headers at a team member's request. The layout no longer runs the `isSampleData` check; the function and tag components stay so it can be turned back on.

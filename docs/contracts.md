@@ -725,8 +725,9 @@ Things to know (found by the red-line-8 review of these reads):
   to them. The order "slow before dirty" is a choice; the spec is silent.
 - Lists are cut off at `DATA_LIST_HARD_LIMIT` (1000, PROPOSED) until pagination
   exists. The public map's read selects only the columns a pin needs.
-- **Sample data indicator (`isSampleData`):** the dashboard layout makes one
-  read-only check: does a `configuration` row with key `demo_seed` exist in the
+- **Sample data indicator (`isSampleData`):** HIDDEN (2026-11-14, human request):
+  the dashboard no longer calls it or shows the tag; the function and components
+  remain. When it was shown, it made one read-only check: does a `configuration` row with key `demo_seed` exist in the
   signed-in user's own organization and regions? `npm run db:seed:demo` writes that
   row in the same transaction as the demo data. Yes shows a "Sample data" tag in
   the page headers. It returns only true or false, answers false on any problem or
