@@ -1,40 +1,60 @@
+import "server-only";
+
+import { and, asc, desc, eq, inArray, isNotNull, isNull, notInArray, sql, type SQL } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
+
+import { DATA_LIST_HARD_LIMIT } from "@/lib/config/ui";
+import { getDb } from "@/lib/db";
+import { complaints, historyEvents, notes, partners, reports, users, waterPoints } from "@/lib/db/schema";
+import type {
+  Complaint,
+  HistoryEvent,
+  LastReportReceived,
+  Note,
+  Partner,
+  Report,
+  WaterPoint,
+  WaterPointType,
+} from "@/lib/domain/types";
+
+import { deriveComplaintFacts, isUuid, toCoordinate, type ReportFacts } from "./derive";
+
 /**
- * PROVISIONAL thin data layer for the web app (W2 to W5).
+ * The data layer for the web app: every screen reads data through this file.
+ * It reads D1's tables (lib/db/schema.ts) with Drizzle.
  *
- * Every screen reads data through this file and nowhere else. It is the ONLY
- * file allowed to import `lib/domain/mock`.
+ * REAL now: complaints, water points, reports, notes, history events and
+ * partners, all read from the database.
  *
- * SWAP POINT: when the real complaint API (task D6) and docs/contracts.md
- * exist, replace the bodies of the functions below with calls to that API.
- * Keep the signatures and result shapes, and no screen needs to change. Delete
- * the mock import and `MOCK_CONTEXT` at the same time.
+ * What D1 does not store, so what is derived or unknown here (PROVISIONAL until
+ * S6, docs/reviews/D1.md):
+ * - A complaint's problem, people affected, school or clinic, and duration are
+ *   derived from its reports (the most severe values; lib/data/derive.ts).
+ * - There is no review reason and no list of candidate water points: both are
+ *   null / empty.
+ * - A history event's description is built by the screen from `event_type`,
+ *   `before_data` and `after_data`.
+ * - A water point has no name; only its type and the spoken location text.
+ * - A complaint's version (for D6's overwrite check) is its `updated_at` as
+ *   text, to the microsecond.
  *
- * Rules kept here (they are enforced for real by the server):
- * - Every read takes a `DataContext`. Records outside the user's organization
- *   or regions are never returned (red line 8). Filtering here only mimics the
- *   server so screens are built against the right behavior.
+ * Rules kept here (red line 8; the data layer is the last line of defence, the
+ * guards are the first):
+ * - Every read takes a `DataContext` built from the validated session.
+ *   EVERY query filters by that organization and those regions, on every table
+ *   it touches, including joined ones. A context that is missing, empty or has
+ *   a non-uuid id returns nothing, never everything.
  * - Another organization's record and a missing record look identical
  *   (`not_found_or_denied`), so existence is not revealed.
+ * - Lists select named columns, never `transcript` or `summary`.
  * - No caller details are returned. Partner `contact` is dropped from views.
  */
-import type { Complaint, HistoryEvent, LastReportReceived, Note, Partner, Report, WaterPoint, WaterPointType } from "../domain/types";
-import {
-  mockComplaints,
-  mockHistoryEvents,
-  mockNotes,
-  mockPartners,
-  mockReports,
-  mockWaterPoints,
-} from "../domain/mock";
 
 /** Who is asking. Supplied by the server session, never by the browser. */
 export interface DataContext {
   organizationId: string;
   regionIds: string[];
 }
-
-/** PROVISIONAL: matches the mock data's single organization and region. Remove with the mock. */
-export const MOCK_CONTEXT: DataContext = { organizationId: "org-demo", regionIds: ["region-demo"] };
 
 export type DataErrorKind =
   /** Missing, or in another organization or region. Deliberately indistinguishable. */
@@ -73,12 +93,12 @@ export interface ComplaintDetail {
   passedOnTo: PartnerView | null;
 }
 
-/** A report as shown in a list: no transcript (transcripts appear only on the detail page). */
-export type ReportListView = Omit<Report, "transcript">;
+/** A report as shown in a list: no transcript and no summary (both are caller-derived text and appear only on the detail page). */
+export type ReportListView = Omit<Report, "transcript" | "summary">;
 
 export interface NeedsReviewItem {
   report: ReportListView;
-  /** Several possible matches are listed, never resolved to one. */
+  /** D1 stores no candidate list, so this is empty until S6/D4 add one. */
   candidates: WaterPoint[];
 }
 
@@ -87,138 +107,332 @@ export interface WaterPointOptions {
   includeInactive?: boolean;
 }
 
-function inScope(ctx: DataContext, record: { organizationId: string; regionId: string }): boolean {
-  return record.organizationId === ctx.organizationId && ctx.regionIds.includes(record.regionId);
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/** A context we will query with: a uuid organization and at least one uuid region. Anything else returns nothing. */
+function usable(ctx: unknown): ctx is DataContext {
+  if (typeof ctx !== "object" || ctx === null) return false;
+  const c = ctx as Record<string, unknown>;
+  return isUuid(c.organizationId) && Array.isArray(c.regionIds) && c.regionIds.length > 0 && c.regionIds.every(isUuid);
 }
+
+type Scoped = { organizationId: AnyPgColumn; regionId: AnyPgColumn };
+
+/** The scope filter. Applied to every table a query reads, including joined tables. */
+const scope = (table: Scoped, ctx: DataContext): SQL =>
+  and(eq(table.organizationId, ctx.organizationId), inArray(table.regionId, ctx.regionIds)) as SQL;
+
+const empty = { status: "empty" } as const;
 
 function result<T>(items: T[]): DataResult<T[]> {
-  return items.length === 0 ? { status: "empty" } : { status: "ok", data: items };
+  return items.length === 0 ? empty : { status: "ok", data: items };
 }
 
-async function guarded<T>(read: () => DataResult<T>): Promise<DataResult<T>> {
+/** Runs a read. Any failure becomes a generic error: a fixed code is logged, never the query, values or connection string. */
+async function guarded<T>(read: () => Promise<DataResult<T>>): Promise<DataResult<T>> {
   try {
-    return read();
+    return await read();
   } catch {
+    console.error("[data] read_failed");
     return { status: "error", error: "failed" };
   }
 }
 
-const byId = <T extends { id: string }>(items: T[], id: string | null): T | null =>
-  id === null ? null : (items.find((item) => item.id === id) ?? null);
+/** A row's version: `updated_at` as UTC text to the microsecond (the driver and JS dates only keep milliseconds). */
+export const versionOf = (column: AnyPgColumn): SQL<string> =>
+  sql<string>`to_char(${column} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
-function toPartnerView({ contact: _contact, ...rest }: Partner): PartnerView {
-  return rest;
+const iso = (d: Date): string => d.toISOString();
+
+type WaterPointRow = typeof waterPoints.$inferSelect;
+type ComplaintRow = typeof complaints.$inferSelect;
+type ReportRow = typeof reports.$inferSelect;
+
+function toWaterPoint(row: WaterPointRow): WaterPoint {
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    regionId: row.regionId,
+    type: row.waterPointType,
+    locationText: row.locationText,
+    latitude: toCoordinate(row.latitude),
+    longitude: toCoordinate(row.longitude),
+    locationSource: row.locationSource,
+    verificationState: row.verificationState,
+    mergedIntoId: row.mergedIntoId,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  };
 }
 
-function toReportListView({ transcript: _transcript, ...rest }: Report): ReportListView {
-  return rest;
+function toComplaint(row: ComplaintRow, version: string, reportFacts: ReportFacts[]): Complaint {
+  const facts = deriveComplaintFacts(reportFacts);
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    regionId: row.regionId,
+    waterPointId: row.waterPointId,
+    status: row.status,
+    ...facts,
+    reportCount: row.reportCount,
+    priorityScore: row.priorityScore,
+    scoreReason: row.priorityReason,
+    needsReview: row.needsReview,
+    needsReviewReason: null,
+    passedOnPartnerId: row.passedOnPartnerId,
+    passedOnNote: row.passedOnNote,
+    version,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  };
 }
 
-/** A related record is returned only if it is in the user's scope; otherwise it is treated as absent. */
-function scopedById<T extends { id: string; organizationId: string; regionId: string }>(
-  ctx: DataContext,
-  items: T[],
-  id: string | null,
-): T | null {
-  const found = byId(items, id);
-  return found && inScope(ctx, found) ? found : null;
+/** The columns a list needs from a report. Never `transcript` or `summary` (caller-derived free text; the detail page only). */
+const reportFactColumns = {
+  complaintId: reports.complaintId,
+  problem: reports.problem,
+  peopleAffected: reports.peopleAffected,
+  servesSchoolOrClinic: reports.servesSchoolOrClinic,
+  duration: reports.duration,
+};
+
+/** A report for a list: every column except `transcript`. */
+const reportListColumns = {
+  id: reports.id,
+  organizationId: reports.organizationId,
+  regionId: reports.regionId,
+  complaintId: reports.complaintId,
+  waterPointId: reports.waterPointId,
+  channel: reports.channel,
+  locationText: reports.locationText,
+  waterPointType: reports.waterPointType,
+  problem: reports.problem,
+  peopleAffected: reports.peopleAffected,
+  servesSchoolOrClinic: reports.servesSchoolOrClinic,
+  duration: reports.duration,
+  callerConfirmed: reports.callerConfirmed,
+  languageSpoken: reports.languageSpoken,
+  needsReview: reports.needsReview,
+  receivedAt: reports.receivedAt,
+};
+
+type ReportListRow = Pick<ReportRow, keyof typeof reportListColumns & keyof ReportRow>;
+
+function toReportListView(row: ReportListRow): ReportListView {
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    regionId: row.regionId,
+    channel: row.channel,
+    waterPointId: row.waterPointId,
+    complaintId: row.complaintId,
+    locationText: row.locationText,
+    waterPointType: row.waterPointType,
+    problem: row.problem,
+    peopleAffected: row.peopleAffected ?? "unknown",
+    servesSchoolOrClinic: row.servesSchoolOrClinic ?? "unknown",
+    duration: row.duration,
+    callerConfirmed: row.callerConfirmed ?? false,
+    languageSpoken: row.languageSpoken ?? "unknown",
+    needsReview: row.needsReview,
+    needsReviewReason: null,
+    candidateWaterPointIds: [],
+    receivedAt: iso(row.receivedAt),
+  };
 }
 
-/** Complaints in the user's regions, most urgent first. */
+const toFacts = (r: { problem: ReportFacts["problem"]; peopleAffected: number | null; servesSchoolOrClinic: boolean | null; duration: ReportFacts["duration"] }): ReportFacts => ({
+  problem: r.problem,
+  peopleAffected: r.peopleAffected,
+  servesSchoolOrClinic: r.servesSchoolOrClinic,
+  duration: r.duration,
+});
+
+// ---------------------------------------------------------------------------
+// Reads for signed-in users
+// ---------------------------------------------------------------------------
+
+/** Complaints in the user's regions, most urgent first. Lists carry no transcripts. */
 export function listComplaints(ctx: DataContext): Promise<DataResult<ComplaintListItem[]>> {
-  return guarded(() =>
-    result(
-      mockComplaints
-        .filter((c) => inScope(ctx, c))
-        .sort((a, b) => b.priorityScore - a.priorityScore || b.updatedAt.localeCompare(a.updatedAt))
-        .map((complaint) => ({ complaint, waterPoint: scopedById(ctx, mockWaterPoints, complaint.waterPointId) })),
-    ),
-  );
-}
+  return guarded(async () => {
+    if (!usable(ctx)) return empty;
+    const db = getDb();
+    const rows = await db
+      .select({ complaint: complaints, version: versionOf(complaints.updatedAt) })
+      .from(complaints)
+      .where(scope(complaints, ctx))
+      .orderBy(desc(complaints.priorityScore), desc(complaints.updatedAt))
+      .limit(DATA_LIST_HARD_LIMIT);
+    if (rows.length === 0) return empty;
 
-/** One complaint with everything the detail page shows. */
-export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<ComplaintDetail>> {
-  return guarded(() => {
-    const complaint = byId(mockComplaints, id);
-    if (!complaint || !inScope(ctx, complaint)) return { status: "error", error: "not_found_or_denied" };
-    return {
-      status: "ok",
-      data: {
-        complaint,
-        waterPoint: scopedById(ctx, mockWaterPoints, complaint.waterPointId),
-        reports: mockReports.filter((r) => r.complaintId === id && inScope(ctx, r)).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt)),
-        notes: mockNotes.filter((n) => n.complaintId === id && inScope(ctx, n)).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-        history: mockHistoryEvents.filter((h) => h.complaintId === id && inScope(ctx, h)).sort((a, b) => a.at.localeCompare(b.at)),
-        passedOnTo: (() => {
-          const partner = scopedById(ctx, mockPartners, complaint.passedOnPartnerId);
-          return partner ? toPartnerView(partner) : null;
-        })(),
-      },
-    };
+    const complaintIds = rows.map((r) => r.complaint.id);
+    const waterPointIds = [...new Set(rows.map((r) => r.complaint.waterPointId))];
+    const [points, facts] = await Promise.all([
+      db.select().from(waterPoints).where(and(scope(waterPoints, ctx), inArray(waterPoints.id, waterPointIds))),
+      db.select(reportFactColumns).from(reports).where(and(scope(reports, ctx), inArray(reports.complaintId, complaintIds))),
+    ]);
+    const pointById = new Map(points.map((p) => [p.id, p]));
+    const factsByComplaint = new Map<string, ReportFacts[]>();
+    for (const f of facts) {
+      if (f.complaintId === null) continue;
+      factsByComplaint.set(f.complaintId, [...(factsByComplaint.get(f.complaintId) ?? []), toFacts(f)]);
+    }
+    return result(
+      rows.map(({ complaint, version }) => {
+        const point = pointById.get(complaint.waterPointId);
+        return {
+          complaint: toComplaint(complaint, version, factsByComplaint.get(complaint.id) ?? []),
+          waterPoint: point ? toWaterPoint(point) : null,
+        };
+      }),
+    );
   });
 }
 
-/** Reports the system could not match or complete, oldest first. */
+/** One complaint with everything the detail page shows. An unknown id and another organization's id answer identically. */
+export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<ComplaintDetail>> {
+  return guarded(async () => {
+    const notFound = { status: "error", error: "not_found_or_denied" } as const;
+    if (!usable(ctx) || !isUuid(id)) return notFound;
+    const db = getDb();
+    const [row] = await db
+      .select({ complaint: complaints, version: versionOf(complaints.updatedAt) })
+      .from(complaints)
+      .where(and(eq(complaints.id, id), scope(complaints, ctx)))
+      .limit(1);
+    if (!row) return notFound;
+    const { complaint, version } = row;
+
+    const [pointRows, reportRows, noteRows, eventRows, partnerRows] = await Promise.all([
+      db.select().from(waterPoints).where(and(eq(waterPoints.id, complaint.waterPointId), scope(waterPoints, ctx))).limit(1),
+      db.select().from(reports).where(and(eq(reports.complaintId, id), scope(reports, ctx))).orderBy(desc(reports.receivedAt)),
+      db
+        .select({ note: notes, author: users.displayName })
+        .from(notes)
+        // The author's name is staff data. Join only within this organization so a crafted row cannot show another organization's staff.
+        .leftJoin(users, and(eq(users.id, notes.authorUserId), eq(users.organizationId, ctx.organizationId)))
+        .where(and(eq(notes.complaintId, id), scope(notes, ctx)))
+        .orderBy(asc(notes.createdAt)),
+      db
+        .select({ event: historyEvents, actor: users.displayName })
+        .from(historyEvents)
+        .leftJoin(users, and(eq(users.id, historyEvents.actorUserId), eq(users.organizationId, ctx.organizationId)))
+        .where(and(eq(historyEvents.complaintId, id), scope(historyEvents, ctx)))
+        .orderBy(asc(historyEvents.createdAt)),
+      complaint.passedOnPartnerId
+        ? db
+            .select({ id: partners.id, organizationId: partners.organizationId, regionId: partners.regionId, name: partners.name, type: partners.type })
+            .from(partners)
+            .where(and(eq(partners.id, complaint.passedOnPartnerId), scope(partners, ctx)))
+            .limit(1)
+        : Promise.resolve([]),
+    ]);
+
+    // The contact column is not even loaded: only these named columns are selected.
+    const toPartnerView = (rest: { id: string; organizationId: string; regionId: string; name: string; type: string }): PartnerView => ({
+      id: rest.id,
+      organizationId: rest.organizationId,
+      regionId: rest.regionId,
+      name: rest.name,
+      type: rest.type,
+    });
+
+    const detail: ComplaintDetail = {
+      complaint: toComplaint(complaint, version, reportRows.map(toFacts)),
+      waterPoint: pointRows[0] ? toWaterPoint(pointRows[0]) : null,
+      reports: reportRows.map((r) => ({ ...toReportListView(r), summary: r.summary ?? "", transcript: r.transcript })),
+      notes: noteRows.map(({ note, author }) => ({
+        id: note.id,
+        organizationId: note.organizationId,
+        regionId: note.regionId,
+        complaintId: note.complaintId,
+        author,
+        text: note.body,
+        createdAt: iso(note.createdAt),
+      })),
+      history: eventRows.map(({ event, actor }) => ({
+        id: event.id,
+        organizationId: event.organizationId,
+        regionId: event.regionId,
+        complaintId: event.complaintId,
+        waterPointId: event.waterPointId,
+        type: event.eventType,
+        actor,
+        before: event.beforeData,
+        after: event.afterData,
+        note: event.note,
+        at: iso(event.createdAt),
+      })),
+      passedOnTo: partnerRows[0] ? toPartnerView(partnerRows[0]) : null,
+    };
+    return { status: "ok", data: detail };
+  });
+}
+
+/** Reports the system could not match or complete, oldest first. No transcripts. */
 export function listNeedsReview(ctx: DataContext): Promise<DataResult<NeedsReviewItem[]>> {
-  return guarded(() =>
-    result(
-      mockReports
-        .filter((r) => r.needsReview && inScope(ctx, r))
-        .sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
-        .map((report) => ({
-          report: toReportListView(report),
-          candidates: report.candidateWaterPointIds
-            .map((id) => scopedById(ctx, mockWaterPoints, id))
-            .filter((wp): wp is WaterPoint => wp !== null),
-        })),
-    ),
-  );
+  return guarded(async () => {
+    if (!usable(ctx)) return empty;
+    const rows = await getDb()
+      .select(reportListColumns)
+      .from(reports)
+      .where(and(scope(reports, ctx), eq(reports.needsReview, true)))
+      .orderBy(asc(reports.receivedAt))
+      .limit(DATA_LIST_HARD_LIMIT);
+    return result(rows.map((r) => ({ report: toReportListView(r), candidates: [] })));
+  });
 }
 
 /** Active water points with no coordinates: not pins, listed instead (WP-3). */
 export function listNeedsLocation(ctx: DataContext): Promise<DataResult<WaterPoint[]>> {
-  return guarded(() =>
-    result(
-      mockWaterPoints.filter(
-        (wp) =>
-          inScope(ctx, wp) &&
-          wp.latitude === null &&
-          wp.longitude === null &&
-          wp.verificationState !== "merged" &&
-          wp.verificationState !== "archived",
-      ),
-    ),
-  );
+  return guarded(async () => {
+    if (!usable(ctx)) return empty;
+    const rows = await getDb()
+      .select()
+      .from(waterPoints)
+      .where(
+        and(
+          scope(waterPoints, ctx),
+          isNull(waterPoints.latitude),
+          isNull(waterPoints.longitude),
+          notInArray(waterPoints.verificationState, ["merged", "archived"]),
+        ),
+      )
+      .orderBy(asc(waterPoints.createdAt))
+      .limit(DATA_LIST_HARD_LIMIT);
+    return result(rows.map(toWaterPoint));
+  });
 }
 
 /** Water points in the user's regions. Merged and archived points are hidden unless `includeInactive`. */
 export function listWaterPoints(ctx: DataContext, options: WaterPointOptions = {}): Promise<DataResult<WaterPoint[]>> {
-  return guarded(() =>
-    result(
-      mockWaterPoints.filter(
-        (wp) =>
-          inScope(ctx, wp) &&
-          (options.includeInactive || (wp.verificationState !== "merged" && wp.verificationState !== "archived")),
-      ),
-    ),
-  );
-}
-
-/**
- * When the last report arrived, from the user's own scope only. `empty` means
- * none has ever arrived. Assumes every timestamp is an ISO string in UTC ("Z"),
- * so string order is time order; the real API must guarantee that.
- */
-export function getLastReportReceived(ctx: DataContext): Promise<DataResult<LastReportReceived>> {
-  return guarded<LastReportReceived>(() => {
-    const latest = mockReports
-      .filter((r) => inScope(ctx, r))
-      .map((r) => r.receivedAt)
-      .sort()
-      .at(-1);
-    return latest ? { status: "ok", data: { receivedAt: latest } } : { status: "empty" };
+  return guarded(async () => {
+    if (!usable(ctx)) return empty;
+    const filters = [scope(waterPoints, ctx)];
+    if (!options.includeInactive) filters.push(notInArray(waterPoints.verificationState, ["merged", "archived"]));
+    const rows = await getDb().select().from(waterPoints).where(and(...filters)).orderBy(asc(waterPoints.createdAt)).limit(DATA_LIST_HARD_LIMIT);
+    return result(rows.map(toWaterPoint));
   });
 }
+
+/** When the last report arrived, from the user's own scope only. `empty` means none has ever arrived. */
+export function getLastReportReceived(ctx: DataContext): Promise<DataResult<LastReportReceived>> {
+  return guarded(async () => {
+    if (!usable(ctx)) return empty;
+    const [row] = await getDb()
+      .select({ latest: sql<Date | null>`max(${reports.receivedAt})` })
+      .from(reports)
+      .where(scope(reports, ctx));
+    const latest = row?.latest ? new Date(row.latest) : null;
+    return latest ? { status: "ok", data: { receivedAt: iso(latest) } } : empty;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// The public read (status only)
+// ---------------------------------------------------------------------------
 
 /**
  * Which data may be published without signing in. NOT a user: it is a
@@ -236,8 +450,8 @@ export type PublicStatus = "open" | "passed_on" | "fixed" | "none";
 
 /**
  * The ENTIRE public shape of a water point, by allowlist. It is built field by
- * field in `toPublicPin`, never by spreading a record, so a field added to
- * `WaterPoint` or `Complaint` cannot reach the public by accident.
+ * field in `toPublicPin`, never by spreading a record, so a field added to a
+ * table cannot reach the public by accident.
  *
  * Deliberately absent: ids, spoken location text, report or reporter counts,
  * problem, people affected, school or clinic, duration, score, notes,
@@ -258,70 +472,76 @@ export interface PublicPin {
 /** The exact keys of `PublicPin`. A test fails if a pin has any other key. */
 export const PUBLIC_PIN_KEYS = ["key", "latitude", "longitude", "type", "status", "unverified"] as const;
 
-function publicStatusOf(complaints: Complaint[]): PublicStatus {
-  if (complaints.some((c) => c.status === "open")) return "open";
-  if (complaints.some((c) => c.status === "passed_on")) return "passed_on";
-  if (complaints.some((c) => c.status === "fixed")) return "fixed";
+function publicStatusOf(statuses: readonly string[]): PublicStatus {
+  if (statuses.includes("open")) return "open";
+  if (statuses.includes("passed_on")) return "passed_on";
+  if (statuses.includes("fixed")) return "fixed";
   return "none";
 }
 
-function toPublicPin(index: number, wp: WaterPoint & { latitude: number; longitude: number }, complaints: Complaint[]): PublicPin {
+function toPublicPin(index: number, point: { latitude: number; longitude: number; type: WaterPointType; unverified: boolean }, statuses: readonly string[]): PublicPin {
   return {
     key: `pin-${index + 1}`,
-    latitude: wp.latitude,
-    longitude: wp.longitude,
-    type: wp.type,
-    status: publicStatusOf(complaints),
-    unverified: wp.verificationState === "unverified",
+    latitude: point.latitude,
+    longitude: point.longitude,
+    type: point.type,
+    status: publicStatusOf(statuses),
+    unverified: point.unverified,
   };
 }
 
 /**
- * The public read. Returns only `PublicPin`s for active water points with
- * coordinates in the public scope. Reads no session. A missing, empty or
- * malformed scope returns `empty` (fail closed), never everything.
- *
- * SWAP POINT: with the real API this must be its own endpoint that selects
- * only these columns, not a filter applied after reading full rows.
+ * The public read. Selects ONLY the columns a pin needs (never the spoken
+ * location text) for active water points with coordinates in the public scope,
+ * and only the status of their complaints. Reads no session. A missing, empty
+ * or malformed scope returns `empty` (fail closed), never everything.
  */
 export function listPublicWaterPoints(
-  scope: PublicScope | null,
+  scope_: PublicScope | null,
   options: { includeUnverified?: boolean } = {},
 ): Promise<DataResult<PublicPin[]>> {
-  return guarded<PublicPin[]>(() => {
-    if (
-      !scope ||
-      typeof scope.organizationId !== "string" ||
-      scope.organizationId.length === 0 ||
-      !Array.isArray(scope.regionIds) ||
-      scope.regionIds.length === 0
-    ) {
-      return { status: "empty" };
+  return guarded(async () => {
+    if (!scope_ || !isUuid(scope_.organizationId) || !Array.isArray(scope_.regionIds) || scope_.regionIds.length === 0 || !scope_.regionIds.every(isUuid)) {
+      return empty;
     }
-    const points = mockWaterPoints
-      .filter(
-        (wp): wp is WaterPoint & { latitude: number; longitude: number } =>
-          wp.organizationId === scope.organizationId &&
-          scope.regionIds.includes(wp.regionId) &&
-          wp.latitude !== null &&
-          wp.longitude !== null &&
-          wp.verificationState !== "merged" &&
-          wp.verificationState !== "archived" &&
-          // Unverified points come straight from a caller's words (a home could be reported as a water point).
-          // They are not published unless explicitly turned on.
-          (options.includeUnverified === true || wp.verificationState !== "unverified"),
-      )
+    const ctx: DataContext = { organizationId: scope_.organizationId, regionIds: [...scope_.regionIds] };
+    const db = getDb();
+    const filters = [
+      scope(waterPoints, ctx),
+      isNotNull(waterPoints.latitude),
+      isNotNull(waterPoints.longitude),
+      notInArray(waterPoints.verificationState, ["merged", "archived"]),
+    ];
+    // Unverified points come straight from a caller's words (a home could be reported as a water point).
+    // They are not published unless explicitly turned on.
+    if (options.includeUnverified !== true) filters.push(eq(waterPoints.verificationState, "verified"));
+
+    const points = await db
+      .select({
+        id: waterPoints.id,
+        latitude: waterPoints.latitude,
+        longitude: waterPoints.longitude,
+        type: waterPoints.waterPointType,
+        verificationState: waterPoints.verificationState,
+      })
+      .from(waterPoints)
+      .where(and(...filters))
+      .limit(DATA_LIST_HARD_LIMIT);
+    if (points.length === 0) return empty;
+
+    const statuses = await db
+      .select({ waterPointId: complaints.waterPointId, status: complaints.status })
+      .from(complaints)
+      .where(and(scope(complaints, ctx), inArray(complaints.waterPointId, points.map((p) => p.id))));
+    const statusesByPoint = new Map<string, string[]>();
+    for (const s of statuses) statusesByPoint.set(s.waterPointId, [...(statusesByPoint.get(s.waterPointId) ?? []), s.status]);
+
+    const placed = points
+      .map((p) => ({ id: p.id, latitude: toCoordinate(p.latitude), longitude: toCoordinate(p.longitude), type: p.type, unverified: p.verificationState === "unverified" }))
+      .filter((p): p is typeof p & { latitude: number; longitude: number } => p.latitude !== null && p.longitude !== null)
       // Ordered by public values only (position, then type). Ordering by id would leak the order records were created in.
       .sort((a, b) => a.latitude - b.latitude || a.longitude - b.longitude || a.type.localeCompare(b.type));
-    return result(
-      points.map((wp, i) =>
-        toPublicPin(
-          i,
-          wp,
-          mockComplaints.filter((c) => c.waterPointId === wp.id && c.organizationId === wp.organizationId),
-        ),
-      ),
-    );
+    return result(placed.map((p, i) => toPublicPin(i, p, statusesByPoint.get(p.id) ?? [])));
   });
 }
 

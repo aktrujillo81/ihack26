@@ -1,13 +1,16 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
 
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapView } from "@/components/map/MapView";
 import { PinList } from "@/components/map/PinList";
 import { buildPins, type MapPin } from "@/components/map/pins";
-import { MOCK_CONTEXT, listComplaints, listWaterPoints } from "@/lib/data/complaints";
-import { mockComplaints, mockWaterPoints } from "@/lib/domain/mock";
+import { listComplaints, listWaterPoints } from "@/lib/data/complaints";
+import { MOCK_CONTEXT } from "@/tests/fixtures/mock-data-layer";
+import { mockComplaints, mockWaterPoints } from "@/tests/fixtures/mock-data";
 import { t } from "@/lib/i18n/strings";
 
 const pins = buildPins(mockWaterPoints, mockComplaints, "authenticated");

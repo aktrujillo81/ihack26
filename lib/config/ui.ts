@@ -17,3 +17,12 @@ export const LAST_REPORT_STALE_AFTER_MINUTES = 15;
  * pagination exist (P1-3). A real page size is configuration and is unknown.
  */
 export const COMPLAINT_LIST_PAGE_SIZE = 50;
+
+/**
+ * PROPOSED, NOT APPROVED. The most rows any list read returns, until real
+ * pagination exists (P1-3). It keeps one huge list from hitting Postgres's
+ * bind-parameter limit or loading everything into memory. A list longer than
+ * this is cut off, silently, so the real value and a "showing the first N" notice
+ * need a decision before the data can grow that large.
+ */
+export const DATA_LIST_HARD_LIMIT = 1000;

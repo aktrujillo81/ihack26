@@ -9,7 +9,7 @@
  * needs-location water points, an ambiguous match, an unusable location, a
  * merged and an archived water point, and `unknown` values.
  */
-import type { Complaint, HistoryEvent, LastReportReceived, Note, Partner, Report, WaterPoint } from "./types";
+import type { Complaint, HistoryEvent, LastReportReceived, Note, Partner, Report, WaterPoint } from "@/lib/domain/types";
 
 const org = "org-demo";
 const region = "region-demo";
@@ -85,7 +85,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-1", ...scope, waterPointId: "wp-1", status: "open", problem: "no_water", peopleAffected: 150,
     servesSchoolOrClinic: true, duration: "week_or_more", reportCount: 3, priorityScore: 12,
     scoreReason: "No water (+3), serves a school or clinic (+3), 100 or more people (+2), a week or more (+2), 2 extra reports (+2)",
-    needsReview: false, needsReviewReason: null, passedOnPartnerId: null,
+    needsReview: false, needsReviewReason: null, passedOnPartnerId: null, passedOnNote: null, version: "v1",
     createdAt: "2026-11-11T07:00:00Z", updatedAt: "2026-11-13T07:00:00Z",
   },
   // Open, red: broken.
@@ -93,7 +93,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-2", ...scope, waterPointId: "wp-2", status: "open", problem: "broken", peopleAffected: 40,
     servesSchoolOrClinic: false, duration: "few_days", reportCount: 1, priorityScore: 5,
     scoreReason: "Broken (+3), 20 to 99 people (+1), a few days (+1)",
-    needsReview: false, needsReviewReason: null, passedOnPartnerId: null,
+    needsReview: false, needsReviewReason: null, passedOnPartnerId: null, passedOnNote: null, version: "v1",
     createdAt: "2026-11-12T12:00:00Z", updatedAt: "2026-11-12T12:00:00Z",
   },
   // Passed on, yellow: slow.
@@ -101,7 +101,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-3", ...scope, waterPointId: "wp-3", status: "passed_on", problem: "slow", peopleAffected: 25,
     servesSchoolOrClinic: true, duration: "few_days", reportCount: 2, priorityScore: 7,
     scoreReason: "Slow (+1), serves a school or clinic (+3), 20 to 99 people (+1), a few days (+1), 1 extra report (+1)",
-    needsReview: false, needsReviewReason: null, passedOnPartnerId: "partner-1",
+    needsReview: false, needsReviewReason: null, passedOnPartnerId: "partner-1", passedOnNote: null, version: "v1",
     createdAt: "2026-11-10T14:00:00Z", updatedAt: "2026-11-13T09:00:00Z",
   },
   // Fixed, green: dirty.
@@ -109,7 +109,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-4", ...scope, waterPointId: "wp-4", status: "fixed", problem: "dirty", peopleAffected: 60,
     servesSchoolOrClinic: false, duration: "today", reportCount: 1, priorityScore: 2,
     scoreReason: "Dirty (+1), 20 to 99 people (+1)",
-    needsReview: false, needsReviewReason: null, passedOnPartnerId: "partner-3",
+    needsReview: false, needsReviewReason: null, passedOnPartnerId: "partner-3", passedOnNote: null, version: "v1",
     createdAt: "2026-11-09T10:00:00Z", updatedAt: "2026-11-12T16:00:00Z",
   },
   // Open on an unverified, needs-location water point.
@@ -117,7 +117,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-5", ...scope, waterPointId: "wp-5", status: "open", problem: "broken", peopleAffected: "unknown",
     servesSchoolOrClinic: "unknown", duration: "unknown", reportCount: 1, priorityScore: 3,
     scoreReason: "Broken (+3). People affected, school or clinic and duration are unknown and add nothing",
-    needsReview: false, needsReviewReason: null, passedOnPartnerId: null,
+    needsReview: false, needsReviewReason: null, passedOnPartnerId: null, passedOnNote: null, version: "v1",
     createdAt: "2026-11-13T10:15:00Z", updatedAt: "2026-11-13T10:15:00Z",
   },
   // Unknown problem on an unverified point: yellow, never severe.
@@ -125,7 +125,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-6", ...scope, waterPointId: "wp-6", status: "open", problem: "unknown", peopleAffected: "unknown",
     servesSchoolOrClinic: "unknown", duration: "today", reportCount: 1, priorityScore: 1,
     scoreReason: "Problem unknown (+1). Everything else unknown and adds nothing",
-    needsReview: true, needsReviewReason: "incomplete_report", passedOnPartnerId: null,
+    needsReview: true, needsReviewReason: "incomplete_report", passedOnPartnerId: null, passedOnNote: null, version: "v1",
     createdAt: "2026-11-13T11:40:00Z", updatedAt: "2026-11-13T11:40:00Z",
   },
   // Open, "other" problem.
@@ -133,7 +133,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-7", ...scope, waterPointId: "wp-2", status: "open", problem: "other", peopleAffected: 10,
     servesSchoolOrClinic: false, duration: "today", reportCount: 1, priorityScore: 1,
     scoreReason: "Other problem (+1)",
-    needsReview: false, needsReviewReason: null, passedOnPartnerId: null,
+    needsReview: false, needsReviewReason: null, passedOnPartnerId: null, passedOnNote: null, version: "v1",
     createdAt: "2026-11-13T13:00:00Z", updatedAt: "2026-11-13T13:00:00Z",
   },
 ];
@@ -226,14 +226,14 @@ export const mockNotes: Note[] = [
 ];
 
 export const mockHistoryEvents: HistoryEvent[] = [
-  { id: "h-1", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "created", actor: "system", detail: "Complaint created from a phone report", at: "2026-11-11T07:00:00Z" },
-  { id: "h-2", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "report_added", actor: "system", detail: "Second report merged; report count 2", at: "2026-11-12T09:00:00Z" },
-  { id: "h-3", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "report_added", actor: "system", detail: "Third report merged; report count 3", at: "2026-11-13T07:00:00Z" },
-  { id: "h-4", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "created", actor: "system", detail: "Complaint created from a phone report", at: "2026-11-10T14:00:00Z" },
-  { id: "h-5", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "passed_on", actor: "Demo Responder", detail: "Status changed from open to passed_on; passed to Demo Pump Repair Co-op", at: "2026-11-13T09:00:00Z" },
-  { id: "h-6", ...scope, complaintId: "c-4", waterPointId: "wp-4", type: "created", actor: "system", detail: "Complaint created from a phone report", at: "2026-11-09T10:00:00Z" },
-  { id: "h-7", ...scope, complaintId: "c-4", waterPointId: "wp-4", type: "status_changed", actor: "Demo Responder", detail: "Status changed from open to fixed", at: "2026-11-12T16:00:00Z" },
-  { id: "h-8", ...scope, complaintId: null, waterPointId: "wp-9", type: "merged", actor: "Demo Responder", detail: "Merged into wp-1; reports and history moved", at: "2026-11-12T08:00:00Z" },
+  { id: "h-1", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "created", actor: null, before: null, after: { status: "open" }, note: null, at: "2026-11-11T07:00:00Z" },
+  { id: "h-2", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "report_added", actor: null, before: { reportCount: 1 }, after: { reportCount: 2 }, note: null, at: "2026-11-12T09:00:00Z" },
+  { id: "h-3", ...scope, complaintId: "c-1", waterPointId: "wp-1", type: "report_added", actor: null, before: { reportCount: 2 }, after: { reportCount: 3 }, note: null, at: "2026-11-13T07:00:00Z" },
+  { id: "h-4", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "created", actor: null, before: null, after: { status: "open" }, note: null, at: "2026-11-10T14:00:00Z" },
+  { id: "h-5", ...scope, complaintId: "c-3", waterPointId: "wp-3", type: "passed_on", actor: "Demo Responder", before: { status: "open" }, after: { status: "passed_on", passedOnNote: "Demo Pump Repair Co-op" }, note: null, at: "2026-11-13T09:00:00Z" },
+  { id: "h-6", ...scope, complaintId: "c-4", waterPointId: "wp-4", type: "created", actor: null, before: null, after: { status: "open" }, note: null, at: "2026-11-09T10:00:00Z" },
+  { id: "h-7", ...scope, complaintId: "c-4", waterPointId: "wp-4", type: "status_changed", actor: "Demo Responder", before: { status: "open" }, after: { status: "fixed" }, note: null, at: "2026-11-12T16:00:00Z" },
+  { id: "h-8", ...scope, complaintId: null, waterPointId: "wp-9", type: "merged", actor: "Demo Responder", before: null, after: { mergedIntoId: "wp-1" }, note: null, at: "2026-11-12T08:00:00Z" },
 ];
 
 export const mockLastReportReceived: LastReportReceived = { receivedAt: "2026-11-13T14:30:00Z" };

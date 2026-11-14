@@ -105,6 +105,55 @@ server and goes to `/sign-in`. Sign-in is a server action that calls
 `signInWithPassword()`; on success it redirects to `/complaints`; on any failure
 it returns a message and sets no cookie.
 
+### What the signed-in screens read (`lib/data/complaints.ts`)
+Every screen reads through this one file, with the `DataContext` built from the
+validated session (organization and region). **Every query filters by that
+organization and those regions on every table it touches**, including joined
+ones. A context that is missing, empty or has a non-uuid id returns nothing,
+never everything. Another organization's record and a missing record answer
+identically (`not_found_or_denied`). Lists select named columns and never
+`transcript`. The real queries are tested against Postgres in
+`tests/integration/data-reads.test.ts` (two organizations, three regions).
+
+All of it is **real** (complaints, water points, reports, notes, history events,
+partners, last report). What D1 does not store, and what the screens do about
+it (**PROVISIONAL, waits for S6 and D4/D5**, see `docs/reviews/D1.md`):
+
+| The screens need | D1 has | What is done |
+|---|---|---|
+| A complaint's problem, people affected, school or clinic, duration | Only on `reports`, not on `complaints` | Derived at read time: the most severe known values across the complaint's reports (spec section 7). No reports: all unknown. |
+| A review reason, and the candidate water points for an ambiguous match | No column | Reason is null, candidates empty. W5 needs a column or a table. |
+| A description of each history event | `event_type`, `before_data`, `after_data`, `note` | The screen builds the sentence from those (translatable). Unknown event types show "Change recorded". |
+| The name of a water point | `location_text` (spoken) and the type only | No name. The public map labels a point by its type. |
+| A version for the overwrite check (D6) | `updated_at` | `updated_at` as UTC text to the microsecond (`version`). |
+| Who it was passed to | `passed_on_partner_id` and free text `passed_on_note` | Shows the partner name, else the note. |
+| A report's channel | enum `phone`, `web`, `other` | The app's list now includes `other`. |
+| A report's people affected, school or clinic | nullable | Null reads as `unknown`. |
+
+Things to know (found by the red-line-8 review of these reads):
+
+- **Lists never carry caller-derived text.** `transcript` and `summary` are
+  returned by the detail read only. A list, including the needs-review list,
+  has neither.
+- **The schema allows cross-scope links.** Only the (organization, region) pair
+  is tied to `regions` by a composite key. A report, note, history event or
+  complaint can point at another organization's complaint, water point, partner
+  or author. So the data layer filters EVERY table it reads, and tests insert such
+  rows on purpose (`tests/integration/data-fixtures.ts`). D1 should add
+  composite foreign keys (organization with each id column) so the database
+  refuses them; until then the filters are the only defence.
+- A note's or history event's author name is shown only if that user belongs to the
+  same organization. Names of staff in OTHER regions of the same organization are
+  shown (staff names, not caller data).
+- `before_data` and `after_data` are passed to the screen as stored; the screen
+  reads only `status` and `passedOnNote`. Whatever D6 writes there must be safe to
+  show (no contact values, no note text).
+- A complaint's shown problem, duration and so on are derived from ALL its
+  reports, so after a reopen they can differ from the stored score and reason next
+  to them. The order "slow before dirty" is a choice; the spec is silent.
+- Lists are cut off at `DATA_LIST_HARD_LIMIT` (1000, PROPOSED) until pagination
+  exists. The public map's read selects only the columns a pin needs.
+
 ## Tables
 
 The initial schema is in `lib/db/schema.ts`; migrations are in `db/migrations/`.

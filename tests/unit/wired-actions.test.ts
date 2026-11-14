@@ -12,14 +12,15 @@ const mocks = vi.hoisted(() => ({ readSessionFromHeaders: vi.fn() }));
 vi.mock("@/lib/auth/adapter", () => ({ readSessionFromHeaders: mocks.readSessionFromHeaders, signInWithPassword: vi.fn() }));
 vi.mock("next/headers", () => ({ cookies: vi.fn(), headers: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
 
 import { ComplaintDetail } from "@/components/complaints/ComplaintDetail";
 import { requireAction, toDataContext } from "@/lib/auth/guards";
 import { getCurrentSession, parseSession } from "@/lib/auth/session";
 import { addNoteAction, changeStatusAction } from "@/lib/actions/form-actions";
 import { INITIAL_ACTION_STATE, actionMessageKey } from "@/lib/actions/state";
-import { MOCK_CONTEXT } from "@/lib/data/complaints";
-import { mockComplaints, mockHistoryEvents, mockNotes } from "@/lib/domain/mock";
+import { MOCK_CONTEXT } from "@/tests/fixtures/mock-data-layer";
+import { mockComplaints, mockHistoryEvents, mockNotes } from "@/tests/fixtures/mock-data";
 import { ACTIONS } from "@/lib/permissions/matrix";
 import { t } from "@/lib/i18n/strings";
 

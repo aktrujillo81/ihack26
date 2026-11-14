@@ -1,14 +1,17 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
 
 import { ComplaintDetail } from "@/components/complaints/ComplaintDetail";
 import { ComplaintDetailView } from "@/components/complaints/ComplaintDetailView";
 import { ComplaintList } from "@/components/complaints/ComplaintList";
 import { ComplaintListView } from "@/components/complaints/ComplaintListView";
 import { buildSummary } from "@/components/complaints/summary";
-import { MOCK_CONTEXT, getComplaint, listComplaints, type ComplaintDetail as Detail, type ComplaintListItem } from "@/lib/data/complaints";
-import { mockReports } from "@/lib/domain/mock";
+import { getComplaint, listComplaints, type ComplaintDetail as Detail, type ComplaintListItem } from "@/lib/data/complaints";
+import { MOCK_CONTEXT } from "@/tests/fixtures/mock-data-layer";
+import { mockReports } from "@/tests/fixtures/mock-data";
 import { ROLES } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 

@@ -1,6 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
 
 import { PUBLIC as PUBLIC_LEGEND } from "@/components/map/MapLegend";
 import { PinMarker, pinLabelLines } from "@/components/map/PinMarker";
@@ -8,7 +10,7 @@ import { PublicMapView } from "@/components/map/PublicMapView";
 import { toPublicMapPins } from "@/components/map/publicPins";
 import { publicMapScope } from "@/lib/config/public-map";
 import { PUBLIC_PIN_KEYS, listPublicWaterPoints, type PublicPin, type PublicScope } from "@/lib/data/complaints";
-import { mockComplaints, mockNotes, mockReports, mockWaterPoints } from "@/lib/domain/mock";
+import { mockComplaints, mockNotes, mockReports, mockWaterPoints } from "@/tests/fixtures/mock-data";
 import { WATER_POINT_TYPES } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 
@@ -26,7 +28,7 @@ function everythingNonPublic(): string[] {
   for (const wp of mockWaterPoints) values.push(wp.locationText, wp.id, wp.organizationId, wp.regionId);
   for (const c of mockComplaints) values.push(c.id, c.scoreReason, c.passedOnPartnerId ?? "");
   for (const r of mockReports) values.push(r.id, r.summary, r.transcript ?? "", r.locationText, r.languageSpoken);
-  for (const n of mockNotes) values.push(n.text, n.author);
+  for (const n of mockNotes) values.push(n.text, n.author ?? "");
   return values.filter((v) => v.length >= 4);
 }
 
