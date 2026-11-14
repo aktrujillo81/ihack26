@@ -221,3 +221,14 @@
 .ww-tag--dashed {
   border-style: dashed;
 }
+
+/* Loading and empty messages. */
+.ww-state {
+  margin: 0;
+  padding: var(--ww-space-4);
+  border: 1px solid var(--ww-divider);
+  border-radius: var(--ww-radius-tile);
+  background: var(--ww-panel);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-body);
+}

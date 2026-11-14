@@ -18,7 +18,7 @@ import path from "node:path";
 const ROOTS = ["app", "components", "lib"];
 const EXTENSIONS = new Set([".css", ".ts", ".tsx", ".js", ".jsx", ".mjs"]);
 const ALLOWED = new Set(["app/tokens.css"]);
-const LEGACY = new Set(["app/globals.css", "components/map/map.css", "components/map/PinMarker.tsx"]);
+const LEGACY = new Set(["app/globals.css"]);
 
 // A '#' not part of a word, then 3, 4, 6 or 8 hex digits, then not more word characters
 // (so "#main", "#content" and "&#39;" are not hex colors).
