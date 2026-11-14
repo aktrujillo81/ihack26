@@ -9,7 +9,15 @@ import {
   isValidScope,
   type Action,
 } from "@/lib/permissions/matrix";
-import { accessForPath, isPublicPath, navItemsFor, requiredActionForPath, type RouteRule } from "@/lib/permissions/routes";
+import {
+  PUBLIC_PATHS,
+  ROUTE_RULES,
+  accessForPath,
+  isPublicPath,
+  navItemsFor,
+  requiredActionForPath,
+  type RouteRule,
+} from "@/lib/permissions/routes";
 
 /** The spec section 7 table, written out by hand. The code must match it exactly. */
 const EXPECTED: Record<(typeof ROLES)[number], readonly Action[]> = {
@@ -120,7 +128,8 @@ describe("routes and navigation", () => {
     for (const role of ROLES) {
       expect(accessForPath("/complaints", role)).toBe("allowed");
       expect(accessForPath("/complaints/c-1", role)).toBe("allowed");
-      expect(accessForPath("/map", role)).toBe("allowed");
+      expect(accessForPath("/dashboard/map", role)).toBe("allowed");
+      expect(accessForPath("/dashboard/map/", role)).toBe("allowed");
     }
     for (const role of [undefined, null, "", "admin", 1]) expect(accessForPath("/complaints", role)).toBe("denied");
   });
@@ -185,5 +194,80 @@ describe("encoded and odd paths are refused", () => {
   it("plain paths still work", () => {
     expect(requiredActionForPath("/complaints/abc-123_x.y~z")).toBe("view");
     expect(accessForPath("/sign-in?reason=expired", undefined)).toBe("public");
+  });
+});
+
+describe("/map is the public map and the signed-in map is /dashboard/map", () => {
+  const ROLES_AND_NOBODY: unknown[] = [...ROLES, undefined, null, "", "admin", 1];
+
+  it("/map is public for everyone, including anonymous users, and unknown roles", () => {
+    expect(isPublicPath("/map")).toBe(true);
+    for (const role of ROLES_AND_NOBODY) expect(accessForPath("/map", role), String(role)).toBe("public");
+  });
+
+  it("trailing slash, query and hash do not change that", () => {
+    for (const path of ["/map/", "/map?x=1", "/map#top", "/map/?x=1#top"]) {
+      expect(accessForPath(path, undefined), path).toBe("public");
+    }
+  });
+
+  it("nothing under /map is public: only the exact path is", () => {
+    for (const path of ["/map/extra", "/map/c-1", "/map/../admin", "/map/./x", "//map", "/mapx", "/Map", "/map;x", "/map%2f", "/map/%2e%2e/admin"]) {
+      expect(isPublicPath(path), path).toBe(false);
+      expect(accessForPath(path, undefined), path).toBe("denied");
+      expect(accessForPath(path, "org_admin"), path).toBe("denied");
+    }
+  });
+
+  it("the signed-in map needs a signed-in role: anonymous and unknown roles are refused", () => {
+    for (const role of [undefined, null, "", "admin", "ORG_ADMIN", 1, {}]) {
+      expect(accessForPath("/dashboard/map", role), String(role)).toBe("denied");
+      expect(accessForPath("/dashboard/map/x", role), String(role)).toBe("denied");
+    }
+    for (const role of ROLES) expect(accessForPath("/dashboard/map", role), role).toBe("allowed");
+  });
+
+  it("the old signed-in path no longer carries the signed-in rule", () => {
+    expect(requiredActionForPath("/map")).toBeNull();
+    expect(requiredActionForPath("/dashboard/map")).toBe("view");
+    expect(requiredActionForPath("/dashboard")).toBeNull();
+  });
+
+  it("anonymous users are refused on every non-public path, listed or not", () => {
+    const probes = [
+      ...ROUTE_RULES.map((r) => r.path),
+      ...ROUTE_RULES.map((r) => `${r.path}/anything`),
+      "/dashboard",
+      "/dashboard/",
+      "/dashboard/complaints",
+      "/admin",
+      "/users",
+      "/api/auth/sign-in",
+      "/api/vapi/capture",
+      "/api/secret",
+      "/_next/static/x.js",
+      "/.env",
+      "/complaints/c-1",
+    ];
+    for (const path of probes) {
+      if (isPublicPath(path)) continue;
+      expect(accessForPath(path, undefined), path).toBe("denied");
+      expect(accessForPath(path, null), path).toBe("denied");
+      expect(accessForPath(path, ""), path).toBe("denied");
+    }
+  });
+
+  it("no path is both public and ruled, and the public list is exactly what we expect", () => {
+    for (const rule of ROUTE_RULES) expect(PUBLIC_PATHS, rule.path).not.toContain(rule.path);
+    expect([...PUBLIC_PATHS].sort()).toEqual(["/", "/api/health", "/map", "/sign-in"]);
+  });
+
+  it("navigation points the signed-in Map link at /dashboard/map and never at the public /map", () => {
+    for (const role of ROLES) {
+      const hrefs = navItemsFor(role).map((i) => i.href);
+      expect(hrefs, role).toContain("/dashboard/map");
+      expect(hrefs, role).not.toContain("/map");
+    }
+    expect(navItemsFor(undefined)).toEqual([]);
   });
 });

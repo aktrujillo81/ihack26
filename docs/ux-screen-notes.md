@@ -60,7 +60,7 @@
 | Denied (no access to any region) | "Your account is not set up for any region yet. Ask your organization's admin." (`signIn.noRegion`) |
 | Session expired | "Your session ended. Please sign in again." (`signIn.expired`). Unsaved work is not discarded silently. |
 | Not configured (PROPOSED, temporary) | "Sign-in is not set up yet." (`signIn.notConfigured`). Shown until the authentication service is connected. Signing in never succeeds in this state. |
-| Navigation (PROPOSED) | Links shown by role: "Complaints" (`nav.complaints`), "Map" (`nav.map`), "Needs review" (`common.needsReview`), "Needs location" (`common.needsLocation`), and "Sign out" (`nav.signOut`). Hiding a link is a convenience only; the server checks every route. Route paths are proposals. |
+| Navigation (PROPOSED) | Links shown by role: "Complaints" (`nav.complaints`), "Map" (`nav.map`), "Needs review" (`common.needsReview`), "Needs location" (`common.needsLocation`), and "Sign out" (`nav.signOut`). Hiding a link is a convenience only; the server checks every route. Route paths are proposals. The "Map" link opens the signed-in map at `/dashboard/map`. `/map` is the separate public, status-only map and is not in the navigation. |
 | Needs review | Not applicable. |
 
 ### SCREEN: Complaint list (the dashboard home)

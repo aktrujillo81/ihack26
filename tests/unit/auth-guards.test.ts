@@ -16,7 +16,7 @@ import { ROLES, type Role } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 
 const NOW = Date.parse("2026-11-14T12:00:00Z");
-const FUTURE = "2026-11-15T12:00:00Z";
+const FUTURE = "2026-11-14T20:00:00Z"; // 8 hours after NOW, inside the 12-hour cap
 const PAST = "2026-11-13T12:00:00Z";
 
 const session = (role: Role, extra: Record<string, unknown> = {}) => ({
@@ -190,7 +190,7 @@ describe("expiry must be strict ISO and not too far away", () => {
   });
 
   it("accepts ISO with Z or an offset, and with fractions", () => {
-    for (const ok of ["2026-11-15T12:00:00Z", "2026-11-15T12:00:00.250Z", "2026-11-15T14:00:00+02:00"]) {
+    for (const ok of ["2026-11-14T20:00:00Z", "2026-11-14T20:00:00.250Z", "2026-11-14T22:00:00+02:00"]) {
       expect(parseSession(session("viewer", { expiresAt: ok }), NOW), ok).not.toBeNull();
     }
   });
@@ -203,11 +203,14 @@ describe("expiry must be strict ISO and not too far away", () => {
 });
 
 describe("default maximum session lifetime", () => {
-  it("is 7 days: 6 days is accepted, 8 days is refused", async () => {
+  it("is 12 hours: 11 hours is accepted, exactly 12 hours is accepted, 12 hours and a second is refused", async () => {
     const { MAX_SESSION_LIFETIME_MS } = await import("@/lib/auth/session");
-    expect(MAX_SESSION_LIFETIME_MS).toBe(7 * 24 * 60 * 60 * 1000);
-    const days = (n: number) => new Date(NOW + n * 24 * 60 * 60 * 1000).toISOString();
-    expect(parseSession(session("viewer", { expiresAt: days(6) }), NOW)).not.toBeNull();
-    expect(parseSession(session("viewer", { expiresAt: days(8) }), NOW)).toBeNull();
+    expect(MAX_SESSION_LIFETIME_MS).toBe(12 * 60 * 60 * 1000);
+    const hours = (n: number) => new Date(NOW + n * 60 * 60 * 1000).toISOString();
+    expect(parseSession(session("viewer", { expiresAt: hours(11) }), NOW)).not.toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: hours(12) }), NOW)).not.toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: new Date(NOW + 12 * 60 * 60 * 1000 + 1000).toISOString() }), NOW)).toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: hours(24) }), NOW)).toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: hours(7 * 24) }), NOW)).toBeNull();
   });
 });

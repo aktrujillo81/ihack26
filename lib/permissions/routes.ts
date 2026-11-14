@@ -30,12 +30,17 @@ export interface RouteRule {
   navLabelKey?: PlainKey;
 }
 
-/** Reachable without signing in. Exact matches only. */
-export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health"];
+/**
+ * Reachable without signing in. Exact matches only, so "/map/anything" is NOT
+ * public. "/map" is the PUBLIC status-only map (no session, no detail); the
+ * signed-in map lives at "/dashboard/map". A path must never be in both this
+ * list and ROUTE_RULES (a test checks that).
+ */
+export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health", "/map"];
 
 export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/complaints", action: "view", navLabelKey: "nav.complaints" },
-  { path: "/map", action: "view", navLabelKey: "nav.map" },
+  { path: "/dashboard/map", action: "view", navLabelKey: "nav.map" },
   { path: "/needs-review", action: "view", navLabelKey: "common.needsReview" },
   { path: "/needs-location", action: "view", navLabelKey: "common.needsLocation" },
 ];
