@@ -4,7 +4,7 @@ import { can } from "@/lib/permissions/matrix";
 
 import "./complaints.css";
 import { CopySummaryButton } from "./CopySummaryButton";
-import { durationText, peopleText, problemText, schoolClinicText, timeText, typeText } from "./format";
+import { actorText, durationText, historyText, peopleText, problemText, schoolClinicText, timeText, typeText } from "./format";
 import { NoteForm } from "./NoteForm";
 import { StateMessage } from "./StateMessage";
 import { StatusControls } from "./StatusControls";
@@ -53,7 +53,7 @@ export function ComplaintDetailView({
           <dt>{t("list.col.status")}</dt>
           <dd>
             <span className="ww-badge">{t(`status.${complaint.status}`)}</span>
-            {passedOnTo && ` ${passedOnTo.name}`}
+            {(passedOnTo?.name ?? complaint.passedOnNote) && ` ${passedOnTo?.name ?? complaint.passedOnNote}`}
           </dd>
           <dt>{t("list.col.priority")}</dt>
           <dd>{t("list.priorityReason", { score: complaint.priorityScore, reason: complaint.scoreReason })}</dd>
@@ -98,7 +98,7 @@ export function ComplaintDetailView({
           <ul className="ww-list-plain">
             {notes.map((note) => (
               <li key={note.id}>
-                <strong>{note.author}</strong> {timeText(note.createdAt)}
+                <strong>{note.author ?? t("common.unknown")}</strong> {timeText(note.createdAt)}
                 <div>{note.text}</div>
               </li>
             ))}
@@ -112,9 +112,9 @@ export function ComplaintDetailView({
         <ul className="ww-list-plain">
           {history.map((event) => (
             <li key={event.id}>
-              {timeText(event.at)} <strong>{event.actor}</strong>
+              {timeText(event.at)} <strong>{actorText(event.actor)}</strong>
               {": "}
-              {event.detail}
+              {historyText(event)}
             </li>
           ))}
         </ul>

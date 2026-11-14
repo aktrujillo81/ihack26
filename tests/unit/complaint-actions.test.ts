@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
 
 import { addComplaintNote, changeComplaintStatus } from "@/lib/actions/complaints";
 import { INITIAL_ACTION_STATE, actionMessageKey, type ActionState } from "@/lib/actions/state";
 import { ALLOWED_TRANSITIONS, nextStatuses } from "@/lib/actions/transitions";
-import { mockComplaints, mockHistoryEvents, mockNotes } from "@/lib/domain/mock";
+import { mockComplaints, mockHistoryEvents, mockNotes } from "@/tests/fixtures/mock-data";
 import { COMPLAINT_STATUSES, type Role } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 

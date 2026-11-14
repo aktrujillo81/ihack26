@@ -1,9 +1,9 @@
 /**
- * PROVISIONAL. Replace with the types generated from or defined by
- * docs/contracts.md once it exists (task S6).
- *
- * Names and values come from docs/spec.md sections 6, 7 and 8, not from a real
- * Vapi payload or database. Do not add fields the spec does not mention.
+ * The shapes the web app works with. They follow docs/spec.md sections 6 to 8
+ * and D1's tables (lib/db/schema.ts), with the differences listed in
+ * lib/data/complaints.ts. Still PROVISIONAL: the `reports` table and the
+ * report-to-complaint link wait for S6 (docs/reviews/D1.md), and
+ * docs/contracts.md does not name these types yet.
  * Nothing here holds caller details (no names, no phone numbers).
  */
 
@@ -33,8 +33,8 @@ export type VerificationState = (typeof VERIFICATION_STATES)[number];
 export const LOCATION_SOURCES = ["landmark_only", "map_pin", "gps", "geocoded"] as const;
 export type LocationSource = (typeof LOCATION_SOURCES)[number];
 
-/** Spec section 5: `phone` now, `web` soon. */
-export const CHANNELS = ["phone", "web"] as const;
+/** Spec section 5: `phone` now, `web` soon. D1's `report_channel` enum also has `other`. */
+export const CHANNELS = ["phone", "web", "other"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 /** Spec section 2. */
@@ -121,6 +121,14 @@ export interface Complaint extends Scoped {
   needsReviewReason: NeedsReviewReason | null;
   /** Recorded step only; nothing is sent (spec section 11). */
   passedOnPartnerId: string | null;
+  /** Free text of who it was passed to (D1: `passed_on_note`), until the partner directory is used. */
+  passedOnNote: string | null;
+  /**
+   * An opaque token for the row's current version (D1: `updated_at`, kept to the
+   * microsecond). A change must send it back; if the row changed since, the
+   * change is refused instead of overwriting (task D6).
+   */
+  version: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -144,19 +152,22 @@ export interface HistoryEvent extends Scoped {
   id: string;
   complaintId: string | null;
   waterPointId: string | null;
-  type: HistoryEventType;
-  /** Staff label (a signed-in user), or "system". Never a caller. */
-  actor: string;
-  /** Short plain description, e.g. "Status changed from open to passed_on". */
-  detail: string;
+  /** D1: `event_type` is free text. Known values are in HISTORY_EVENT_TYPES; the screen shows anything else generically. */
+  type: string;
+  /** The staff member's name (a signed-in user), or null for the system. Never a caller. */
+  actor: string | null;
+  /** D1: `before_data` and `after_data`. The screen reads only the fields it knows. */
+  before: unknown;
+  after: unknown;
+  note: string | null;
   at: string;
 }
 
 export interface Note extends Scoped {
   id: string;
   complaintId: string;
-  /** Staff label. Never a caller. */
-  author: string;
+  /** The staff member's name. Never a caller. Null if the author is not in this organization (nothing is shown). */
+  author: string | null;
   text: string;
   createdAt: string;
 }

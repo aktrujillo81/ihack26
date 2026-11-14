@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth/adapter", () => ({ readSessionFromHeaders: mocks.readSessionFromHeaders, signInWithPassword: vi.fn() }));
 vi.mock("@/lib/auth/sign-out", () => ({ signOutAction: vi.fn() }));
+vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ has: (name: string) => mocks.cookieNames.has(name) }),
@@ -37,7 +38,8 @@ import SignInPage from "@/app/(auth)/sign-in/page";
 import { AppNav } from "@/components/nav/AppNav";
 import { requirePageSession } from "@/lib/auth/page-guard";
 import { ComplaintListView } from "@/components/complaints/ComplaintListView";
-import { MOCK_CONTEXT, listComplaints } from "@/lib/data/complaints";
+import { listComplaints } from "@/lib/data/complaints";
+import { MOCK_CONTEXT } from "@/tests/fixtures/mock-data-layer";
 import { ROLES } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 

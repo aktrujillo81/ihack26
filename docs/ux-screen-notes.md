@@ -184,6 +184,9 @@
 | `detail.addNote` / `detail.noteLabel` | Add note / Note |
 | `detail.notAvailable` | This action is not available yet. (Shown until the complaint API is connected; nothing is saved.) |
 | `detail.invalidInput` | Please check what you entered. |
+| `history.system` / `created` / `reportAdded` / `reopened` / `noteAdded` / `other` | System / Complaint created / Report added / Reopened / Note added / Change recorded |
+| `history.statusChanged` | Status changed from {from} to {to} |
+| `history.passedOn` | Passed on to {who} |
 
 Status changes allowed (spec DB-3 and section 10): Open to Passed on or Fixed, Passed on to Fixed, Fixed back to Open. Passed on back to Open is not listed in the spec and is refused (unknown). Passing on needs a note of who it is passed to (free text until the partner directory exists, P1-2).
 

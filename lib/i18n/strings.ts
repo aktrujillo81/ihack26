@@ -121,6 +121,14 @@ const en = {
   "detail.noteLabel": "Note",
   "detail.notAvailable": "This action is not available yet.",
   "detail.invalidInput": "Please check what you entered.",
+  "history.system": "System",
+  "history.created": "Complaint created",
+  "history.reportAdded": "Report added",
+  "history.statusChanged": "Status changed from {from} to {to}",
+  "history.passedOn": "Passed on to {who}",
+  "history.reopened": "Reopened",
+  "history.noteAdded": "Note added",
+  "history.other": "Change recorded",
   "detail.saved": "Saved.",
 
   // Map
