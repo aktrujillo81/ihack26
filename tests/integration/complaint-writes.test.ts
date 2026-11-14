@@ -304,7 +304,7 @@ describe("every way across an organization or region is 'not found', identically
       expect(await addNote({ ctx, actorUserId: w.staffA.id, complaintId: id, text: "x" })).toEqual({ status: "not_found" });
     }
     // An author who is staff in the organization but in a different region than the context.
-    expect(await applyStatusChange({ ctx: { organizationId: w.A.org.id, regionIds: [w.A.region.id, w.regionA2.id] }, actorUserId: (await staffInRegion2()).id, complaintId: id, expectedVersion: version, to: "fixed" })).toEqual({ status: "denied" });
+    expect(await applyStatusChange({ ctx: { organizationId: w.A.org.id, regionIds: [w.A.region.id] }, actorUserId: (await staffInRegion2()).id, complaintId: id, expectedVersion: version, to: "fixed" })).toEqual({ status: "denied" });
     expect(await snapshot(id)).toBe(snap);
   });
 
