@@ -97,8 +97,8 @@ Each task is sized to one branch and one pull request. The Orchestrator assigns 
 | ID | Priority | Task | Needs |
 |---|---|---|---|
 | S1 | P0 | Merge the `.gitignore` and add `.env.example` (names only). Humans turn on branch protection for `main` | none |
-| S2 | P0 | Humans create the Supabase and Vercel projects and get the Vapi key. Keys are shared privately and set in `.env.local` and Vercel | S1 |
-| S3 | P0 | App scaffold: Next.js, Supabase client, base layout, and a health route deployed to a public URL | S1, S2 |
+| S2 | P0 | Humans prepare the host server (Node, PostgreSQL, Cloudflare Tunnel with a public hostname for the app), create the database and its user, and get the Vapi key. Keys are shared privately and set in `.env.local` and the server `.env` | S1 |
+| S3 | P0 | App scaffold: Next.js, database client and migration tool, base layout, and a health route (checks the database) running on the host server and reachable at the public URL | S1, S2 |
 | S4 | P0 | Update the Vapi assistant: save the prompt as `docs/vapi-prompt.md`, apply section 8, set the maximum call length and silence timeout, and check whether recording is on | S2 |
 | S5 | P0 | One paid test call (with a human's OK). Remove personal data and save the payload in `docs/samples/` | S3, S4 |
 | S6 | P0 | Write `docs/contracts.md` from the real payload: data shapes, tables, endpoints, rules, and permissions | S5 |
@@ -108,13 +108,13 @@ Each task is sized to one branch and one pull request. The Orchestrator assigns 
 **Data and API**
 | ID | Priority | Task | Needs |
 |---|---|---|---|
-| D1 | P0 | Database schema, migrations, and access rules: organizations, regions, users and roles, water points, reports, complaints, history events, partners, notes, and configuration | S6 |
+| D1 | P0 | Database schema and migrations in `db/`, plus server-side access checks: organizations, regions, users and roles, water points, reports, complaints, history events, partners, notes, and configuration | S6 |
 | D2 | P0 | Seed script: one organization and region, demo accounts for each role, starter water points, and partners | D1 |
 | D3 | P0 | Vapi endpoint: verify the request, validate, remove personal data, save, and record the last report received | D1, S6 |
 | D4 | P0 | Water point matching, new unverified water points, and `needs_review` | D3 |
 | D5 | P0 | Scoring, color, duplicate merging, and the score reason, with unit tests | S6 (scoring), D4 (merging) |
 | D6 | P0 | Complaint API: list, detail, status changes, notes, history events, and permission checks | D1 |
-| D7 | P0 | Live update setup for the map and dashboard | D1 |
+| D7 | P0 | Live updates for the map and dashboard, served by our Next.js server (default: polling an API route every few seconds) | D1 |
 
 **Web app**
 | ID | Priority | Task | Needs |
@@ -133,7 +133,7 @@ Each task is sized to one branch and one pull request. The Orchestrator assigns 
 | Q3 | P0 | Demo data reset script, and separate dev and demo data | D2 |
 | Q4 | P0 | Run the full demo path three times in a row (budgeted calls, with a human's OK) | D3 to D6, W2 to W5 |
 | Q5 | P0 | Lens review (Builder, Adopter, Responder) of the build. Fix problems or record them as unknowns | Q4 |
-| Q6 | P0 | Tag a known-good commit, confirm the deployed URL works from outside the venue network, check environment variables on Vercel, and check the Vapi balance | Q4 |
+| Q6 | P0 | Tag a known-good commit, confirm the deployed URL works from outside the venue network, check environment variables on the host server, confirm the app restarts on its own after a reboot, take a database backup, and check the Vapi balance | Q4 |
 | Q7 | P0 | Backup video of the demo path | Q4 |
 | Q8 | P0 | Two full rehearsals, one with a failure. Everyone can explain the whole flow in 60 seconds | Q4 |
 
@@ -295,14 +295,14 @@ These weights are configuration, not constants in the code.
 
 ## 9. Non-functional requirements
 - **Privacy:** No personal data stored or shown. Transcripts are visible only to signed-in users with access to that region, never on a public map.
-- **Security:** No secrets in code, browser, or logs. Passwords or sign-in links are handled by a proven auth service, not custom code. Permissions are checked server-side. Data from one organization is never visible to another.
+- **Security:** No secrets in code, browser, or logs. Passwords or sign-in links are handled by a proven auth library (default: Better Auth), not custom code. Permissions are checked server-side. Data from one organization is never visible to another.
 - **Reliability:** Failures are visible. An unparseable report becomes a "needs review" item, never a silent loss.
 - **Speed:** Target about 10 seconds from call end to the complaint appearing. Not yet verified.
 - **Accessibility:** Color is never the only signal. Text is readable from across a room.
 - **Maintainability:** Any change to a route, table, or rule updates `docs/contracts.md` in the same PR. Scoring, matching, merging, and permissions have tests.
 - **Auditability:** Status changes, edits, merges, and role changes are logged with who and when.
 - **Cost:** The Vapi budget is $5 in total, at about $0.09 per minute (roughly 55 minutes of calls). Cap call length, log every paid call, and get a human's OK before each one. See `docs/budget.md`.
-- **Keys:** The humans provide the Vapi API key and webhook credential, and the Supabase URL, anon key, and service role key. They live only in `.env.local` and Vercel environment variables. The service role key is used only on the server. They are shared privately, because the repo is public.
+- **Keys:** The humans provide the Vapi API key and webhook credential, and set the database URL and auth secret. They live only in `.env.local` and the `.env` file on the host server. The database URL and auth secret are used only on the server, and Postgres is never reachable from the internet. They are shared privately, because the repo is public.
 
 ---
 
@@ -347,7 +347,7 @@ The pitch must say this plainly and describe the product as a one-district pilot
 ## 12. Assumptions and open questions
 
 ### Assumptions (verify; change if wrong)
-- The stack is Next.js and Supabase (including its sign-in service), deployed on Vercel. **Confirm.**
+- Decided: the stack is a self-hosted Next.js app and a self-hosted PostgreSQL database on one team server. Only the app is public, through a Cloudflare Tunnel. See `docs/decisions.md`.
 - The free Vapi number is US-only and inbound-only, fine for the demo.
 - English is the demo language, with at most one other tested language.
 - Duplicate merging applies to the same water point while a complaint is open or passed on.
@@ -356,7 +356,9 @@ The pitch must say this plainly and describe the product as a one-district pilot
 
 ### Decisions the humans must make before starting
 1. Which tool runs the agents (Claude Code, Codex, or another) and how each agent file is loaded.
-2. Sign-in method. Default if undecided: email and password through Supabase Auth.
+2. Sign-in method. Default if undecided: email and password through Better Auth, stored in our Postgres.
+8. Database tool for the schema and migrations. Default if undecided: Drizzle ORM with Drizzle Kit migrations.
+9. Which machine hosts the app and database, who can access it, and how backups are taken. Default if undecided: a nightly `pg_dump`, plus one before the demo.
 3. Map provider. Default if undecided: Leaflet with OpenStreetMap. Check the tile usage terms.
 4. Who approves merges, and who covers when someone is away.
 5. Decided: the Vapi budget is $5 (see section 9). Still open: the usage budget for the AI tools, and what to cut first if credits run out.

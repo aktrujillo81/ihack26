@@ -13,7 +13,7 @@
 - The list of unknowns and open questions, and getting humans to answer them.
 - `docs/decisions.md` and `docs/ai-mistakes.md`.
 - The gates: no P1 work before P0 works end to end, the feature freeze, and the Definition of Done in the spec.
-- Release and demo readiness: the deployed URL works from outside the venue network, environment variables are set, Vapi points at the current URL, call limits are set, credits are checked, demo accounts and starter data exist, the backup video is saved on two devices, and the space is cleaned before 5 PM Saturday.
+- Release and demo readiness: the public URL works from outside the venue network, the host server and tunnel are up, environment variables are set, Vapi points at the current URL, call limits are set, credits are checked, demo accounts and starter data exist, the backup video is saved on two devices, and the space is cleaned before 5 PM Saturday.
 
 ## How you work with the humans and the other agents
 - The humans talk only to you. You start the other five agents, relay messages between them, and report back.

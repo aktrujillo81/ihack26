@@ -11,10 +11,9 @@ docs/samples/raw/
 # Dependencies
 node_modules/
 
-# Next.js and Vercel
+# Next.js
 .next/
 out/
-.vercel/
 
 # Build and test output
 build/
@@ -25,9 +24,10 @@ coverage/
 *.log
 npm-debug.log*
 
-# Supabase local files
-supabase/.branches/
-supabase/.temp/
+# Local database dumps (may contain data)
+*.dump
+*.sql.gz
+backups/
 
 # OS and editor files
 .DS_Store
