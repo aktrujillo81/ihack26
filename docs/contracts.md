@@ -529,6 +529,13 @@ active one reports `fixed`.
 **`candidates`** is the one name for possible matches everywhere (6.6, 6.7), with
 the shape `[{ "id", "type", "locationText" }]`, in-scope only.
 
+**Built instead (D7, smallest version):** the signed-in complaint list calls
+`router.refresh()` every `LIST_REFRESH_SECONDS` (15, `lib/config/ui.ts`), paused
+while the tab is hidden, with one extra refresh when the tab becomes visible. It
+adds no endpoint and no data shape; the server components re-read the list under
+the session's scope. `GET /api/live` below is still **not built**, and nothing
+reads `polling.intervalSeconds` yet.
+
 `GET /api/live` (D7, polling): `{ "serverTime", "lastReportReceivedAt" (or null if
 none ever), "staleAfterMinutes", "pollIntervalSeconds", "version" }`. `version`
 is the latest `updatedAt` among the user's scope records (complaints, water
