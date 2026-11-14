@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import { signOutAction } from "@/lib/auth/sign-out";
 import { t } from "@/lib/i18n/strings";
 import { navItemsFor } from "@/lib/permissions/routes";
 
 import "./nav.css";
+import { SignOutButton } from "./SignOutButton";
 
 /**
  * The page header: app name, the links this role may use, and sign-out. The
@@ -26,11 +26,7 @@ export function AppNav({ role }: { role: unknown }) {
           ))}
         </ul>
       </nav>
-      <form action={signOutAction}>
-        <button type="submit" className="ww-signout">
-          {t("nav.signOut")}
-        </button>
-      </form>
+      <SignOutButton />
     </header>
   );
 }

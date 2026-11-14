@@ -39,6 +39,13 @@
   outline: 4px solid currentColor;
   outline-offset: 2px;
 }
+.ww-signout-error {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border: 3px solid currentColor;
+  font-size: 20px;
+  font-weight: 700;
+}
 .ww-page {
   padding: 16px;
 }

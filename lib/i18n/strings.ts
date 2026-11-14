@@ -79,6 +79,7 @@ const en = {
   "nav.complaints": "Complaints",
   "nav.map": "Map",
   "nav.signOut": "Sign out",
+  "nav.signOutFailed": "Sign-out did not work. Please try again.",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
