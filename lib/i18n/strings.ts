@@ -85,6 +85,15 @@ const en = {
   "nav.map": "Map",
   "nav.signOut": "Sign out",
   "nav.signOutFailed": "Sign-out did not work. Please try again.",
+  // PROVISIONAL (wording from docs/design/operations-console.html): app shell and page headers.
+  "app.subtitle": "Operations console",
+  "nav.workspace": "Workspace",
+  "nav.signedInAs": "Signed in as",
+  "role.org_admin": "Org Admin",
+  "role.responder": "Responder",
+  "role.viewer": "Viewer",
+  "page.complaints.subtitle": "Reports from callers, matched to known water points.",
+  "page.map.subtitle": "Water points by status. Pins use a shape and a word as well as a color.",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",

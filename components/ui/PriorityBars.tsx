@@ -1,8 +1,9 @@
+import type { PriorityLevel } from "@/lib/domain/priority";
 import { t } from "@/lib/i18n/strings";
 
 import "./ui.css";
 
-export type PriorityLevel = "high" | "medium" | "low";
+export type { PriorityLevel };
 
 const FILLED: Record<PriorityLevel, number> = { low: 1, medium: 2, high: 3 };
 

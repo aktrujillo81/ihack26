@@ -174,3 +174,32 @@
     transition: background-color 0.12s ease;
   }
 }
+
+/* Page header: title and description left, status items right. */
+.ww-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ww-space-4);
+  margin-bottom: var(--ww-space-6);
+}
+.ww-page-title {
+  margin: 0;
+  font-size: var(--ww-text-title);
+  font-weight: 600;
+  letter-spacing: var(--ww-title-tracking);
+  line-height: 1.2;
+}
+.ww-page-subtitle {
+  margin: 6px 0 0;
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-body);
+  line-height: 1.5;
+}
+.ww-page-header-aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ww-space-3);
+}
