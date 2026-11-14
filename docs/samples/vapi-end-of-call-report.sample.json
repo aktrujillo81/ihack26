@@ -252,11 +252,11 @@
       "type": "inboundPhoneCall",
       "status": "ringing",
       "customer": {
-        "number": "+15555550100"
+        "number": "REDACTED"
       }
     },
     "customer": {
-      "number": "+15555550100"
+      "number": "REDACTED"
     },
     "assistantVersion": "v4"
   }
