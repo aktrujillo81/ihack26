@@ -31,6 +31,11 @@ const en = {
   "common.unknown": "Unknown",
   "common.unverified": "Unverified",
   "common.needsReview": "Needs review",
+  // PROVISIONAL (wording from docs/design/): shared UI pieces.
+  "common.sampleData": "Sample data",
+  "priority.high": "High",
+  "priority.medium": "Medium",
+  "priority.low": "Low",
   "common.needsLocation": "Needs location",
 
   // Status
