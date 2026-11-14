@@ -1,0 +1,239 @@
+/* The complaints list: summary strip, toolbar, table, footer. Tokens only (docs/style-guide.md sections 6, 7 and 15). */
+.ww-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ww-space-6);
+}
+
+/* Summary strip: one bordered panel, four equal cells. */
+.ww-summary {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+.ww-summary-cell {
+  flex: 1 1 200px;
+  padding: 18px var(--ww-space-6);
+  border-left: 1px solid var(--ww-divider);
+}
+.ww-summary-cell:first-child {
+  border-left: 0;
+}
+.ww-summary-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ww-space-2);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-label);
+  font-weight: 500;
+}
+.ww-summary-open .ww-chip-shape {
+  fill: var(--ww-open-icon);
+}
+.ww-summary-passed_on .ww-chip-shape {
+  fill: var(--ww-passed-icon);
+}
+.ww-summary-fixed .ww-chip-shape {
+  fill: var(--ww-fixed-icon);
+}
+.ww-summary-value {
+  margin-top: var(--ww-space-2);
+  font-size: var(--ww-text-stat);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.ww-summary-caption {
+  margin-top: 2px;
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+}
+
+/* The list panel and its toolbar. */
+.ww-list {
+  overflow: hidden;
+}
+.ww-list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ww-space-3);
+  padding: 14px var(--ww-space-5);
+  border-bottom: 1px solid var(--ww-divider);
+}
+.ww-search {
+  position: relative;
+  flex: 1 1 240px;
+  max-width: 360px;
+  color: var(--ww-ink-3);
+}
+.ww-search svg {
+  position: absolute;
+  top: 50%;
+  left: var(--ww-space-3);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.ww-search input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ww-control-height);
+  padding: 0 var(--ww-space-3) 0 36px;
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-control);
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font: inherit;
+  font-size: var(--ww-text-label);
+}
+.ww-search input::placeholder {
+  color: var(--ww-ink-3);
+}
+
+/* The table: a real table, fixed layout, no wrapping in cells. It scrolls sideways inside its box on narrow screens. */
+.ww-table-scroll {
+  overflow-x: auto;
+}
+.ww-list-table {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.ww-list-table th,
+.ww-list-table td {
+  overflow: hidden;
+  padding: var(--ww-space-3) 10px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ww-list-table th:first-child,
+.ww-list-table td:first-child {
+  padding-left: var(--ww-space-5);
+}
+.ww-list-table th {
+  border-bottom: 1px solid var(--ww-divider);
+  background: var(--ww-ground);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+  font-weight: 600;
+}
+.ww-list-table td {
+  border-bottom: 1px solid var(--ww-divider-soft);
+  font-size: var(--ww-text-label);
+  vertical-align: middle;
+}
+.ww-list-table tbody tr:hover td {
+  background: var(--ww-row-hover);
+}
+/* An unverified water point also gets a dashed edge, besides the word "Unverified". */
+.ww-list-table .ww-row-unverified td:first-child {
+  border-left: 3px dashed var(--ww-control-border);
+  padding-left: calc(var(--ww-space-5) - 3px);
+}
+
+/* Widths chosen from the header words and the date text, so no header is cut off at the 1280px minimum. */
+.ww-col-point {
+  width: 19.5%;
+}
+.ww-col-status {
+  width: 10%;
+}
+.ww-col-priority {
+  width: 15.5%;
+}
+.ww-list-table .ww-col-problem {
+  width: 7%;
+}
+.ww-list-table .ww-col-people {
+  width: 10%;
+}
+.ww-list-table .ww-col-school {
+  width: 10.5%;
+}
+.ww-list-table .ww-col-duration {
+  width: 7%;
+}
+.ww-col-count {
+  width: 7%;
+  font-variant-numeric: tabular-nums;
+}
+.ww-col-time {
+  width: 13.5%;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-cell-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ww-space-1) var(--ww-space-2);
+  min-width: 0;
+}
+.ww-row-link {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ww-ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.ww-row-link:hover {
+  text-decoration: underline;
+}
+.ww-cell-sub {
+  overflow: hidden;
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+  text-overflow: ellipsis;
+}
+
+/* Flags (Needs review, Unverified): neutral outlined tag with a word, never color. */
+.ww-tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ww-space-1);
+  padding: 1px var(--ww-space-2);
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-chip);
+  color: var(--ww-ink);
+  font-size: var(--ww-text-micro);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ww-tag--dashed {
+  border-style: dashed;
+}
+
+/* Sortable header: a real button; the active column shows an arrow, and the th carries aria-sort. */
+.ww-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--ww-space-1) 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.ww-list-footer {
+  padding: var(--ww-space-3) var(--ww-space-5);
+  border-top: 1px solid var(--ww-divider);
+  background: var(--ww-ground);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+}
+.ww-list-nomatch {
+  padding: var(--ww-space-7) var(--ww-space-5);
+}
+.ww-list-nomatch p {
+  margin: 0 0 var(--ww-space-4);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-body);
+}

@@ -27,15 +27,15 @@ export function StateMessage({
   emptyKey: PlainKey;
   retryHref?: string;
 }) {
-  if (state.status === "loading") return <p role="status">{t("common.loading")}</p>;
-  if (state.status === "empty") return <p>{t(emptyKey)}</p>;
+  if (state.status === "loading") return <p role="status" className="ww-state">{t("common.loading")}</p>;
+  if (state.status === "empty") return <p className="ww-state">{t(emptyKey)}</p>;
 
   const key: PlainKey =
     state.error === "denied" ? "common.denied" : state.error === "not_found_or_denied" ? "detail.notFoundOrDenied" : "common.error";
   return (
     <div role="alert" className="ww-state-error">
       <p>{t(key)}</p>
-      {state.error === "failed" && isSafeRetryHref(retryHref) && <a href={retryHref}>{t("common.retry")}</a>}
+      {state.error === "failed" && isSafeRetryHref(retryHref) && <a href={retryHref} className="ww-btn">{t("common.retry")}</a>}
     </div>
   );
 }

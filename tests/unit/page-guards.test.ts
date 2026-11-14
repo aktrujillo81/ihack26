@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/adapter", () => ({ readSessionFromHeaders: mocks.readSessionFromHeaders, signInWithPassword: vi.fn() }));
 vi.mock("@/lib/auth/sign-out", () => ({ signOutAction: vi.fn() }));
 vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound, usePathname: () => mocks.pathname }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound, usePathname: () => mocks.pathname, useSearchParams: () => null }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ has: (name: string) => mocks.cookieNames.has(name) }),
   headers: async () => new Headers(),

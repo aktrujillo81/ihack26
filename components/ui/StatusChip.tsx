@@ -3,12 +3,12 @@ import { t } from "@/lib/i18n/strings";
 import "./ui.css";
 
 const KNOWN = ["open", "passed_on", "fixed"] as const;
-type KnownStatus = (typeof KNOWN)[number];
+export type KnownStatus = (typeof KNOWN)[number];
 
 const isKnown = (value: unknown): value is KnownStatus => typeof value === "string" && (KNOWN as readonly string[]).includes(value);
 
 /** Shape per status (style guide section 3): circle, triangle, square, dashed diamond. */
-function Shape({ kind }: { kind: KnownStatus | "unknown" }) {
+export function StatusShape({ kind }: { kind: KnownStatus | "unknown" }) {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
       {kind === "open" && <circle className="ww-chip-shape" cx="6" cy="6" r="5" />}
@@ -28,7 +28,7 @@ export function StatusChip({ status }: { status: string | null | undefined }) {
   const kind = isKnown(status) ? status : "unknown";
   return (
     <span className={`ww-chip ww-chip--${kind}`}>
-      <Shape kind={kind} />
+      <StatusShape kind={kind} />
       {kind === "unknown" ? t("common.unknown") : t(`status.${kind}`)}
     </span>
   );
