@@ -2,6 +2,7 @@ import {
   boolean,
   check,
   foreignKey,
+  index,
   integer,
   jsonb,
   numeric,
@@ -212,6 +213,97 @@ export const configuration = pgTable("configuration", {
   }),
   uniqueIndex("configuration_scope_key_idx").on(table.organizationId, table.regionId, table.key),
 ]);
+
+// ---------------------------------------------------------------------------
+// Better Auth core tables (task A1). Login identity only: email, password hash
+// and sessions for STAFF. Never callers (red line 3).
+//
+// Hand-written to Better Auth 1.7.23's Drizzle schema (generateId "uuid"),
+// with two intended differences: the tables are renamed to auth_* (`user` is a
+// Postgres reserved word and too close to D1's `users`; lib/auth/server.ts sets
+// the matching modelName), and timestamps are timestamptz.
+//
+// Organization, region, role and active live ONLY in D1's `users` row, found
+// by users.auth_subject = auth_user.id. Never add them here: a signed-in user
+// can edit parts of their own Better Auth user row.
+// ---------------------------------------------------------------------------
+
+const authTimestamp = (name: string) => timestamp(name, { withTimezone: true });
+
+export const authUser = pgTable("auth_user", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: text("image"),
+  createdAt: authTimestamp("created_at").defaultNow().notNull(),
+  updatedAt: authTimestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+/** One row per signed-in staff session. Holds the staff member's IP and user agent (not caller data). Deleted at expiry. */
+export const authSession = pgTable(
+  "auth_session",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expiresAt: authTimestamp("expires_at").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: authTimestamp("created_at").defaultNow().notNull(),
+    updatedAt: authTimestamp("updated_at")
+      .$onUpdate(() => new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUser.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("auth_session_user_id_idx").on(table.userId), index("auth_session_expires_at_idx").on(table.expiresAt)],
+);
+
+/** Credentials. provider_id = 'credential' holds the scrypt password hash. */
+export const authAccount = pgTable(
+  "auth_account",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUser.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: authTimestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: authTimestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: authTimestamp("created_at").defaultNow().notNull(),
+    updatedAt: authTimestamp("updated_at")
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("auth_account_user_id_idx").on(table.userId)],
+);
+
+/** Required by Better Auth. Unused in this build (no email verification or reset flows). */
+export const authVerification = pgTable(
+  "auth_verification",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: authTimestamp("expires_at").notNull(),
+    createdAt: authTimestamp("created_at").defaultNow().notNull(),
+    updatedAt: authTimestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("auth_verification_identifier_idx").on(table.identifier)],
+);
 
 export type Organization = typeof organizations.$inferSelect;
 export type Region = typeof regions.$inferSelect;
