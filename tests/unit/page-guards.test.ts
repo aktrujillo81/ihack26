@@ -15,11 +15,14 @@ const mocks = vi.hoisted(() => ({
   redirect: vi.fn((to: string) => {
     throw Object.assign(new Error("NEXT_REDIRECT"), { to });
   }),
+  notFound: vi.fn(() => {
+    throw Object.assign(new Error("NEXT_NOT_FOUND"), { notFound: true });
+  }),
 }));
 
 vi.mock("@/lib/auth/adapter", () => ({ readSessionFromHeaders: mocks.readSessionFromHeaders, signInWithPassword: vi.fn() }));
 vi.mock("@/lib/auth/sign-out", () => ({ signOutAction: vi.fn() }));
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ has: (name: string) => mocks.cookieNames.has(name) }),
   headers: async () => new Headers(),
@@ -32,6 +35,7 @@ import SignedInMapPage from "@/app/(dashboard)/dashboard/map/page";
 import HomePage from "@/app/page";
 import SignInPage from "@/app/(auth)/sign-in/page";
 import { AppNav } from "@/components/nav/AppNav";
+import { requirePageSession } from "@/lib/auth/page-guard";
 import { ComplaintListView } from "@/components/complaints/ComplaintListView";
 import { MOCK_CONTEXT, listComplaints } from "@/lib/data/complaints";
 import { ROLES } from "@/lib/domain/types";
@@ -55,6 +59,7 @@ async function outcome(fn: () => Promise<unknown>): Promise<string> {
   } catch (e) {
     const to = (e as { to?: string }).to;
     if (to) return `redirect:${to}`;
+    if ((e as { notFound?: boolean }).notFound) return "notFound";
     throw e;
   }
 }
@@ -243,5 +248,34 @@ describe("every page and route in app/ is guarded or on an explicit list", () =>
       if (file.startsWith("app/(dashboard)/")) continue;
       expect(Object.keys(EXPLICIT), file).toContain(file);
     }
+  });
+});
+
+describe("the page guard enforces the permission, not only the sign-in", () => {
+  it("a valid session whose role lacks the permission gets 'not found', the same as a page that does not exist", async () => {
+    // Every role has `view` today, so ask for an action a Viewer lacks, as a future route rule could.
+    mocks.readSessionFromHeaders.mockResolvedValue(session({ role: "viewer" }));
+    expect(await outcome(() => requirePageSession("manage_users"))).toBe("notFound");
+    expect(await outcome(() => requirePageSession("change_status"))).toBe("notFound");
+    expect(await outcome(() => requirePageSession("view"))).toBe("rendered");
+    expect(await outcome(() => requirePageSession())).toBe("rendered");
+  });
+
+  it("a Responder lacks the admin actions, an Org Admin has them", async () => {
+    mocks.readSessionFromHeaders.mockResolvedValue(session({ role: "responder" }));
+    expect(await outcome(() => requirePageSession("manage_users"))).toBe("notFound");
+    expect(await outcome(() => requirePageSession("change_status"))).toBe("rendered");
+    mocks.readSessionFromHeaders.mockResolvedValue(session({ role: "org_admin" }));
+    expect(await outcome(() => requirePageSession("manage_users"))).toBe("rendered");
+  });
+
+  it("no valid session still redirects, never 'not found', whatever the action", async () => {
+    mocks.readSessionFromHeaders.mockResolvedValue(null);
+    expect(await outcome(() => requirePageSession("manage_users"))).toBe("redirect:/sign-in");
+  });
+
+  it("an unknown action is refused", async () => {
+    mocks.readSessionFromHeaders.mockResolvedValue(session({ role: "org_admin" }));
+    expect(await outcome(() => requirePageSession("delete_everything" as never))).toBe("notFound");
   });
 });

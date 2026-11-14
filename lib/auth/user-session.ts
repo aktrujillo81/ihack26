@@ -3,10 +3,10 @@ import "server-only";
 import { parseSession, type Session } from "./session";
 
 /**
- * PROVISIONAL. Mirrors the columns of the D1 draft `users` table
- * (branch origin/feat/database-migrations, commit 2893c47), which is NOT on
- * main yet. It is deliberately not imported from lib/db/schema.ts: that file on
- * main is still the empty placeholder, and this code must not edit it.
+ * Maps a D1 `users` row to a session. D1 is on main (PR #27) and A1 (lib/auth/users.ts)
+ * selects exactly these columns, so `UserRow` mirrors them rather than importing the
+ * schema type, which keeps this file free of the database. Still PROVISIONAL until
+ * docs/contracts.md names the session shape.
  *
  * D1 draft facts this relies on:
  * - `organization_id` and `region_id` are required: ONE organization and ONE
@@ -35,9 +35,9 @@ export interface UserRow {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * The auth library's session expiry may arrive as a `Date` (UNVERIFIED which).
- * Accept either a valid `Date` or a strict ISO string, and hand `parseSession`
- * an ISO string. Anything else is passed through unchanged so it is refused.
+ * The auth library's session expiry arrives as a `Date` (lib/auth/adapter.ts passes
+ * `result.session.expiresAt`). Accept a valid `Date` or a strict ISO string, and
+ * hand `parseSession` an ISO string. Anything else is passed through unchanged so it is refused.
  */
 function expiryToIso(value: unknown): unknown {
   if (value instanceof Date) return Number.isFinite(value.getTime()) ? value.toISOString() : null;

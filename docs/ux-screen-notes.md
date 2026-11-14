@@ -63,7 +63,8 @@
 | Already signed in | Opening the sign-in page while signed in goes straight to the complaint list. |
 | After signing in | The user goes to the complaint list (`/complaints`). The destination is fixed; it is never taken from the address or the form. |
 | Signed out, or session ended | Any protected page sends the user to the sign-in page. If a session cookie was present but is no longer valid, the page shows "Your session ended. Please sign in again." (`signIn.expired`); with no cookie, it shows no message. |
-| Sign out | A "Sign out" button (`nav.signOut`) in the page header ends the session on the server and goes to the sign-in page. |
+| Sign out | A "Sign out" button (`nav.signOut`) in the page header ends the session on the server and goes to the sign-in page. If it fails, the user stays where they are and sees "Sign-out did not work. Please try again." (`nav.signOutFailed`, PROPOSED), because the session may still be valid. |
+| Page not allowed for this role | A signed-in user whose role may not open a page sees the same "not found" page as for a page that does not exist. Every role can open the pages that exist today. |
 | Navigation (PROPOSED) | Links shown by role: "Complaints" (`nav.complaints`), "Map" (`nav.map`), "Needs review" (`common.needsReview`), "Needs location" (`common.needsLocation`), and "Sign out" (`nav.signOut`). Hiding a link is a convenience only; the server checks every route. Route paths are proposals. The "Map" link opens the signed-in map at `/dashboard/map`. `/map` is the separate public, status-only map and is not in the navigation. |
 | Needs review | Not applicable. |
 

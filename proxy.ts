@@ -18,8 +18,12 @@ export function proxy(request: NextRequest): NextResponse {
   if (decision === "unauthorized") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
-  // A fixed destination: nothing from the request is copied into it.
-  return NextResponse.redirect(new URL("/sign-in", request.url));
+  // A fixed destination: nothing from the request (path or query) is copied into it. Built from the
+  // request's own URL so the host and port stay whatever the client used.
+  const target = request.nextUrl.clone();
+  target.pathname = "/sign-in";
+  target.search = "";
+  return NextResponse.redirect(target);
 }
 
 export const config = {
