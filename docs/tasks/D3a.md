@@ -15,6 +15,10 @@ DEPENDS ON: schema PR #39 (migration 0003) merged; contracts PR #41. D3b (Andrew
 7. **Seed rows** (contracts 4.1 item 4): `intake.phone` and the default configuration keys of section 8, added to the existing seed through one shared defaults module (no value repeated in code). A malformed payload must still get an organization and region from the `intake.phone` row.
 8. **Remove `POST /api/vapi/capture`** and its config (`lib/config/vapi-capture.ts`), its tests and the proxy/permission mentions, in the same PR. Update `docs/contracts.md` (section 2 "Built", remove the temporary route text), `docs/vapi-prompt.md` (Server URL row, version table, stale "unknown" lines; Phone owns the wording) and `docs/status.md`.
 
+## From the schema PR review (Security, `docs/reviews/D-schema.md`)
+- Say in `docs/contracts.md` and in the comment on `reports.provider_call_ref` in `lib/db/schema.ts` that it is stored **only as a keyed HMAC**, never the raw call id (the database cannot enforce it).
+- `ended_reason`: a value Vapi sends that is not one of the three known values is stored as `other` and never crashes the route (red line 6).
+
 ## Rules
 - Local database only (port 5434). Never `db:migrate`, never write to production (5433). No paid Vapi call (only Andrew, with a human's OK).
 - Tests build fake payloads at runtime. Never commit a raw payload. `docs/samples/` stays as the one cleaned sample.
