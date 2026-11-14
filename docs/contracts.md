@@ -380,7 +380,7 @@ the code is what runs and this table is what the contract wants.
 | Stale check | `expectedStatus`, 409 | `version` (`updated_at`), result `conflict` |
 | `passed_on` to `open` | Allowed, with a note (spec change, awaiting approval) | Refused (`invalid`), because the spec does not list it |
 | `fixed` to `open` | 409 if the water point already has an active complaint | No such check; the unique index in 4.1 item 8 does not exist yet |
-| Pass-on note | 1 to 2000 characters, never in `before_data`/`after_data` | Max 200 characters, **copied into `after_data.passedOnNote`** |
+| Pass-on note | 1 to 2000 characters, never in `before_data`/`after_data` | Max 200 characters, kept on the complaint row only. History holds codes only (decided 2026-11-14, built) |
 | Note text | 1 to 2000 characters | 1 to 1000 characters |
 | Partner | `partnerId` optional | Not set (no picker) |
 
@@ -674,7 +674,7 @@ Things to know (found by the red-line-8 review of these reads):
   same organization. Names of staff in OTHER regions of the same organization are
   shown (staff names, not caller data).
 - `before_data` and `after_data` are passed to the screen as stored; the screen
-  reads only `status` and `passedOnNote`. Whatever D6 writes there must be safe to
+  reads only `status`. Whatever D6 writes there must be safe to
   show (no contact values, no note text).
 - A complaint's shown problem, duration and so on are derived from ALL its
   reports, so after a reopen they can differ from the stored score and reason next
@@ -708,14 +708,13 @@ request.
 - **Same transaction:** the change and its `history_events` row are written
   together; if either fails both are rolled back (`error`).
 - **History event:** `status_changed`, `passed_on` or `reopened`, with
-  `before_data {status}` and `after_data {status[, passedOnNote]}`; `note_added`
+  `before_data {status}` and `after_data {status}` (codes only); `note_added`
   with `after_data {noteId}` (no note text). Actor is the signed-in user.
   Reopen clears `fixed_at` and the pass-on fields.
 - **Append-only (red line 9):** the write code only inserts into `history_events`
   and the database trigger refuses update and delete. Both are tested.
-- `passedOnNote` is free text typed by staff and is copied into the history
-  event, so the form tells staff not to type caller names or numbers (red line 3).
-  Nothing can check this automatically.
+- `passedOnNote` is free text typed by staff. It is stored on the complaint row only and is never copied into
+  `before_data`/`after_data` (decided 2026-11-14, built); the form still tells staff not to type caller names or numbers (red line 3).
 - The author must be an active user of the same organization and in one of the
   session's regions; the role is taken from the validated session.
 - Errors log the fixed code `[data] write_failed` only. The page is refreshed
@@ -835,4 +834,4 @@ read only through `lib/config/env.ts` (server-only).
 | 15 | Whether the stale-report threshold (15 minutes) is right | UX, humans | Approve or change `ui.staleReportMinutes` |
 | 16 | Several phone lines mapped to several organizations or regions | Backend | Future work; one `intake.phone` row now |
 | 17 | The map provider and tile terms | Frontend, humans | Spec unknown 9 |
-| 18 | The differences between 5.8/6.4/6.5 and the built complaint writes (#37): transport, `passed_on` to `open`, the active-complaint check on reopen, note lengths, and pass-on text stored in `after_data` | Humans (Backend, Security) | Decide per row in the table after 5.8; the pass-on text in `after_data` also touches red line 3 |
+| 18 | The differences between 5.8/6.4/6.5 and the built complaint writes (#37): transport, `passed_on` to `open`, the active-complaint check on reopen, note lengths, and pass-on text stored in `after_data` | Humans (Backend, Security) | Pass-on text in `after_data` is closed: history holds codes only (decided 2026-11-14, built). Other rows still open: decide per row in the table after 5.8 |
