@@ -73,7 +73,7 @@ export function ComplaintDetailView({
 
       {(canChange || canPassOn) && (
         <section className="ww-section">
-          <StatusControls complaintId={complaint.id} status={complaint.status} canPassOn={canPassOn} canChange={canChange} />
+          <StatusControls complaintId={complaint.id} status={complaint.status} version={complaint.version} canPassOn={canPassOn} canChange={canChange} />
         </section>
       )}
 

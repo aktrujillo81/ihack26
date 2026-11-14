@@ -182,7 +182,7 @@
 | `detail.reportsTitle` / `notesTitle` / `timelineTitle` | Reports / Notes / Timeline |
 | `detail.passOn` | Pass on |
 | `detail.addNote` / `detail.noteLabel` | Add note / Note |
-| `detail.notAvailable` | This action is not available yet. (Shown until the complaint API is connected; nothing is saved.) |
+| `detail.conflict` | This complaint was changed by someone else. Reload the page and try again. (Shown when the screen is out of date; nothing is saved.) |
 | `detail.invalidInput` | Please check what you entered. |
 | `history.system` / `created` / `reportAdded` / `reopened` / `noteAdded` / `other` | System / Complaint created / Report added / Reopened / Note added / Change recorded |
 | `history.statusChanged` | Status changed from {from} to {to} |

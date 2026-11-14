@@ -7,12 +7,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ readSessionFromHeaders: vi.fn() }));
+const mocks = vi.hoisted(() => ({ readSessionFromHeaders: vi.fn(), revalidatePath: vi.fn() }));
 
 vi.mock("@/lib/auth/adapter", () => ({ readSessionFromHeaders: mocks.readSessionFromHeaders, signInWithPassword: vi.fn() }));
 vi.mock("next/headers", () => ({ cookies: vi.fn(), headers: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/data/complaints", async () => await import("@/tests/fixtures/mock-data-layer"));
+vi.mock("@/lib/data/complaint-writes", async () => await import("@/tests/fixtures/mock-complaint-writes"));
+vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
 import { ComplaintDetail } from "@/components/complaints/ComplaintDetail";
 import { requireAction, toDataContext } from "@/lib/auth/guards";
@@ -40,7 +42,7 @@ const form = (fields: Record<string, string>) => {
   return f;
 };
 const status = (id: string, to: unknown, extra: Record<string, string> = {}) =>
-  changeStatusAction(INITIAL_ACTION_STATE, form({ complaintId: id, status: String(to), ...extra }));
+  changeStatusAction(INITIAL_ACTION_STATE, form({ complaintId: id, status: String(to), version: "2026-11-14T12:00:00.123456Z", ...extra }));
 const note = (id: string, text: string) => addNoteAction(INITIAL_ACTION_STATE, form({ complaintId: id, text }));
 
 beforeEach(() => {
@@ -103,12 +105,28 @@ describe("with no valid session every action is unauthenticated", () => {
   });
 });
 
-describe("a Responder is authorized, and nothing is written yet", () => {
-  it("valid requests get 'not available' (the writes are D6), never success", async () => {
+describe("a Responder is authorized and the change is saved (the write itself is tested against Postgres)", () => {
+  it("valid requests are saved, with the session's user as the author", async () => {
     mocks.readSessionFromHeaders.mockResolvedValue(sessionFor("responder"));
-    expect(await status("c-1", "fixed")).toEqual({ status: "not_available" });
-    expect(await status("c-1", "passed_on", { passedOnTo: "Demo Pump Repair Co-op" })).toEqual({ status: "not_available" });
-    expect(await note("c-1", "Checked with the committee.")).toEqual({ status: "not_available" });
+    expect(await status("c-1", "fixed")).toEqual({ status: "saved" });
+    expect(await status("c-1", "passed_on", { passedOnTo: "Demo Pump Repair Co-op" })).toEqual({ status: "saved" });
+    expect(await note("c-1", "Checked with the committee.")).toEqual({ status: "saved" });
+  });
+
+  it("a saved change refreshes the complaint's pages, and only with a real uuid in the path", async () => {
+    mocks.readSessionFromHeaders.mockResolvedValue(sessionFor("responder"));
+    mocks.revalidatePath.mockClear();
+    await status("c-1", "fixed"); // "c-1" is not a uuid: the list is refreshed, never a path built from it
+    expect(mocks.revalidatePath.mock.calls.map((c) => c[0])).toEqual(["/complaints"]);
+  });
+
+  it("a refused or failed change refreshes nothing", async () => {
+    mocks.revalidatePath.mockClear();
+    mocks.readSessionFromHeaders.mockResolvedValue(sessionFor("viewer"));
+    await status("c-1", "fixed");
+    mocks.readSessionFromHeaders.mockResolvedValue(null);
+    await note("c-1", "hi");
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
 
   it("another organization's record is 'not found' for every role, never 'denied'", async () => {

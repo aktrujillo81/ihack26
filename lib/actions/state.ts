@@ -7,13 +7,14 @@ import type { PlainKey } from "../i18n/strings";
 
 export type ActionState =
   | { status: "idle" }
-  /** Reserved for D6. Nothing returns this yet, because nothing is written. */
+  /** The change was written, with its history event. */
   | { status: "saved" }
+  /** The complaint changed since the screen loaded it. Nothing was written. */
+  | { status: "conflict" }
   | { status: "unauthenticated" }
   | { status: "denied" }
   | { status: "not_found" }
   | { status: "invalid" }
-  | { status: "not_available" }
   | { status: "error" };
 
 export const INITIAL_ACTION_STATE: ActionState = { status: "idle" };
@@ -33,8 +34,8 @@ export function actionMessageKey(state: ActionState): PlainKey | null {
       return "detail.notFoundOrDenied";
     case "invalid":
       return "detail.invalidInput";
-    case "not_available":
-      return "detail.notAvailable";
+    case "conflict":
+      return "detail.conflict";
     default:
       return "detail.saveFailed";
   }

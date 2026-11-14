@@ -154,6 +154,50 @@ Things to know (found by the red-line-8 review of these reads):
 - Lists are cut off at `DATA_LIST_HARD_LIMIT` (1000, PROPOSED) until pagination
   exists. The public map's read selects only the columns a pin needs.
 
+### Complaint writes (task D6, `lib/data/complaint-writes.ts`)
+Two server actions in `lib/actions/complaints.ts`, called by the forms through
+`lib/actions/form-actions.ts`. Nothing here contacts anyone: "pass on" is a
+recorded step (red line 5).
+
+| Action | Input | Permission | Result states |
+|---|---|---|---|
+| `changeComplaintStatus` | `complaintId`, `status` (`open`, `passed_on`, `fixed`), `passedOnTo` (required, max 200, for `passed_on`), `version` | `pass_on` for `passed_on`, else `change_status` | `saved`, `conflict`, `unauthenticated`, `denied`, `not_found`, `invalid`, `error` |
+| `addComplaintNote` | `complaintId`, `text` (1 to 1000 after trim) | `add_note` | same |
+
+Order of checks: session, then the complaint is looked up inside the session's
+organization and regions (another organization, another region, a missing id and
+a malformed id all answer `not_found`), then `requireActionInScope` (a Viewer is
+`denied` whatever the payload), then the input, then the write. Organization,
+region and author come from the stored complaint and the session, never from the
+request.
+
+- **Allowed steps:** open to passed on or fixed; passed on to fixed; fixed to open
+  (reopen). Anything else, including the same status, is `invalid`.
+- **Version check:** the form sends the `version` it was shown (`updated_at` as
+  UTC text to the microsecond). The write locks the complaint row, compares, and
+  refuses with `conflict` if it moved. Two requests with the same version: exactly
+  one is saved. Notes do not change the version.
+- **Same transaction:** the change and its `history_events` row are written
+  together; if either fails both are rolled back (`error`).
+- **History event:** `status_changed`, `passed_on` or `reopened`, with
+  `before_data {status}` and `after_data {status[, passedOnNote]}`; `note_added`
+  with `after_data {noteId}` (no note text). Actor is the signed-in user.
+  Reopen clears `fixed_at` and the pass-on fields.
+- **Append-only (red line 9):** the write code only inserts into `history_events`
+  and the database trigger refuses update and delete. Both are tested.
+- `passedOnNote` is free text typed by staff and is copied into the history
+  event, so the form tells staff not to type caller names or numbers (red line 3).
+  Nothing can check this automatically.
+- The author must be an active user of the same organization and in one of the
+  session's regions; the role is taken from the validated session.
+- Errors log the fixed code `[data] write_failed` only. The page is refreshed
+  after `saved`.
+- Not done: setting `passed_on_partner_id` (no partner picker yet), and `review`
+  actions (W5).
+
+Tested in `tests/integration/complaint-writes.test.ts` (Postgres) and
+`tests/unit/complaint-actions.test.ts` (what the actions pass to the write).
+
 ## Tables
 
 The initial schema is in `lib/db/schema.ts`; migrations are in `db/migrations/`.
