@@ -8,7 +8,7 @@ iHack 2026 project (International category). People call a Vapi phone number to 
 - Only the Next.js server is public, on one port, through a Cloudflare Tunnel. Postgres listens only on the host and is never exposed.
 - Sign-in uses a proven auth library that stores users and sessions in our Postgres (default: Better Auth, email and password).
 - Vapi for the phone line and call data
-- TODO: confirm with the team
+- Live updates use our own API (default: polling), not a third-party realtime service. The stack decisions are recorded in `docs/decisions.md`.
 
 ## Source of truth
 - `docs/spec.md`: the product brief (what and why). Humans approve changes.
