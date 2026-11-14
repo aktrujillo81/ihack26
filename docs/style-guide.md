@@ -75,7 +75,7 @@ Three bars of rising height plus the word High / Medium / Low. Filled bars `--ww
 
 **Stat tile.** Label with shape, number (30px), one-line caption. Captions describe a state ("Awaiting action"), never a promise.
 
-**Table.** Header row on `--ww-ground`, 13px/600, sort buttons with an arrow icon on the active column. Rows are real links with a visible focus ring, 14px 20px padding, soft divider, hover `--ww-row-hover`, selected `--ww-row-selected`. Columns on the main list: Water point (type + mono ID + flags), Status, Priority, Reports, Last report. List rows never show transcripts or spoken location text.
+**Table.** Header row on `--ww-ground`, 13px/600, sort buttons with an arrow icon on the active column. Rows are real links with a visible focus ring, 14px 20px padding, soft divider, hover `--ww-row-hover`, selected `--ww-row-selected`. Columns on the main list: Water point (type + mono ID + flags), Status, Priority, Reports, Last report. List rows never show transcripts. Staff-only lists may show the spoken location text (the spec requires a location on the list, DB-1), as one line that ends in an ellipsis with the full text in a `title`; public views never show it. The spec lists more columns than the design sketch (problem, people affected, school or clinic, duration); the spec wins, so the table keeps them.
 
 **Buttons.** Primary (accent fill, white text, one per view), secondary (white, control border), ghost (accent text). 40px high, 14px/500. Disabled buttons are avoided; leave enabled and respond with an explanation.
 
@@ -122,7 +122,7 @@ Three bars of rising height plus the word High / Medium / Low. Filled bars `--ww
 
 ## 12. Data and privacy in UI
 - Lists never show transcripts. Detail shows them only to roles the matrix allows.
-- Spoken location text is staff-only, on the authenticated detail page.
+- Spoken location text is staff-only: it may appear on signed-in staff lists and the detail page, never on a public view.
 - Copyable summaries never include transcript text, notes or caller details.
 - Mock and seed data contain no phone numbers, emails or names.
 
