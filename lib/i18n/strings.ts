@@ -119,7 +119,7 @@ const en = {
   "detail.passOn": "Pass on",
   "detail.addNote": "Add note",
   "detail.noteLabel": "Note",
-  "detail.notAvailable": "This action is not available yet.",
+  "detail.conflict": "This complaint was changed by someone else. Reload the page and try again.",
   "detail.invalidInput": "Please check what you entered.",
   "history.system": "System",
   "history.created": "Complaint created",

@@ -124,6 +124,9 @@ type Scoped = { organizationId: AnyPgColumn; regionId: AnyPgColumn };
 const scope = (table: Scoped, ctx: DataContext): SQL =>
   and(eq(table.organizationId, ctx.organizationId), inArray(table.regionId, ctx.regionIds)) as SQL;
 
+/** For the write functions in ./complaint-writes.ts: the same scope filter and context check the reads use. */
+export { scope as scopeFilter, usable as isUsableContext };
+
 const empty = { status: "empty" } as const;
 
 function result<T>(items: T[]): DataResult<T[]> {
