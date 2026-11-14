@@ -13,12 +13,14 @@
     "db:local": "node scripts/db-local.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx --conditions=react-server db/seed/index.ts"
   },
   "engines": {
     "node": ">=20.12"
   },
   "dependencies": {
+    "better-auth": "1.7.23",
     "drizzle-orm": "^0.45.4",
     "next": "^16.4.6",
     "postgres": "^4.1.1",
@@ -34,6 +36,7 @@
     "embedded-postgres": "17.11.0-beta.19",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.6",
+    "tsx": "4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
   }
