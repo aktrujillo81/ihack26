@@ -74,10 +74,11 @@ else. `received_at` is the server's own clock.
 
 ---
 
-## 2. `POST /api/vapi/webhook` (to build in D3)
+## 2. `POST /api/vapi/webhook` (Built in D3a; storage stub until D3b)
 
-Replaces `POST /api/vapi/capture`, which is **removed when D3 lands**. Humans
-then delete the raw captures from every machine and set the new Vapi server URL.
+Replaces the temporary capture route, which was removed in D3a. Humans then
+delete the raw captures from every machine and set the new Vapi server URL only
+after D3b is deployed and verified.
 
 ### Request checks, in this order
 1. **Secret first, before the body is read.** `Authorization: Bearer <secret>` or `X-Vapi-Secret: <secret>`, constant-time compare with `VAPI_WEBHOOK_SECRET`. Unset secret: refuse everything. Which header type Vapi really sends is **unknown** (only "Bearer credential" is recorded); D3 accepts both and logs the fixed code for which one matched, never the value.
@@ -115,11 +116,6 @@ per organization where not null. A second delivery with the same ref is answered
 Fixed codes only (for example `[vapi-webhook] stored`, `ignored_type`, `repeat`,
 `rejected`, `too_large`, `rate_limited`, `no_scope`, `store_failed`,
 `match_failed`). Never the body, the secret, the call id, or a field value.
-
-### Temporary route `POST /api/vapi/capture` (task S5a) (Built, REMOVE in D3)
-- **Purpose:** Save the raw body of the first Vapi calls so this contract could be written (S5, S6).
-- **Auth:** Same secret rules as above. **401** missing or wrong secret, empty body. **413** over `lib/config/vapi-capture.ts` (2 MB). **200** `{ "ok": true }` and the body saved untouched to `docs/samples/raw/` (gitignored, owner-only files, after 20 files still 200 but nothing saved). **500** `{ "ok": false }` when the file cannot be written.
-- **Rules:** No parsing or database writes. The saved files contain the caller's phone number: never commit or share them. Logs use fixed codes only. Not cached.
 
 ---
 

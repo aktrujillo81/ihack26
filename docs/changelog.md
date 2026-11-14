@@ -40,6 +40,7 @@ This file was created on 2026-11-14 during S6. Rows up to PR #32 were filled in 
 | (same) | #35 | D1, W2, W3 | Signed-in screens read real data (scoped by session) | not recorded here |
 | (same) | #36 | Demo | Demo seed on the local database only (port 5434) | not recorded here |
 | (same) | #37 | D6 | Complaint writes: status change, pass on, reopen, notes, version check, same-transaction history. Differs from contract 5.8/6.4/6.5: see contracts.md section 5.8 and unknown 18 | not recorded here |
+| (this branch) | D3a | Backend | Replaced the temporary capture endpoint with the authenticated Vapi webhook, closed normalizer hand-off, HMAC call reference, intake defaults, and failing D3b storage stub | Backend, Security, Phone / AI Prompter, UX, Frontend |
 
 ## S5 results (from PR #32)
 - Three paid calls, $0.27 in total, balance 4.73. Calls 1 and 2 (assistant v3) arrived with no extracted data. Call 3 (v4) carried all nine fields.

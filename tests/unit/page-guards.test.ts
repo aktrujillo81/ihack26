@@ -224,7 +224,7 @@ describe("every page and route in app/ is guarded or on an explicit list", () =>
     "app/map/page.tsx": "public status-only map (PROPOSED, not approved)",
     "app/api/health/route.ts": "public health check",
     "app/api/auth/[...all]/route.ts": "Better Auth, deny-by-default allowlist (A1)",
-    "app/api/vapi/capture/route.ts": "Vapi webhook, shared secret (TEMPORARY S5a)",
+    "app/api/vapi/webhook/route.ts": "Vapi webhook, shared secret",
   };
 
   it("finds the pages we expect", () => {

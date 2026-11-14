@@ -1,7 +1,7 @@
 # Demo runbook
 
 How to start Well Watch on a laptop, what to click, and what is real. **State as of
-main at `e7e5f37` (2026-11-14).** Update this file when D3, D4 or W5 land: it will
+the D3a branch (2026-11-14).** Update this file when D3b, D4 or W5 land: it will
 be wrong the day they do.
 
 > Safety: everything here uses the **development** database on **port 5434**
@@ -23,8 +23,8 @@ Say this out loud if asked. Do not let the demo imply more than it does.
 | The complaints, water points, reports, notes, partners you see | **Seeded** | Invented by `npm run db:seed:demo`. No real caller, no caller details. They are not marked as demo in the screens. |
 | Staff accounts | **Seeded** | By `npm run db:seed`. |
 | "Pass on" to a partner | **A recorded step only** | Nothing is sent to anyone. The partner is typed as text; there is no partner picker yet. |
-| Vapi phone line and assistant | **Real, but not connected to the dashboard** | The temporary capture route saves raw call bodies to a gitignored folder on the host. |
-| A phone call creating a complaint on the dashboard | **Not built** | Needs D3 (Vapi endpoint) and D4 (water point matching). Seeded complaints stand in. |
+| Vapi phone line and assistant | **Real, not yet connected to storage** | D3a validates and normalizes, but its D3b storage stub intentionally returns 503. Do not switch Vapi to it yet. |
+| A phone call creating a complaint on the dashboard | **Not built** | Needs D3b storage, D4 matching, and D5 scoring. Seeded complaints stand in. |
 | Needs review and Needs location lists, last-report indicator | **Not built** | W5, blocked on D3 and D4. The seeded data for them exists; there is no screen yet. |
 | Placing a pin on an unverified point, verify, merge | **Not built** | P1-1, blocked on D4 and W4. |
 | Scoring from a call | **Not built** | D5. The seeded complaints carry a score and reason that were written by hand. |

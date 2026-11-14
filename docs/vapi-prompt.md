@@ -2,7 +2,7 @@
 
 **Owner:** Phone / AI Prompter. **Rule:** this file must equal what is live in Vapi (red line 9). If they differ, fix whichever is wrong and log it in `docs/changelog.md`.
 
-**Status of v2: LIVE since Sat 2026-11-14, about 3:56 AM Mountain Time** (Vapi version `v2`, 100% of traffic; Vapi kept the earlier assistant as `v1`). Anything changed in Vapi later must be changed here in the same PR.
+**Status of v4: LIVE since Sat 2026-11-14, about 5:20 AM Mountain Time** (Vapi version `v4`, 100% of traffic; Vapi kept earlier assistants as `v1` to `v3`). Anything changed in Vapi later must be changed here in the same PR.
 
 **Later changes (2026-11-14, Mountain Time):**
 - **v3** (about 4:33 AM): server URL set (temporary Cloudflare tunnel for the S5 test calls) with the `hackathon-webhook` Bearer credential; only `end-of-call-report` is sent.
@@ -27,7 +27,7 @@ Names are the Vapi API names; the dashboard labels may differ. Anything not yet 
 | `maxDurationSeconds` | **120** (set) | PI-1 aims for about 90 seconds, so 90 would cut off slow callers during the read-back. `docs/budget.md` assumes 90: update it to 120 (about $0.04 more per call at most) unless a human reverses this. |
 | `silenceTimeoutSeconds` | **20** (set) | Dashboard accepts 5 to 3,600 (Advanced tab, Call Timeout Settings). Short enough to save credits, long enough for a caller on a weak line. |
 | Recording | **Audio recording is ON** (checked 2026-11-14) | Vapi's default. The greeting uses the "recording on" wording. Whether to turn audio recording off is open: this project only needs the transcript, and Security decides. **How long Vapi keeps calls and transcripts is still unknown** (spec section 12, unknown 2). |
-| Server URL | Set in Vapi during S4. It should be `https://bg.verilen.com/api/vapi/capture` (the temporary S5a route). **Verify it in Vapi.** | The route is not merged or deployed yet. The real endpoint (D3) replaces it later, and then this row changes. |
+| Server URL | **Human must switch after D3b is deployed and its authenticated curl check passes:** `https://bg.verilen.com/api/vapi/webhook` | Do not switch while D3a's storage stub is deployed; it returns 503 by design. |
 | Server messages sent | `end-of-call-report` only | Other event types are not needed. Event types Vapi sends beyond this are unknown. |
 | Server authentication | A Vapi **custom credential** (Bearer token, or the older `X-Vapi-Secret` header) attached to the assistant's server URL | Vapi has no fixed signature to check. Attach the credential in the dashboard: if the URL is set through the API instead, Vapi may send **no** credential. The secret is stored as `VAPI_WEBHOOK_SECRET` in `.env.local` (development) and the host server's `.env`. Never in the repo. The endpoint returns 401 if the header is missing or wrong. |
 | Voice, model, transcriber | Keep what is live | Not specified by the spec. Do not change without a reason. |
@@ -127,7 +127,7 @@ Read the call transcript. Fill each field only from what the caller said. If the
 ```
 Two fields are strings here on purpose (`people_affected`, `serves_school_or_clinic`) so "unknown" fits. The server turns them into a number or boolean, or `unknown`.
 
-**Where the extracted fields arrive in the data Vapi sends is unknown until a real call is captured (S5).** Because the feature in use is Structured Output, they are expected under `message.artifact.structuredOutputs` (keyed by an ID), not `message.analysis.structuredData`. Confirm on the first call. Vapi's documentation shows `message.analysis.structuredData` for an analysis plan and `message.artifact.structuredOutputs` for its newer structured outputs. Which one our assistant produces is the first thing to check.
+The extracted fields were confirmed under `message.artifact.structuredOutputs` (keyed by an ID), found by the output name `water_point_report`, not under `message.analysis.structuredData`.
 
 **Personal data warning:** the end-of-call data is documented to include the caller's phone number (`message.call.customer.number`) and recording links. The endpoint must remove these before saving (PR-3). A raw payload must never be committed.
 
