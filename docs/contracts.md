@@ -23,6 +23,56 @@ task S6 from a real captured Vapi payload. Anything not listed here is
 - **500:** `{ "ok": false }` when the file cannot be written.
 - **Rules:** No parsing, validation, cleaning, or database writes. The saved files contain the caller's phone number: never commit or share them. Logs use fixed codes only (`[vapi-capture] saved`, `rejected`, `too_large`, `limit_reached`, `save_failed`), never the body or the secret. Not cached.
 
+### Authentication: `/api/auth/*` (task A1)
+Better Auth 1.7.23, email and password, served by `app/api/auth/[...all]/route.ts`.
+**Deny by default:** only these two reach Better Auth. Every other path or
+method under `/api/auth` answers `404 {"error":"not_found"}` (sign-up, password
+reset, change email, change password, delete user, update user, social sign-in,
+list sessions, get-session, and the rest). Bodies, cookies and tokens are never logged.
+
+| Method | Path | Request | Responses |
+|---|---|---|---|
+| POST | `/api/auth/sign-in/email` | JSON `{ "email", "password" }` | **200** sets the session cookie; body is `{ redirect, user }` (the route strips Better Auth's `token` field: the token lives only in the HttpOnly cookie). **401** `{ "message": "Invalid email or password", "code": "INVALID_EMAIL_OR_PASSWORD" }` for an unknown email or a wrong password (same body). **401** `code: "FAILED_TO_CREATE_SESSION"` when the password is right but there is no single active `users` row with a live region (no session is created). **400** malformed email. **403** untrusted `Origin` when the request carries a cookie (Better Auth checks Origin only then; JSON-only bodies plus no CORS/OPTIONS handler keep cross-site browsers out otherwise). **429** `{ "message": "Too many requests. Please try again later." }` plus `X-Retry-After`. |
+| POST | `/api/auth/sign-out` | JSON body (e.g. `{}`) with `Content-Type: application/json` and the session cookie | **200** `{ "success": true }`; deletes the `auth_session` row and expires the cookie. Without a JSON content type: **415**. |
+| GET | `/api/auth/get-session` | | **404**. Not exposed: sessions are read on the server only, through `lib/auth/adapter.ts`. |
+
+- **Cookie:** `better-auth.session_token` (signed, HttpOnly, SameSite=Lax, Path=/,
+  Max-Age 43200). In production, or whenever `BETTER_AUTH_URL` is `https://`,
+  it is `__Secure-better-auth.session_token` with `Secure`. No cookie cache
+  (`session_data` cookie is never set).
+- **Session length:** 12 hours from sign-in (`SESSION_LIFETIME_SECONDS` in
+  `lib/config/auth.ts`, the one source for this value). Never extended by use.
+  Every session row is capped at that lifetime when it is created.
+- **Origins:** `BETTER_AUTH_URL` (the public hostname, `https://bg.verilen.com`
+  on the host), plus `http://127.0.0.1:6543` only when `NODE_ENV=development`.
+  The Origin check is forced on in every environment.
+- **Rate limit:** on in every environment. Sign-in: 5 per 60 seconds per client
+  IP, then 429. The client IP is taken only from `cf-connecting-ip` (a single
+  valid IP). With no such header: `127.0.0.1` in development and tests; in
+  production one shared bucket for all such requests. In-memory, per server
+  process (resets on restart).
+- **Accounts:** sign-up is disabled (also for direct server calls). Accounts
+  come only from `npm run db:seed`. Password length 12 to 128.
+
+### Server-only auth functions (task A1, `lib/auth/adapter.ts`)
+Not HTTP endpoints. For W1's wiring points.
+- `getSessionFromHeaders(h: Headers): Promise<unknown>`: reads the Better Auth
+  session (signed cookie, row read from the database every time), then the
+  `users` row with `auth_subject` = the Better Auth user id (see "Staff
+  sign-in" below), and returns `sessionFromUser(row, session.expiresAt)`
+  (`lib/auth/user-session.ts`): `{ userId, role, organizationId, regionIds,
+  expiresAt }`, where `userId` is `users.id` and `regionIds` is the user's one
+  region. `null` for: no or forged cookie, signed out, expired, no matching
+  row, inactive user, archived region or organization, or any error.
+- `readSessionFromHeaders()`: the same, using the current request's headers.
+- `signInWithPassword(email, password, headers?)` returns
+  `"ok" | "invalid" | "no_region" | "rate_limited" | "error"`. Unknown email and
+  wrong password both give `"invalid"`. `"no_region"` only after the password
+  was accepted (no active `users` row with a live region). Its own limit: 5 per
+  60 s per `cf-connecting-ip` (Better Auth's limiter does not cover direct
+  server calls). Failures are logged as `[auth] sign_in_failed reason=<result>`,
+  never with the email.
+
 ## Tables
 
 The initial schema is in `lib/db/schema.ts`; migrations are in `db/migrations/`.
@@ -43,6 +93,33 @@ organization but has no region owner.
 - Every scoped table has a composite foreign key from
   (`organization_id`, `region_id`) to `regions`. A row cannot claim an
   organization that does not own its region.
+
+### Staff sign-in: Better Auth tables (task A1, migration 0002)
+
+Login identity only, for staff. Callers never have rows here. Hand-written to
+Better Auth 1.7.23's schema (uuid ids), renamed to `auth_*` (Better Auth
+`modelName`) and with timestamptz. They carry no organization, region, role or
+active: those live only in `users`.
+- `auth_user`: `id` uuid, `name`, `email` unique, `email_verified`, `image`,
+  timestamps.
+- `auth_account`: credentials. `provider_id = 'credential'`, `account_id` =
+  `auth_user.id`, `password` = Better Auth scrypt hash (the only place a
+  password hash is stored). OAuth columns unused.
+- `auth_session`: `id`, `token` unique, `expires_at`, `ip_address`,
+  `user_agent`, `user_id` → `auth_user` (cascade), timestamps. **Holds the
+  signed-in staff member's IP address and browser user agent: staff data, not
+  caller data.** Rows are deleted, not kept (a session is not history): on
+  sign-out; when an expired row's own cookie is read (Better Auth); on every
+  successful sign-in, which deletes all rows with `expires_at < now()` for every
+  user; and by `npm run db:cleanup-sessions`. Expired rows are refused on read
+  until deleted; with no sign-ins, an expired row stays until the next sign-in
+  or cleanup run.
+- `auth_verification`: required by Better Auth; unused.
+- **Link:** `users.auth_subject` = `auth_user.id` (text, unique in D1, no FK).
+  Lookups check the id is a non-empty string, ask for two rows and accept
+  exactly one, and join `regions` (same organization, `archived_at` null) and
+  `organizations` (`archived_at` null). `users.email` and `auth_user.email` are
+  both set by the seed; nothing else changes either.
 
 ### Water points
 
@@ -81,4 +158,56 @@ organization but has no region owner.
   colors, allowed values, and duplicate rules.
 
 Caller identity, raw Vapi payloads, API keys, and passwords are not stored in
-these tables. Transcript redaction and retention policy remain open questions.
+these tables (staff password hashes live only in `auth_account`). Transcript redaction and retention policy remain open questions.
+
+## Permission rules (task A1)
+- Access = exactly one `users` row for the Better Auth user, `active = true`,
+  with a non-archived region that belongs to the user's non-archived
+  organization, and a known role. Anything else: no session at sign-in and
+  `null` from the adapter. The system never picks one of several rows.
+- Role, organization, region and active are read from the database on every
+  request, so a role change, deactivation, archive or sign-out takes effect on
+  the next request.
+- "Remove" a staff member = `users.active = false` (red line 9; `users` has no
+  `archived_at`).
+- AC-5: `changeRole({ organizationId, actorUserId, userId, role })` and
+  `deactivateUser({ organizationId, actorUserId, userId })` in
+  `lib/auth/users.ts` lock the organization's active `org_admin` rows
+  (`FOR UPDATE`, id order) in one transaction and refuse (`"last_admin"`) any
+  change that would leave zero active Org Admins. Results:
+  `ok | not_found | last_admin | invalid_role | forbidden`. Defence in depth:
+  in the same transaction they lock the actor's `users` row and return
+  `"forbidden"` (writing nothing) unless the actor is `role = org_admin`,
+  `active = true` and in the same `organizationId`. A target outside the given
+  organization, or already inactive, is `not_found`. **Callers must pass the
+  `organizationId` and `actorUserId` from the signed-in session, never values
+  taken from the request.** Who may call them (an Org Admin of that
+  organization) is checked by the caller's guard; there is no UI or endpoint for
+  them in this build (AC-6 is cut).
+- Every change writes exactly one `history_events` row in the same transaction:
+  `event_type` `role_changed` or `user_deactivated`; `actor_user_id` = the
+  session user; `organization_id` and `region_id` = the target user's;
+  `before_data`/`after_data` = `{ userId, role }` or `{ userId, active }`. No
+  change (same role), no row.
+- **Gap, flagged for whoever builds region management:** AC-5 protects roles and
+  active only. Archiving a region that is the only region of users (for example
+  an organization's only region, or its last Org Admin's) leaves them with no
+  access, and nothing in A1 prevents it.
+- What each role may do: `lib/permissions/matrix.ts` and spec section 7.
+
+## Seed (`npm run db:seed`, task A1)
+Creates "Demo Organization" and "Demo Region" (`slug` `demo-region`), then per
+role a Better Auth user and credential account and a `users` row
+(`auth_subject` = that user id, same email): `admin@example.org` (org_admin),
+`responder@example.org`, `viewer@example.org`, all in the demo region.
+Passwords from `SEED_ADMIN_PASSWORD`, `SEED_RESPONDER_PASSWORD`,
+`SEED_VIEWER_PASSWORD` (12 to 128 characters, or the seed exits with code 1),
+hashed with Better Auth's `hashPassword`, never printed. Idempotent: reuses
+existing rows, never changes an existing `users` row, and updates the password
+hashes to the current values. Never calls sign-up.
+
+## Environment variables (names only)
+`DATABASE_URL`, `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`,
+`SEED_ADMIN_PASSWORD`, `SEED_RESPONDER_PASSWORD`, `SEED_VIEWER_PASSWORD`
+(plus the Vapi and public-map names in `.env.example`). Secrets are read only
+through `lib/config/env.ts` (server-only).
