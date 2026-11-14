@@ -42,8 +42,8 @@ describe("secrets boundary", () => {
   it("secrets are read only in lib/config/env.ts (plus env-file loaders for CLI tools)", () => {
     const allowed = new Set(["lib/config/env.ts", "drizzle.config.ts", "scripts/db-local.mjs"]);
     const offenders = files
-      .map((f) => path.relative(ROOT, f))
-      .filter((rel) => !allowed.has(rel) && /process\.env\.(BETTER_AUTH_SECRET|DATABASE_URL|SEED_)/.test(read(path.join(ROOT, rel))));
+      .map((f) => path.relative(ROOT, f).replaceAll(path.sep, "/"))
+      .filter((rel) => !allowed.has(rel) && /process\.env\.(BETTER_AUTH_SECRET|DATABASE_URL|SEED_|VAPI_WEBHOOK_SECRET|VAPI_CALL_REF_KEY)/.test(read(path.join(ROOT, rel))));
     expect(offenders).toEqual([]);
   });
 });

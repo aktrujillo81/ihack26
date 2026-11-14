@@ -97,14 +97,14 @@
 }
 .ww-list-table {
   width: 100%;
-  min-width: 1280px;
+  min-width: 1100px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 .ww-list-table th,
 .ww-list-table td {
   overflow: hidden;
-  padding: var(--ww-space-3) 10px;
+  padding: var(--ww-space-3) var(--ww-space-2);
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -114,6 +114,8 @@
   padding-left: var(--ww-space-5);
 }
 .ww-list-table th {
+  line-height: 1.3;
+  white-space: normal;
   border-bottom: 1px solid var(--ww-divider);
   background: var(--ww-ground);
   color: var(--ww-ink-2);
@@ -134,35 +136,52 @@
   padding-left: calc(var(--ww-space-5) - 3px);
 }
 
-/* Widths chosen from the header words and the date text, so no header is cut off at the 1280px minimum. */
+/* Widths (of the 1128px the table gets at a 1440px window): every header word and the date fit, spoken location and
+   the priority reason end in an ellipsis. Below 1100px the panel scrolls, and the first column stays in view. */
 .ww-col-point {
-  width: 19.5%;
+  width: 19%;
 }
 .ww-col-status {
-  width: 10%;
+  width: 11%;
 }
 .ww-col-priority {
-  width: 15.5%;
+  width: 15%;
 }
 .ww-list-table .ww-col-problem {
   width: 7%;
 }
 .ww-list-table .ww-col-people {
-  width: 10%;
+  width: 7.5%;
 }
 .ww-list-table .ww-col-school {
-  width: 10.5%;
+  width: 9.5%;
 }
 .ww-list-table .ww-col-duration {
-  width: 7%;
+  width: 8%;
 }
 .ww-col-count {
-  width: 7%;
+  width: 7.5%;
   font-variant-numeric: tabular-nums;
 }
 .ww-col-time {
-  width: 13.5%;
+  width: 15.5%;
   font-variant-numeric: tabular-nums;
+}
+
+/* The first column stays in view when the table scrolls sideways (narrow windows). */
+.ww-list-table th:first-child,
+.ww-list-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-right: 1px solid var(--ww-divider-soft);
+  background: var(--ww-panel);
+}
+.ww-list-table th:first-child {
+  background: var(--ww-ground);
+}
+.ww-list-table tbody tr:hover td:first-child {
+  background: var(--ww-row-hover);
 }
 
 .ww-cell-line {
@@ -188,24 +207,6 @@
   color: var(--ww-ink-3);
   font-size: var(--ww-text-meta);
   text-overflow: ellipsis;
-}
-
-/* Flags (Needs review, Unverified): neutral outlined tag with a word, never color. */
-.ww-tag {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--ww-space-1);
-  padding: 1px var(--ww-space-2);
-  border: 1px solid var(--ww-control-border);
-  border-radius: var(--ww-radius-chip);
-  color: var(--ww-ink);
-  font-size: var(--ww-text-micro);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.ww-tag--dashed {
-  border-style: dashed;
 }
 
 /* Sortable header: a real button; the active column shows an arrow, and the th carries aria-sort. */

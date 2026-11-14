@@ -19,5 +19,5 @@ A cleaned copy of the first real Vapi `end-of-call-report` that carried extracte
 - The nine fields come back as expected: `people_affected` and `serves_school_or_clinic` are strings (`"150"`, `"true"`), `caller_confirmed` is a boolean.
 - The caller's phone number is in `message.call.customer.number` and `message.customer.number`. The raw payload also repeats it in other places (`variables`, SIP details), so the endpoint should keep an allowlist and never save the raw body.
 - `endedReason` values seen so far: `customer-ended-call` and `assistant-said-end-call-phrase`.
-- Vapi sent the credential on the request: the capture route requires the secret and fails closed, and it saved the file.
+- Vapi sent the credential on the request. The D3a webhook accepts the recorded Bearer form or `X-Vapi-Secret`, and never stores the raw body.
 - Calls 1 and 2 (assistant v3) arrived with no structured data at all. Check for a missing `structuredOutputs` key and handle it as `needs_review`, not as an error.

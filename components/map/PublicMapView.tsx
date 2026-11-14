@@ -1,3 +1,4 @@
+import { Panel } from "@/components/ui/Panel";
 import { TILE_SOURCE } from "@/lib/config/map";
 import { PUBLIC_MAP_INCLUDES_UNVERIFIED } from "@/lib/config/public-map";
 import { listPublicWaterPoints, type PublicScope } from "@/lib/data/complaints";
@@ -21,13 +22,15 @@ import { Renderer } from "./renderer";
 export async function PublicMapView({ scope }: { scope: PublicScope | null }) {
   const result = await listPublicWaterPoints(scope, { includeUnverified: PUBLIC_MAP_INCLUDES_UNVERIFIED });
   if (result.status === "error") return <p role="alert">{t("common.error")}</p>;
-  if (result.status === "empty") return <p>{t("map.empty")}</p>;
+  if (result.status === "empty") return <p className="ww-state">{t("map.empty")}</p>;
 
   const pins = toPublicMapPins(result.data);
   return (
     <div>
-      <Renderer pins={pins} tileSource={TILE_SOURCE} />
-      <MapLegend variant="public" includeUnverified={PUBLIC_MAP_INCLUDES_UNVERIFIED} />
+      <Panel as="div" padded={false} className="ww-map-panel">
+        <MapLegend variant="public" includeUnverified={PUBLIC_MAP_INCLUDES_UNVERIFIED} />
+        <Renderer pins={pins} tileSource={TILE_SOURCE} />
+      </Panel>
       <PinList pins={pins} />
     </div>
   );

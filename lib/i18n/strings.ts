@@ -156,6 +156,22 @@ const en = {
   "history.noteAdded": "Note added",
   "history.other": "Change recorded",
   "detail.saved": "Saved.",
+  // PROVISIONAL (wording from docs/design/complaint-detail.html; channel names for web and other are proposals): the detail screen's layout.
+  "detail.breadcrumb": "Breadcrumb",
+  "detail.summaryTitle": "Summary",
+  "detail.waterPointType": "Water point type",
+  "detail.priorityReason": "Priority reason",
+  "detail.transcriptsStaffOnly": "Transcripts are visible to staff only",
+  "detail.spokenLocation": "Spoken location:",
+  "detail.locationTitle": "Location",
+  "detail.verified": "Verified",
+  "detail.coordinates": "Coordinates: {lat}, {lon}",
+  "detail.pair": "{first} · {second}",
+  "detail.copyableTitle": "Copyable summary",
+  "detail.copyableNote": "The summary leaves out transcripts, notes and caller details.",
+  "channel.phone": "Phone call",
+  "channel.web": "Web",
+  "channel.other": "Other",
 
   // Map
   "map.empty": "No water points with a location yet.",
@@ -170,6 +186,8 @@ const en = {
   "map.publicTitle": "Water points",
   "map.zoomIn": "Zoom in",
   "map.zoomOut": "Zoom out",
+  // PROVISIONAL (wording from docs/design/operations-console.html): shown only while the plain grid is the basemap.
+  "map.basemapPlaceholder": "Basemap placeholder",
 
   // Needs review list
   "review.empty": "Nothing needs review right now.",

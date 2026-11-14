@@ -18,7 +18,7 @@ describe("without a session cookie, only the public and self-authenticating rout
   });
 
   it("the Better Auth and Vapi routes pass, because their own handlers authenticate", () => {
-    for (const path of ["/api/auth/sign-in/email", "/api/auth/sign-out", "/api/auth/anything", "/api/vapi/capture"]) {
+    for (const path of ["/api/auth/sign-in/email", "/api/auth/sign-out", "/api/auth/anything", "/api/vapi/webhook"]) {
       expect(decideProxy(path, false), path).toBe("pass");
     }
   });
@@ -81,7 +81,7 @@ describe("the proxy itself", () => {
   });
 
   it("lets public and self-authenticating requests through untouched", () => {
-    for (const path of ["/sign-in", "/map", "/api/health", "/api/auth/sign-in/email", "/api/vapi/capture"]) {
+    for (const path of ["/sign-in", "/map", "/api/health", "/api/auth/sign-in/email", "/api/vapi/webhook"]) {
       const res = proxy(request(path));
       expect(res.headers.get("x-middleware-next"), path).toBe("1");
       expect(res.status, path).toBe(200);

@@ -1,0 +1,269 @@
+/* The complaint detail screen (docs/design/complaint-detail.html). Tokens only. */
+.ww-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ww-space-5);
+}
+
+.ww-breadcrumb {
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-label);
+}
+.ww-breadcrumb a {
+  color: var(--ww-accent);
+  text-decoration: underline;
+}
+
+.ww-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ww-space-4);
+}
+.ww-detail-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ww-space-3);
+}
+.ww-detail-title h1 {
+  margin: 0;
+  font-size: var(--ww-text-title);
+  font-weight: 600;
+  letter-spacing: var(--ww-title-tracking);
+  line-height: 1.2;
+}
+.ww-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--ww-space-3);
+}
+
+.ww-detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ww-space-6);
+}
+.ww-detail-main {
+  display: flex;
+  flex: 1 1 560px;
+  flex-direction: column;
+  gap: var(--ww-space-6);
+  min-width: 0;
+}
+.ww-detail-side {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: var(--ww-space-6);
+  min-width: 0;
+  max-width: 420px;
+}
+
+.ww-card-title {
+  margin: 0;
+  font-size: var(--ww-text-section);
+  font-weight: 600;
+}
+.ww-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ww-space-3);
+  margin-bottom: var(--ww-space-4);
+}
+.ww-card-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+}
+
+/* Summary facts: label above, value below. */
+.ww-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: var(--ww-space-4) var(--ww-space-6);
+  margin: var(--ww-space-4) 0 0;
+}
+.ww-fact dt {
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+  font-weight: 500;
+}
+.ww-fact dd {
+  margin: var(--ww-space-1) 0 0;
+  font-size: var(--ww-text-body);
+  font-weight: 500;
+}
+.ww-fact--wide {
+  grid-column: 1 / -1;
+}
+.ww-fact--wide dd {
+  font-weight: 400;
+}
+
+/* Reports. */
+.ww-reports {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ww-report {
+  padding: var(--ww-space-4) 0;
+  border-top: 1px solid var(--ww-divider-soft);
+}
+.ww-report:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.ww-report:last-child {
+  padding-bottom: 0;
+}
+.ww-report-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ww-space-2);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-label);
+  font-weight: 500;
+}
+.ww-report-summary {
+  margin: var(--ww-space-2) 0 var(--ww-space-1);
+  font-size: var(--ww-text-body);
+}
+.ww-report-location {
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+}
+.ww-report-location span {
+  color: var(--ww-ink-3);
+  font-weight: 600;
+}
+.ww-transcript,
+.ww-summary-pre {
+  margin: var(--ww-space-2) 0 0;
+  padding: var(--ww-space-3);
+  border: 1px solid var(--ww-divider);
+  border-radius: var(--ww-radius-control);
+  background: var(--ww-ground);
+  color: var(--ww-ink);
+  font-family: var(--ww-font-mono);
+  font-size: var(--ww-text-meta);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.ww-report-empty {
+  margin: var(--ww-space-2) 0 0;
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+}
+
+/* Timeline: a line down the left with a marker at each event. The words carry the meaning. */
+.ww-timeline {
+  margin: var(--ww-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ww-timeline li {
+  position: relative;
+  padding: 0 0 var(--ww-space-4) var(--ww-space-6);
+}
+.ww-timeline li::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ww-ink);
+}
+.ww-timeline li::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: -2px;
+  left: 4px;
+  width: 2px;
+  background: var(--ww-divider);
+}
+.ww-timeline li:last-child {
+  padding-bottom: 0;
+}
+.ww-timeline li:last-child::after {
+  display: none;
+}
+.ww-timeline-text {
+  font-size: var(--ww-text-label);
+  font-weight: 500;
+}
+.ww-timeline-meta {
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+}
+
+/* Location card. */
+.ww-location-text {
+  margin: 0;
+  font-size: var(--ww-text-body);
+}
+.ww-coordinates {
+  margin: var(--ww-space-2) 0 0;
+  color: var(--ww-ink-2);
+  font-family: var(--ww-font-mono);
+  font-size: var(--ww-text-meta);
+}
+.ww-card-note-text {
+  margin: var(--ww-space-3) 0 0;
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+}
+
+/* Notes. */
+.ww-notes {
+  margin: var(--ww-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ww-note {
+  padding: var(--ww-space-3) 0;
+  border-top: 1px solid var(--ww-divider-soft);
+}
+.ww-note:first-child {
+  border-top: 0;
+}
+.ww-note-text {
+  font-size: var(--ww-text-label);
+  overflow-wrap: anywhere;
+}
+.ww-note-meta {
+  margin-top: var(--ww-space-1);
+  color: var(--ww-ink-3);
+  font-size: var(--ww-text-meta);
+}
+.ww-empty-note {
+  margin: var(--ww-space-4) 0 0;
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-label);
+}
+
+/* The breadcrumb's slash and the passed-on name are decoration and spacing, so they live here, not in the text. */
+.ww-breadcrumb a::after {
+  content: "/";
+  margin: 0 var(--ww-space-2);
+  color: var(--ww-ink-3);
+  display: inline-block;
+  text-decoration: none;
+}
+.ww-passed-on {
+  margin-left: var(--ww-space-2);
+  font-weight: 400;
+}

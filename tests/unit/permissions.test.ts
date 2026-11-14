@@ -243,7 +243,7 @@ describe("/map is the public map and the signed-in map is /dashboard/map", () =>
       "/admin",
       "/users",
       "/api/auth/sign-in",
-      "/api/vapi/capture",
+      "/api/vapi/webhook",
       "/api/secret",
       "/_next/static/x.js",
       "/.env",
