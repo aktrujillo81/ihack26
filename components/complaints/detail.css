@@ -303,3 +303,55 @@
   margin-left: var(--ww-space-2);
   font-weight: 400;
 }
+
+@media (max-width: 900px) {
+  .ww-detail-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .ww-detail-side {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .ww-detail-title,
+  .ww-detail-actions {
+    align-items: stretch;
+  }
+
+  .ww-detail-title h1 {
+    flex-basis: 100%;
+  }
+
+  .ww-detail-actions .ww-btn,
+  .ww-detail-actions form,
+  .ww-detail-actions form .ww-btn {
+    width: 100%;
+  }
+
+  .ww-detail-actions form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ww-space-3);
+  }
+
+  .ww-facts {
+    grid-template-columns: 1fr;
+    gap: var(--ww-space-3);
+  }
+
+  .ww-card-head {
+    align-items: flex-start;
+  }
+
+  .ww-card-head > .ww-technician-ticket-form {
+    flex-basis: 100%;
+  }
+
+  .ww-confirm {
+    min-width: 0;
+  }
+}
