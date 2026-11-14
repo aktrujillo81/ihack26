@@ -74,6 +74,11 @@ const en = {
   "signIn.invalid": "That email or password is not right.",
   "signIn.noRegion": "Your account is not set up for any region yet. Ask your organization's admin.",
   "signIn.expired": "Your session ended. Please sign in again.",
+  // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
+  "signIn.notConfigured": "Sign-in is not set up yet.",
+  "nav.complaints": "Complaints",
+  "nav.map": "Map",
+  "nav.signOut": "Sign out",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
