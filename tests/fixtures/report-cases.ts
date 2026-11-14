@@ -4,7 +4,7 @@
  * payload and no phone-like text appears here.
  */
 import type { WaterPointType } from "@/lib/domain/types";
-import type { ValidatedReport } from "@/lib/ingest/report-input";
+import type { ValidatedReport } from "@/lib/ingest/types";
 
 import { buildFakeReport, fakeCallRef } from "./fake-report-builder";
 

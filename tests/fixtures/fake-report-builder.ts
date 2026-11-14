@@ -6,7 +6,7 @@
  */
 import { randomInt, randomUUID } from "node:crypto";
 
-import type { ValidatedReport } from "@/lib/ingest/report-input";
+import type { ValidatedReport } from "@/lib/ingest/types";
 
 function digits(count: number): string {
   let out = "";
