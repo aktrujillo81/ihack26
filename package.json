@@ -17,7 +17,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --conditions=react-server db/seed/index.ts",
     "db:seed:demo": "tsx --conditions=react-server db/seed/demo-index.ts",
-    "db:cleanup-sessions": "tsx --conditions=react-server db/cleanup-sessions.ts"
+    "db:cleanup-sessions": "tsx --conditions=react-server db/cleanup-sessions.ts",
+    "notify:complete": "node scripts/notify-command-complete.mjs",
+    "notify:command": "node scripts/run-with-notifications.mjs"
   },
   "engines": {
     "node": ">=20.12"
