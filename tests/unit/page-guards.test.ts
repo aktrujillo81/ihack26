@@ -168,10 +168,13 @@ describe("the protected layout and navigation", () => {
     }
   });
 
-  it("no link points at a page that does not exist yet", () => {
-    const html = renderToStaticMarkup(createElement(AppNav, { role: "org_admin" }));
-    expect(html).not.toContain("needs-review");
-    expect(html).not.toContain("needs-location");
+  it("the Needs review link exists for every role, and no link points at a page that does not exist yet", () => {
+    for (const role of ROLES) {
+      const html = renderToStaticMarkup(createElement(AppNav, { role }));
+      expect(html, role).toContain(`href="/needs-review"`);
+      expect(html, role).toContain(t("nav.needsReview"));
+      expect(html, role).not.toContain("needs-location");
+    }
   });
 
   it("marks only the current page with aria-current, and a detail page keeps Complaints current", () => {

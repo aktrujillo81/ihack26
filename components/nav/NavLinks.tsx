@@ -15,6 +15,7 @@ export interface NavLinkItem {
 /** Icons by route (design: operations-console). A route with no icon here shows none. */
 const ICONS: Record<string, string> = {
   "/complaints": "M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01",
+  "/needs-review": "M5 21V4m0 0h11l-2 4 2 4H5",
   "/dashboard/map": "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14",
 };
 
