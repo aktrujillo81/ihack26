@@ -46,6 +46,33 @@
 .ww-chip--fixed .ww-chip-shape {
   fill: var(--ww-fixed-icon);
 }
+.ww-chip--accepted, .ww-chip--in_progress {
+  color: var(--ww-open-text);
+  background: var(--ww-open-bg);
+  border-color: var(--ww-open-border);
+}
+.ww-chip--accepted .ww-chip-shape, .ww-chip--in_progress .ww-chip-shape {
+  fill: var(--ww-open-icon);
+  stroke: var(--ww-open-icon);
+}
+.ww-chip--completed {
+  color: var(--ww-fixed-text);
+  background: var(--ww-fixed-bg);
+  border-color: var(--ww-fixed-border);
+}
+.ww-chip--completed .ww-chip-shape {
+  fill: var(--ww-fixed-icon);
+  stroke: var(--ww-fixed-icon);
+}
+.ww-chip--denied {
+  color: var(--ww-unknown-text);
+  background: var(--ww-unknown-bg);
+  border-color: var(--ww-unknown-border);
+}
+.ww-chip--denied .ww-chip-shape {
+  fill: none;
+  stroke: var(--ww-unknown-icon);
+}
 .ww-chip--unknown {
   border-style: dashed;
   background: var(--ww-unknown-bg);

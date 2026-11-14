@@ -30,3 +30,9 @@ export const TILE_SOURCE: TileSource | null =
 
 /** After this many tile errors with no tile loaded, switch to the plain background. */
 export const TILE_ERROR_LIMIT = 3;
+
+/** Default dashboard view for the demo region. Pin-filled maps may fit to their pins. */
+export const DASHBOARD_MAP_CENTER: [number, number] = [-1.2888, 36.815];
+
+/** Default complaint location-editor view. Existing complaint coordinates override this. */
+export const LOCATION_EDITOR_CENTER: [number, number] = [-1.2888, 36.815];

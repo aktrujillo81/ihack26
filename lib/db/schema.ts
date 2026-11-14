@@ -28,7 +28,7 @@ export const reportChannel = pgEnum("report_channel", ["phone", "web", "other"])
 export const durationType = pgEnum("duration_type", ["today", "few_days", "week_or_more", "unknown"]);
 export const verificationState = pgEnum("verification_state", ["unverified", "verified", "merged", "archived"]);
 export const locationSource = pgEnum("location_source", ["landmark_only", "map_pin", "gps", "geocoded"]);
-export const complaintStatus = pgEnum("complaint_status", ["open", "passed_on", "fixed"]);
+export const complaintStatus = pgEnum("complaint_status", ["open", "accepted", "denied", "in_progress", "passed_on", "fixed", "completed"]);
 /** Contracts 5.2, in priority order. One stored reason per flagged report. */
 export const needsReviewReason = pgEnum("needs_review_reason", [
   "malformed_payload",
@@ -141,6 +141,8 @@ export const complaints = pgTable("complaints", {
   duration: durationType("duration").default("unknown").notNull(),
   passedOnPartnerId: uuid("passed_on_partner_id").references(() => partners.id),
   passedOnNote: text("passed_on_note"),
+  assignedPartnerId: uuid("assigned_partner_id").references(() => partners.id),
+  assignedAt: timestamp("assigned_at", { withTimezone: true }),
   fixedAt: timestamp("fixed_at", { withTimezone: true }),
   ...timestamps,
 }, (table) => [
@@ -153,7 +155,7 @@ export const complaints = pgTable("complaints", {
   check("complaints_report_count_nonnegative", sql`${table.reportCount} >= 0`),
   check("complaints_people_affected_nonnegative", sql`${table.peopleAffected} is null or ${table.peopleAffected} >= 0`),
   // At most one active complaint per water point (contracts 4.1 item 8).
-  uniqueIndex("complaints_one_active_per_water_point_idx").on(table.waterPointId).where(sql`${table.status} in ('open', 'passed_on')`),
+  uniqueIndex("complaints_one_active_per_water_point_idx").on(table.waterPointId).where(sql`${table.status} in ('open', 'accepted', 'in_progress', 'passed_on')`),
 ]);
 
 export const reports = pgTable("reports", {
@@ -233,6 +235,7 @@ export const notes = pgTable("notes", {
   complaintId: uuid("complaint_id").notNull().references(() => complaints.id),
   authorUserId: uuid("author_user_id").notNull().references(() => users.id),
   body: text("body").notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   ...timestamps,
 }, (table) => [
   foreignKey({

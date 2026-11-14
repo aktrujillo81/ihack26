@@ -93,6 +93,7 @@ export interface ComplaintDetail {
   /** Oldest first. */
   history: HistoryEvent[];
   passedOnTo: PartnerView | null;
+  partners?: PartnerView[];
 }
 
 /** A report as shown in a list: no transcript and no summary (both are caller-derived text and appear only on the detail page). */
@@ -189,6 +190,8 @@ function toComplaint(row: ComplaintRow, version: string, reportFacts: ReportFact
     needsReviewReason: row.needsReview ? topReviewReason(reportReasons) : null,
     passedOnPartnerId: row.passedOnPartnerId,
     passedOnNote: row.passedOnNote,
+    assignedPartnerId: row.assignedPartnerId,
+    assignedAt: row.assignedAt ? iso(row.assignedAt) : null,
     version,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
@@ -315,7 +318,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
     if (!row) return notFound;
     const { complaint, version } = row;
 
-    const [pointRows, reportRows, noteRows, eventRows, partnerRows] = await Promise.all([
+    const [pointRows, reportRows, noteRows, eventRows, partnerRows, directoryRows] = await Promise.all([
       db.select().from(waterPoints).where(and(eq(waterPoints.id, complaint.waterPointId), scope(waterPoints, ctx))).limit(1),
       db.select().from(reports).where(and(eq(reports.complaintId, id), scope(reports, ctx))).orderBy(desc(reports.receivedAt)),
       db
@@ -323,7 +326,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
         .from(notes)
         // The author's name is staff data. Join only within this organization so a crafted row cannot show another organization's staff.
         .leftJoin(users, and(eq(users.id, notes.authorUserId), eq(users.organizationId, ctx.organizationId)))
-        .where(and(eq(notes.complaintId, id), scope(notes, ctx)))
+        .where(and(eq(notes.complaintId, id), scope(notes, ctx), isNull(notes.archivedAt)))
         .orderBy(asc(notes.createdAt)),
       db
         .select({ event: historyEvents, actor: users.displayName })
@@ -338,6 +341,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
             .where(and(eq(partners.id, complaint.passedOnPartnerId), scope(partners, ctx)))
             .limit(1)
         : Promise.resolve([]),
+      db.select({ id: partners.id, organizationId: partners.organizationId, regionId: partners.regionId, name: partners.name, type: partners.type }).from(partners).where(scope(partners, ctx)).orderBy(asc(partners.name)),
     ]);
 
     // The contact column is not even loaded: only these named columns are selected.
@@ -361,6 +365,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
         author,
         text: note.body,
         createdAt: iso(note.createdAt),
+        archivedAt: note.archivedAt ? iso(note.archivedAt) : null,
       })),
       history: eventRows.map(({ event, actor }) => ({
         id: event.id,
@@ -376,13 +381,14 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
         at: iso(event.createdAt),
       })),
       passedOnTo: partnerRows[0] ? toPartnerView(partnerRows[0]) : null,
+      partners: directoryRows.map(toPartnerView),
     };
     return { status: "ok", data: detail };
   });
 }
 
 /** Keys of history before/after data that are codes or ids. Anything else (such as old free text) is dropped before it reaches the browser. */
-const HISTORY_CODE_KEYS = ["status", "reportCount", "mergedIntoId", "noteId", "userId", "role", "active"] as const;
+const HISTORY_CODE_KEYS = ["status", "reportCount", "mergedIntoId", "noteId", "userId", "role", "active", "assigned"] as const;
 
 export function codesOnly(data: unknown): Record<string, string | number | boolean | null> | null {
   if (typeof data !== "object" || data === null || Array.isArray(data)) return null;

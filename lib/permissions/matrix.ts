@@ -16,6 +16,10 @@ export const ACTIONS = [
   "view", // map, complaints, transcripts in the user's regions
   "change_status",
   "add_note",
+  "edit_note",
+  "archive_note",
+  "edit_location",
+  "assign_provider",
   "pass_on", // records a hand-off step only; nothing is sent
   "create_water_point",
   "verify_water_point",
@@ -33,6 +37,10 @@ const RESPONDER: readonly Action[] = [
   "view",
   "change_status",
   "add_note",
+  "edit_note",
+  "archive_note",
+  "edit_location",
+  "assign_provider",
   "pass_on",
   "create_water_point",
   "verify_water_point",

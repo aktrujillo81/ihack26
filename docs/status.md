@@ -2,7 +2,7 @@
 
 Read this first in every session. The Orchestrator keeps it current.
 
-**Last updated:** Sat 2026-11-14, about 9:30 AM Mountain Time, by the Orchestrator.
+**Last updated:** Sat 2026-11-14, by the Orchestrator.
 **Deadline:** 4:00 PM Saturday. Feature freeze time: **unknown** (proposed: 1:30 PM Mountain; the humans set it).
 **Vapi balance:** 4.73 credits of 5.00 (3 paid calls, $0.27). Floor until rehearsals: 2.25. Only Andrew places paid calls, each with a human's OK.
 
@@ -13,7 +13,7 @@ IN PROGRESS: D3a (PR #42), W1 prep (PR #28, open), and the D3/D4/D5 schema work 
 BLOCKED: D3b save implementation until #39 and #42 are merged. D4, D5, D6, D7, W2 to W5 real data, and Q1 to Q8 remain downstream of the data path.
 NEEDS A HUMAN: see "Needs a human" below.
 NEXT: merge #39 and #42, then Andrew builds the real D3b save on `feat/d3b-save-impl` from `C:\Users\aktru\projects\hackathon-d3b`. That save must use D3a's frozen type, not the provisional helper type from #45.
-D3a UPDATE (this branch): webhook built and reviewed; `saveReport` is intentionally a failing D3b stub until D3b replaces it.
+NGO WORKFLOW UPDATE: Human-approved workflow extension is implemented in this branch: statuses, provider assignment, location editing/verification, and note edit/archive. Migration `0004_complaint_workflow.sql` must be applied before deployment.
 ```
 
 ## Tasks

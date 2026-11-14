@@ -12,9 +12,13 @@
 import type { ComplaintStatus } from "../domain/types";
 
 export const ALLOWED_TRANSITIONS: Readonly<Record<ComplaintStatus, readonly ComplaintStatus[]>> = {
-  open: ["passed_on", "fixed"],
-  passed_on: ["fixed"],
-  fixed: ["open"],
+  open: ["accepted", "denied", "passed_on", "fixed", "completed"],
+  accepted: ["in_progress", "denied", "passed_on", "completed"],
+  denied: ["open"],
+  in_progress: ["passed_on", "completed", "fixed"],
+  passed_on: ["in_progress", "completed", "fixed"],
+  fixed: ["open", "completed"],
+  completed: ["open"],
 };
 
 export function nextStatuses(status: ComplaintStatus): readonly ComplaintStatus[] {

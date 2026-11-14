@@ -3,7 +3,7 @@ import "server-only";
 import { AuthError, requireActionInScope, requireSession, toDataContext } from "../auth/guards";
 import type { Session } from "../auth/session";
 import { MAX_COMPLAINT_ID_LENGTH, MAX_NOTE_LENGTH, MAX_PASSED_ON_TO_LENGTH } from "../config/limits";
-import { addNote, applyStatusChange, getComplaintHead, type WriteResult } from "../data/complaint-writes";
+import { addNote, applyStatusChange, archiveNote, editNote, getComplaintHead, updateLocation, type WriteResult } from "../data/complaint-writes";
 import { COMPLAINT_STATUSES, type ComplaintStatus } from "../domain/types";
 import type { Action } from "../permissions/matrix";
 import type { ActionState } from "./state";
@@ -80,10 +80,10 @@ function toState(result: WriteResult): ActionState {
 
 export async function changeComplaintStatus(
   raw: unknown,
-  input: { complaintId: unknown; status: unknown; passedOnTo?: unknown; version?: unknown },
+  input: { complaintId: unknown; status: unknown; passedOnTo?: unknown; partnerId?: unknown; version?: unknown },
 ): Promise<ActionState> {
   try {
-    // "passed_on" is a pass-on; "fixed" and "open" are status changes. The matrix has a separate action for each.
+    // "passed_on" is a pass-on; every other transition is a status change.
     const wanted = input.status === "passed_on" ? "pass_on" : "change_status";
     const auth = await authorize(raw, wanted, input.complaintId);
     if (!auth.ok) return auth.state;
@@ -102,11 +102,34 @@ export async function changeComplaintStatus(
         expectedVersion: input.version,
         to: target,
         passedOnNote: target === "passed_on" ? (input.passedOnTo as string) : undefined,
+        partnerId: typeof input.partnerId === "string" ? input.partnerId : undefined,
       }),
     );
   } catch {
     return { status: "error" };
   }
+}
+
+export async function editComplaintNote(raw: unknown, input: { complaintId: unknown; noteId: unknown; text: unknown }): Promise<ActionState> {
+  try { const auth = await authorize(raw, "edit_note", input.complaintId); if (!auth.ok) return auth.state;
+    if (typeof input.noteId !== "string" || !isText(input.text, MAX_NOTE_LENGTH)) return { status: "invalid" };
+    return toState(await editNote({ ctx: toDataContext(auth.session), actorUserId: auth.session.userId, complaintId: input.complaintId as string, noteId: input.noteId, text: input.text }));
+  } catch { return { status: "error" }; }
+}
+
+export async function archiveComplaintNote(raw: unknown, input: { complaintId: unknown; noteId: unknown }): Promise<ActionState> {
+  try { const auth = await authorize(raw, "archive_note", input.complaintId); if (!auth.ok) return auth.state;
+    if (typeof input.noteId !== "string") return { status: "invalid" };
+    return toState(await archiveNote({ ctx: toDataContext(auth.session), actorUserId: auth.session.userId, complaintId: input.complaintId as string, noteId: input.noteId }));
+  } catch { return { status: "error" }; }
+}
+
+export async function updateComplaintLocation(raw: unknown, input: { complaintId: unknown; version: unknown; locationText: unknown; latitude: unknown; longitude: unknown; verify: unknown }): Promise<ActionState> {
+  try { const auth = await authorize(raw, "edit_location", input.complaintId); if (!auth.ok) return auth.state;
+    if (typeof input.version !== "string" || typeof input.locationText !== "string") return { status: "invalid" };
+    const latitude = input.latitude === null || input.latitude === "" ? null : Number(input.latitude); const longitude = input.longitude === null || input.longitude === "" ? null : Number(input.longitude);
+    return toState(await updateLocation({ ctx: toDataContext(auth.session), actorUserId: auth.session.userId, complaintId: input.complaintId as string, expectedVersion: input.version, locationText: input.locationText, latitude, longitude, verify: input.verify === true }));
+  } catch { return { status: "error" }; }
 }
 
 export async function addComplaintNote(raw: unknown, input: { complaintId: unknown; text: unknown }): Promise<ActionState> {

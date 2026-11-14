@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { LayerGroup, Map as LeafletMapInstance } from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { TILE_ERROR_LIMIT } from "@/lib/config/map";
+import { DASHBOARD_MAP_CENTER, TILE_ERROR_LIMIT } from "@/lib/config/map";
 import { t } from "@/lib/i18n/strings";
 
 import "./map.css";
@@ -51,7 +51,7 @@ export function LeafletMap({ pins, tileSource }: MapRendererProps) {
           // The map pans and zooms with the keyboard. Pins themselves are not tab stops until they
           // do something (MP-7); the text list below the map is the keyboard path to the same information.
           keyboard: true,
-        });
+        }).setView(DASHBOARD_MAP_CENTER, 13);
         L.control.zoom({ zoomInTitle: t("map.zoomIn"), zoomOutTitle: t("map.zoomOut") }).addTo(map);
         // The library's own scale bar (metric). Styled in map.css; it reads no data.
         L.control.scale({ imperial: false }).addTo(map);

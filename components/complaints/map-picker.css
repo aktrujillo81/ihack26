@@ -1,0 +1,4 @@
+.ww-location-picker-wrap { display: grid; gap: var(--ww-space-2); margin-top: var(--ww-space-3); }
+.ww-location-picker { width: 100%; height: 280px; min-height: 220px; border: 1px solid var(--ww-divider); border-radius: var(--ww-radius-control); background: var(--ww-map-land); overflow: hidden; }
+.ww-location-marker { width: 22px !important; height: 22px !important; border: 3px solid var(--ww-panel); border-radius: 50%; background: var(--ww-accent); box-shadow: 0 0 0 2px var(--ww-ink); }
+.ww-location-picker .leaflet-control-zoom a { color: var(--ww-ink); }
