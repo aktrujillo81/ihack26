@@ -98,6 +98,8 @@ The closing line is in the prompt. **How the call then ends is unknown.** Vapi o
 ## Data extraction
 **As set up in Vapi (2026-11-14):** Vapi's newer **Structured Output** feature, not the older analysis plan. Name `water_point_report`, extraction method **AI extraction**, result format **Multiple fields (Object)**, attached to the Well Watch assistant, audio not included. The nine fields below are entered with every field **Required**. Types are String for all fields except `caller_confirmed` (Boolean). The allowed values are in each field's description, not an enum type. **Not yet confirmed:** how Vapi shows these fields in the data it sends (see the end of this section).
 
+**Server safety net (decided 2026-11-14, built in D3a):** the allowed values live only in each field's description, so the extractor can return a near miss. D3a maps `handpump` to `hand_pump` (and may add `bore_hole` to `borehole`; if it maps `yes`/`no` for the school field it says so in `docs/contracts.md` and here) before validation. Anything not in the map stays `invalid_fields`, never silently null (red line 7). The spoken script does not change; the field descriptions stay the source.
+
 The schema block below is the reference for field names and descriptions. It was written for an analysis plan, so Vapi's form entries differ in shape only.
 
 Spec section 8 names these fields. `docs/contracts.md` wins once S6 lands, and this schema must then be changed to match it exactly.
