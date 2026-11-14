@@ -50,7 +50,7 @@ D3a UPDATE (this branch): webhook built and reviewed; `saveReport` is intentiona
 | #42 | `feat/d3a-vapi-webhook-impl` | unknown | D3a prerequisite; not merged |
 
 ## Needs a human
-1. **Vapi server URL.** Do not switch it until D3b is deployed and the authenticated webhook check returns 200 with a stored row. The target is `https://bg.verilen.com/api/vapi/webhook`.
+1. **Vapi server URL.** Do not switch it until D3b is deployed and the authenticated webhook check returns 200 with a stored row. The target is `https://wellwatch.verilen.com/api/vapi/webhook`.
 2. **Feature freeze time.** Not set.
 3. **Public map (PR #22).** Merged, but the spec lists it as cut. Approve the spec change or turn the page off.
 4. **Retention.** How long transcripts are kept (spec unknown 10), and whether Vapi's audio recording stays on (Vapi's own retention is unknown).

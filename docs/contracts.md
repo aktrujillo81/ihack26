@@ -622,7 +622,7 @@ list sessions, get-session, and the rest). Bodies, cookies and tokens are never 
 
 - **Cookie:** `better-auth.session_token` (signed, HttpOnly, SameSite=Lax, Path=/, Max-Age 43200). In production, or whenever `BETTER_AUTH_URL` is `https://`, it is `__Secure-better-auth.session_token` with `Secure`. No cookie cache (`session_data` cookie is never set).
 - **Session length:** 12 hours from sign-in (`SESSION_LIFETIME_SECONDS` in `lib/config/auth.ts`, the one source for this value). Never extended by use. Every session row is capped at that lifetime when it is created.
-- **Origins:** `BETTER_AUTH_URL` (the public hostname, `https://bg.verilen.com` on the host), plus `http://127.0.0.1:6543` only when `NODE_ENV=development`. The Origin check is forced on in every environment.
+- **Origins:** `BETTER_AUTH_URL` (the public hostname, `https://wellwatch.verilen.com` on the host), plus `http://127.0.0.1:3162` only when `NODE_ENV=development`. The Origin check is forced on in every environment.
 - **Rate limit:** on in every environment. Sign-in: 5 per 60 seconds per client IP, then 429. The client IP is taken only from `cf-connecting-ip` (a single valid IP). With no such header: `127.0.0.1` in development and tests; in production one shared bucket for all such requests. In-memory, per server process (resets on restart).
 - **Accounts:** sign-up is disabled (also for direct server calls). Accounts come only from `npm run db:seed`. Password length 12 to 128.
 
