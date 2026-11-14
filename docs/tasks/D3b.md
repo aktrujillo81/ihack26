@@ -59,7 +59,7 @@ ACCEPTANCE CRITERIA
 - Four reviews at PASS (Backend, Security, Phone / AI Prompter, UX) and a human merges.
 
 DECIDED BY THE HUMANS (2026-11-14, `docs/decisions.md`)
-1. **Two steps.** Step 1 (one transaction): duplicate check, insert the report, history `report_added` is NOT written yet if the report stays unattached. Step 2 (second transaction): match (D4), complaint and score (D5), attach, history. If step 2 fails, the report from step 1 stays, flagged `processing_error`, and counts as received. Acceptance test: force a failure in step 2 and see the report kept with `processing_error` and no partial complaint or history. The function may be one exported function with two phases or two functions: Backend names them.
+1. **Two steps.** Step 1 (one transaction): duplicate check, insert the report (with `received_at`). Which history rows go in which step: unknown (open question 2). Step 2 (second transaction): match (D4), complaint and score (D5), attach, history. If step 2 fails, the report from step 1 stays, flagged `processing_error`, and counts as received. Acceptance test: force a failure in step 2 and see the report kept with `processing_error` and no partial complaint or history. The function may be one exported function with two phases or two functions: Backend names them.
 2. **Schema first.** Items 1 to 3, 5 to 8 and 11 come from the schema PR (`docs/tasks/D3-schema.md`), merged before D3b starts. D3b makes no schema edits.
 3. **Alias** `handpump` to `hand_pump` is D3a's (before the report reaches D3b).
 
