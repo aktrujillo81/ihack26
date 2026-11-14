@@ -100,6 +100,7 @@
 | Unverified | Banner: "This water point has not been verified yet." (`detail.unverifiedBanner`) |
 | Viewer | Status controls and note box are not rendered. The server still refuses any attempt. |
 | Status change | Confirm dialog: "Change status to {status}?" (`detail.confirmStatus`), buttons "Confirm" (`common.confirm`) and "Cancel" (`common.cancel`). |
+| Pass on | The confirm dialog also says "You can't undo this in this version." (`detail.confirmPassedOn`, UX gate 2026-11-14). "Passed on to" shows a limit message "200 characters max" and keeps the typed text if the save fails (`detail.saveFailed`). **P1:** "Put back to open" for a passed-on complaint (`passed_on` to `open`, note required). Until then a mistake is recorded with a note. |
 | Pass on (note field) | "Who is it passed to?" (`detail.passedOnTo`). This records a step only. Nothing is sent. Helper text: "This records the hand-off. It does not send a message." (`detail.passedOnHelp`) |
 | Fixed | Button "Mark fixed" (`detail.markFixed`). After fixing, "Reopen" is available (`detail.reopen`). |
 | Save failed | "Your change was not saved. Please try again." (`detail.saveFailed`). The screen keeps the user's text. |
