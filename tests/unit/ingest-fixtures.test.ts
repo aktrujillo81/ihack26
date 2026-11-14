@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { DURATIONS, PROBLEMS, WATER_POINT_TYPES } from "@/lib/domain/types";
-import { ENDED_REASONS, INTAKE_REVIEW_REASONS, type ValidatedReport } from "@/lib/ingest/report-input";
+import { ENDED_REASONS, NEEDS_REVIEW_REASONS, type ValidatedReport } from "@/lib/ingest/types";
 
 import { buildFakeReport, fakeCallRef, fakeName, fakePhoneNumbers, plantPersonalData } from "../fixtures/fake-report-builder";
 import {
@@ -31,7 +31,7 @@ function assertShape(report: ValidatedReport) {
   expect(report.transcript).toBeNull();
   if (report.endedReason !== null) expect(ENDED_REASONS).toContain(report.endedReason);
   // Invariant: needs review means a reason (contracts 5.2).
-  if (report.needsReview) expect(INTAKE_REVIEW_REASONS).toContain(report.needsReviewReason);
+  if (report.needsReview) expect(NEEDS_REVIEW_REASONS).toContain(report.needsReviewReason);
   else expect(report.needsReviewReason).toBeNull();
 }
 
@@ -142,7 +142,7 @@ describe("report cases", () => {
 describe("no phone-like text is written in these files", () => {
   const root = path.resolve(__dirname, "../..");
   const files = [
-    "lib/ingest/report-input.ts",
+    "lib/ingest/types.ts",
     "lib/ingest/text-caps.ts",
     "lib/ingest/aliases.ts",
     "lib/config/intake-defaults.ts",
