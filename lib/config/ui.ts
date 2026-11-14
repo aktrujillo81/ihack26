@@ -38,3 +38,11 @@ export const DATA_LIST_HARD_LIMIT = 1000;
  */
 export const PRIORITY_HIGH_FROM_SCORE = 7;
 export const PRIORITY_MEDIUM_FROM_SCORE = 4;
+
+/**
+ * PROPOSED, NOT APPROVED. How often the complaint list re-reads itself (D7,
+ * smallest version: `router.refresh()` in the browser, no endpoint). The
+ * contract's `GET /api/live` (6.7) is a larger design with a 5 second default
+ * and is not built. Paused while the tab is hidden.
+ */
+export const LIST_REFRESH_SECONDS = 15;

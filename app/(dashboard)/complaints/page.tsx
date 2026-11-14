@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { AutoRefresh } from "@/components/complaints/AutoRefresh";
 import { ComplaintList } from "@/components/complaints/ComplaintList";
 import { StateMessage } from "@/components/complaints/StateMessage";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -18,6 +19,7 @@ export default async function ComplaintsPage() {
   const session = await requirePageSession();
   return (
     <main>
+      <AutoRefresh />
       <PageHeader title={t("nav.complaints")} subtitle={t("page.complaints.subtitle")} />
       <Suspense fallback={<StateMessage state={{ status: "loading" }} emptyKey="list.empty" />}>
         <ComplaintList ctx={toDataContext(session)} retryHref="/complaints" />
