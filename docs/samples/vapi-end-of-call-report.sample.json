@@ -1,0 +1,263 @@
+{
+  "message": {
+    "timestamp": 1794659088009,
+    "type": "end-of-call-report",
+    "startedAt": "2026-11-14T12:23:25.870Z",
+    "endedAt": "2026-11-14T12:24:43.586Z",
+    "endedReason": "assistant-said-end-call-phrase",
+    "durationSeconds": 77.716,
+    "durationMinutes": 1.2953,
+    "cost": 0.09,
+    "summary": "",
+    "analysis": {},
+    "transcript": "AI: Hello, this is the WaterPoint report line. This call is recorded and written down so your report can be shared. I will ask a few short questions. First, where is the water point? Please tell me the village and something nearby.\nUser: Riverside Village near the market.\nAI: Thank you. What kind of water point is it? For example, a well, a handpump, a tap, or a borehole.\nUser: A hand pump.\nAI: Thank you. What is the problem with the handpump? For example, no water, it is broken, the water is dirty, or the water is slow.\nUser: There is no water.\nAI: Thank you. About. How many people use this handpump?\nUser: About 150.\nAI: Thank you. Does a school or a clinic use this handpump?\nUser: Yes, a school uses it.\nAI: Thank you. How long has this been a problem? Today, a few days, or a week or more?\nUser: About a week.\nAI: You said the water point is in Riverside Village, near the market. It is a hand pump with no water. About 150 people use it, including a school. The problem has lasted about a week. Is that right?\nUser: Yes.\nAI: Thank you. Your report has been recorded and will be shared with people who may be able to help.\n",
+    "messages": [
+      {
+        "role": "bot",
+        "message": "Hello, this is the WaterPoint report line. This call is recorded and written down so your report can be shared. I will ask a few short questions. First, where is the water point? Please tell me the village and something nearby.",
+        "time": 1794659006431,
+        "secondsFromStart": 0.561,
+        "duration": 11820
+      },
+      {
+        "role": "user",
+        "message": "Riverside Village near the market.",
+        "time": 1794659020456,
+        "secondsFromStart": 14.34,
+        "duration": 1380
+      },
+      {
+        "role": "bot",
+        "message": "Thank you. What kind of water point is it? For example, a well, a handpump, a tap, or a borehole.",
+        "time": 1794659022991,
+        "secondsFromStart": 17.121,
+        "duration": 5340
+      },
+      {
+        "role": "user",
+        "message": "A hand pump.",
+        "time": 1794659030596,
+        "secondsFromStart": 24.48,
+        "duration": 360
+      },
+      {
+        "role": "bot",
+        "message": "Thank you. What is the problem with the handpump? For example, no water, it is broken, the water is dirty, or the water is slow.",
+        "time": 1794659032051,
+        "secondsFromStart": 26.181,
+        "duration": 7320
+      },
+      {
+        "role": "user",
+        "message": "There is no water.",
+        "time": 1794659041156,
+        "secondsFromStart": 35.04,
+        "duration": 480
+      },
+      {
+        "role": "bot",
+        "message": "Thank you. About. How many people use this handpump?",
+        "time": 1794659042671,
+        "secondsFromStart": 36.801,
+        "duration": 2820
+      },
+      {
+        "role": "user",
+        "message": "About 150.",
+        "time": 1794659046976,
+        "secondsFromStart": 40.86,
+        "duration": 780
+      },
+      {
+        "role": "bot",
+        "message": "Thank you. Does a school or a clinic use this handpump?",
+        "time": 1794659048911,
+        "secondsFromStart": 43.041,
+        "duration": 3240
+      },
+      {
+        "role": "user",
+        "message": "Yes, a school uses it.",
+        "time": 1794659053396,
+        "secondsFromStart": 47.28,
+        "duration": 1080
+      },
+      {
+        "role": "bot",
+        "message": "Thank you. How long has this been a problem? Today, a few days, or a week or more?",
+        "time": 1794659056111,
+        "secondsFromStart": 50.241,
+        "duration": 4380
+      },
+      {
+        "role": "user",
+        "message": "About a week.",
+        "time": 1794659062396,
+        "secondsFromStart": 56.28,
+        "duration": 240
+      },
+      {
+        "role": "bot",
+        "message": "You said the water point is in Riverside Village, near the market. It is a hand pump with no water. About 150 people use it, including a school. The problem has lasted about a week. Is that right?",
+        "time": 1794659063851,
+        "secondsFromStart": 57.981,
+        "duration": 11400
+      },
+      {
+        "role": "user",
+        "message": "Yes.",
+        "time": 1794659076976,
+        "secondsFromStart": 70.86,
+        "duration": 60
+      },
+      {
+        "role": "bot",
+        "message": "Thank you. Your report has been recorded and will be shared with people who may be able to help.",
+        "time": 1794659078131,
+        "secondsFromStart": 72.261,
+        "duration": 4020
+      }
+    ],
+    "artifact": {
+      "transcript": "AI: Hello, this is the WaterPoint report line. This call is recorded and written down so your report can be shared. I will ask a few short questions. First, where is the water point? Please tell me the village and something nearby.\nUser: Riverside Village near the market.\nAI: Thank you. What kind of water point is it? For example, a well, a handpump, a tap, or a borehole.\nUser: A hand pump.\nAI: Thank you. What is the problem with the handpump? For example, no water, it is broken, the water is dirty, or the water is slow.\nUser: There is no water.\nAI: Thank you. About. How many people use this handpump?\nUser: About 150.\nAI: Thank you. Does a school or a clinic use this handpump?\nUser: Yes, a school uses it.\nAI: Thank you. How long has this been a problem? Today, a few days, or a week or more?\nUser: About a week.\nAI: You said the water point is in Riverside Village, near the market. It is a hand pump with no water. About 150 people use it, including a school. The problem has lasted about a week. Is that right?\nUser: Yes.\nAI: Thank you. Your report has been recorded and will be shared with people who may be able to help.\n",
+      "messages": [
+        {
+          "role": "bot",
+          "message": "Hello, this is the WaterPoint report line. This call is recorded and written down so your report can be shared. I will ask a few short questions. First, where is the water point? Please tell me the village and something nearby.",
+          "time": 1794659006431,
+          "secondsFromStart": 0.561,
+          "duration": 11820
+        },
+        {
+          "role": "user",
+          "message": "Riverside Village near the market.",
+          "time": 1794659020456,
+          "secondsFromStart": 14.34,
+          "duration": 1380
+        },
+        {
+          "role": "bot",
+          "message": "Thank you. What kind of water point is it? For example, a well, a handpump, a tap, or a borehole.",
+          "time": 1794659022991,
+          "secondsFromStart": 17.121,
+          "duration": 5340
+        },
+        {
+          "role": "user",
+          "message": "A hand pump.",
+          "time": 1794659030596,
+          "secondsFromStart": 24.48,
+          "duration": 360
+        },
+        {
+          "role": "bot",
+          "message": "Thank you. What is the problem with the handpump? For example, no water, it is broken, the water is dirty, or the water is slow.",
+          "time": 1794659032051,
+          "secondsFromStart": 26.181,
+          "duration": 7320
+        },
+        {
+          "role": "user",
+          "message": "There is no water.",
+          "time": 1794659041156,
+          "secondsFromStart": 35.04,
+          "duration": 480
+        },
+        {
+          "role": "bot",
+          "message": "Thank you. About. How many people use this handpump?",
+          "time": 1794659042671,
+          "secondsFromStart": 36.801,
+          "duration": 2820
+        },
+        {
+          "role": "user",
+          "message": "About 150.",
+          "time": 1794659046976,
+          "secondsFromStart": 40.86,
+          "duration": 780
+        },
+        {
+          "role": "bot",
+          "message": "Thank you. Does a school or a clinic use this handpump?",
+          "time": 1794659048911,
+          "secondsFromStart": 43.041,
+          "duration": 3240
+        },
+        {
+          "role": "user",
+          "message": "Yes, a school uses it.",
+          "time": 1794659053396,
+          "secondsFromStart": 47.28,
+          "duration": 1080
+        },
+        {
+          "role": "bot",
+          "message": "Thank you. How long has this been a problem? Today, a few days, or a week or more?",
+          "time": 1794659056111,
+          "secondsFromStart": 50.241,
+          "duration": 4380
+        },
+        {
+          "role": "user",
+          "message": "About a week.",
+          "time": 1794659062396,
+          "secondsFromStart": 56.28,
+          "duration": 240
+        },
+        {
+          "role": "bot",
+          "message": "You said the water point is in Riverside Village, near the market. It is a hand pump with no water. About 150 people use it, including a school. The problem has lasted about a week. Is that right?",
+          "time": 1794659063851,
+          "secondsFromStart": 57.981,
+          "duration": 11400
+        },
+        {
+          "role": "user",
+          "message": "Yes.",
+          "time": 1794659076976,
+          "secondsFromStart": 70.86,
+          "duration": 60
+        },
+        {
+          "role": "bot",
+          "message": "Thank you. Your report has been recorded and will be shared with people who may be able to help.",
+          "time": 1794659078131,
+          "secondsFromStart": 72.261,
+          "duration": 4020
+        }
+      ],
+      "structuredOutputs": {
+        "00000000-0000-4000-8000-000000000001": {
+          "name": "water_point_report",
+          "result": {
+            "problem": "no_water",
+            "summary": "The hand pump in Riverside Village near the market has no water.",
+            "duration": "week_or_more",
+            "location_text": "Riverside Village near the market",
+            "language_spoken": "English",
+            "people_affected": "150",
+            "caller_confirmed": true,
+            "water_point_type": "hand_pump",
+            "serves_school_or_clinic": "true"
+          },
+          "compliancePlan": null
+        }
+      },
+      "recordingUrl": "REMOVED",
+      "stereoRecordingUrl": "REMOVED"
+    },
+    "call": {
+      "id": "REMOVED",
+      "type": "inboundPhoneCall",
+      "status": "ringing",
+      "customer": {
+        "number": "REDACTED"
+      }
+    },
+    "customer": {
+      "number": "REDACTED"
+    },
+    "assistantVersion": "v4"
+  }
+}
