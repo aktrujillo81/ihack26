@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { MapLoading } from "@/components/map/MapLoading";
 import { MapView } from "@/components/map/MapView";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { toDataContext } from "@/lib/auth/guards";
 import { requirePageSession } from "@/lib/auth/page-guard";
 import { t } from "@/lib/i18n/strings";
@@ -21,7 +22,7 @@ export default async function SignedInMapPage() {
   const session = await requirePageSession();
   return (
     <main>
-      <h1>{t("nav.map")}</h1>
+      <PageHeader title={t("nav.map")} subtitle={t("page.map.subtitle")} />
       <Suspense fallback={<MapLoading />}>
         <MapView ctx={toDataContext(session)} />
       </Suspense>

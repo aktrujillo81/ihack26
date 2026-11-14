@@ -18,3 +18,11 @@ For the person who runs the production database (port 5433 on the host). **Nobod
 8. **Report back:** the migration output (no connection strings), the two counts, and the verify results.
 
 Do not run `npm run db:seed:demo` on the host: it refuses anything but port 5434 on purpose, and its data is invented.
+
+## Also check (PR #44, history holds codes only): old pass-on text in history
+Before PR #44 the app copied the typed "passed on to" text into `history_events.after_data`. History cannot be changed (a database trigger refuses update and delete), so old rows stay. The timeline and the screens stop showing it; the reader is changed to strip it. A human should look at what is there, read-only, in `psql` on the host:
+```sql
+SELECT count(*) FROM history_events WHERE after_data ? 'passedOnNote';
+SELECT created_at, after_data->>'passedOnNote' AS text FROM history_events WHERE after_data ? 'passedOnNote' ORDER BY created_at;
+```
+If the text is only organization or partner names, nothing more to do. If anyone typed a caller's name or phone number, tell the Orchestrator and the humans: it cannot be removed by the app, and what to do (for example restoring from a backup taken before, or a controlled one-off by the database owner with the trigger disabled and the change recorded in `docs/decisions.md`) is a human decision. Do not run the demo seed on the host to "fix" this: it does not remove old rows. Do not paste the text into chat or a commit.

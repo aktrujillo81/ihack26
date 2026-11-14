@@ -53,13 +53,13 @@ Work runs in three rounds: Plan, Build, Review. Before any doc is written or any
 - When an AI assistant gets something wrong, add a line to `docs/ai-mistakes.md`.
 - When the team makes a real decision, add a line to `docs/decisions.md`.
 
-<!-- BEGIN:nextjs-agent-rules -->
-
 ## UI work
 - Read `docs/style-guide.md` and match `docs/design/` before any UI change.
 - Use `--ww-*` tokens only (`app/tokens.css`). No raw hex colors in components. `npm run check:hex` enforces it.
 - Status is always shape + word + color. Never color alone (red line 11).
 - Run the PR checklist in section 13 of the guide before opening a UI PR.
+
+<!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
 

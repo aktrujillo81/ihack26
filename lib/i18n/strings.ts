@@ -31,6 +31,11 @@ const en = {
   "common.unknown": "Unknown",
   "common.unverified": "Unverified",
   "common.needsReview": "Needs review",
+  // PROVISIONAL (wording from docs/design/): shared UI pieces.
+  "common.sampleData": "Sample data",
+  "priority.high": "High",
+  "priority.medium": "Medium",
+  "priority.low": "Low",
   "common.needsLocation": "Needs location",
 
   // Status
@@ -80,6 +85,15 @@ const en = {
   "nav.map": "Map",
   "nav.signOut": "Sign out",
   "nav.signOutFailed": "Sign-out did not work. Please try again.",
+  // PROVISIONAL (wording from docs/design/operations-console.html): app shell and page headers.
+  "app.subtitle": "Operations console",
+  "nav.workspace": "Workspace",
+  "nav.signedInAs": "Signed in as",
+  "role.org_admin": "Org Admin",
+  "role.responder": "Responder",
+  "role.viewer": "Viewer",
+  "page.complaints.subtitle": "Reports from callers, matched to known water points.",
+  "page.map.subtitle": "Water points by status. Pins use a shape and a word as well as a color.",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
@@ -112,6 +126,18 @@ const en = {
   "list.col.priority": "Priority",
   "list.col.status": "Status",
   "list.col.updated": "Last update",
+  // PROVISIONAL (wording from docs/design/operations-console.html): the list's summary strip, filter, search and sort.
+  "list.summary.title": "Summary",
+  "list.summary.open": "Awaiting action",
+  "list.summary.passed_on": "With a partner",
+  "list.summary.fixed": "Closed out",
+  "list.summary.needsReview": "Staff check needed",
+  "list.filter.label": "Filter by status",
+  "list.filter.all": "All",
+  "list.search.label": "Search water points",
+  "list.sortBy": "Sort by {column}",
+  "list.noMatches": "No complaints match. Try a different filter or search.",
+  "list.clearFilters": "Clear filters",
   "common.timeUtc": "{time} UTC",
   "detail.reportsTitle": "Reports",
   "detail.notesTitle": "Notes",
@@ -130,6 +156,22 @@ const en = {
   "history.noteAdded": "Note added",
   "history.other": "Change recorded",
   "detail.saved": "Saved.",
+  // PROVISIONAL (wording from docs/design/complaint-detail.html; channel names for web and other are proposals): the detail screen's layout.
+  "detail.breadcrumb": "Breadcrumb",
+  "detail.summaryTitle": "Summary",
+  "detail.waterPointType": "Water point type",
+  "detail.priorityReason": "Priority reason",
+  "detail.transcriptsStaffOnly": "Transcripts are visible to staff only",
+  "detail.spokenLocation": "Spoken location:",
+  "detail.locationTitle": "Location",
+  "detail.verified": "Verified",
+  "detail.coordinates": "Coordinates: {lat}, {lon}",
+  "detail.pair": "{first} · {second}",
+  "detail.copyableTitle": "Copyable summary",
+  "detail.copyableNote": "The summary leaves out transcripts, notes and caller details.",
+  "channel.phone": "Phone call",
+  "channel.web": "Web",
+  "channel.other": "Other",
 
   // Map
   "map.empty": "No water points with a location yet.",
@@ -144,6 +186,8 @@ const en = {
   "map.publicTitle": "Water points",
   "map.zoomIn": "Zoom in",
   "map.zoomOut": "Zoom out",
+  // PROVISIONAL (wording from docs/design/operations-console.html): shown only while the plain grid is the basemap.
+  "map.basemapPlaceholder": "Basemap placeholder",
 
   // Needs review list
   "review.empty": "Nothing needs review right now.",

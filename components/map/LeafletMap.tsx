@@ -53,6 +53,8 @@ export function LeafletMap({ pins, tileSource }: MapRendererProps) {
           keyboard: true,
         });
         L.control.zoom({ zoomInTitle: t("map.zoomIn"), zoomOutTitle: t("map.zoomOut") }).addTo(map);
+        // The library's own scale bar (metric). Styled in map.css; it reads no data.
+        L.control.scale({ imperial: false }).addTo(map);
         map.attributionControl.setPrefix(false);
 
         setTilesFailed(false);
@@ -107,8 +109,9 @@ export function LeafletMap({ pins, tileSource }: MapRendererProps) {
       const icon = L.divIcon({
         className: "ww-pin-marker",
         html: renderToStaticMarkup(<PinMarker pin={pin} />),
-        iconSize: [160, 100],
-        iconAnchor: [80, 20],
+        // The marker is just the pin glyph, centered on the point; its label chip sits beside it (map.css).
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
       });
       // No `title`: it would be a hover-only tooltip. The label is always visible.
       const marker = L.marker([pin.lat, pin.lng], { icon, keyboard: false });
@@ -137,7 +140,11 @@ export function LeafletMap({ pins, tileSource }: MapRendererProps) {
           {t("map.tilesFailed")}
         </p>
       )}
-      <div ref={containerRef} className="ww-map" />
+      <div className="ww-map-frame">
+        <div ref={containerRef} className="ww-map" />
+        {/* Said only when the plain grid is what is showing: no tile source, or the tiles failed. */}
+        {(!tileSource || tilesFailed) && <span className="ww-map-tag">{t("map.basemapPlaceholder")}</span>}
+      </div>
     </>
   );
 }

@@ -2,17 +2,18 @@
 
 Read this first in every session. The Orchestrator keeps it current.
 
-**Last updated:** Sat 2026-11-14, after D3a review, by the Backend agent.
+**Last updated:** Sat 2026-11-14, about 9:30 AM Mountain Time, by the Orchestrator.
 **Deadline:** 4:00 PM Saturday. Feature freeze time: **unknown** (proposed: 1:30 PM Mountain; the humans set it).
 **Vapi balance:** 4.73 credits of 5.00 (3 paid calls, $0.27). Floor until rehearsals: 2.25. Only Andrew places paid calls, each with a human's OK.
 
 ## Report
 ```
-DONE: S1, S3, S4, S5 (with S5a), S7, D1 (merged as PROVISIONAL), A1. Evidence: merged PRs in docs/changelog.md.
-IN PROGRESS: D3a webhook branch is ready for human review; D3b must replace the failing storage stub before Vapi is switched.
-BLOCKED: D3, D4, D5, D6, D7, W2 to W5 real data, Q1 to Q8: all wait for S6.
+DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, contract-follow-code documentation (#41), shared UI pieces (#43), and app shell (#47). PR #45 merged D3b's schema-independent helpers only; D3b save is not done. Evidence: merged PRs in docs/changelog.md.
+IN PROGRESS: D3a (PR #42), W1 prep (PR #28, open), and the D3/D4/D5 schema work (PR #39, open).
+BLOCKED: D3b save implementation until #39 and #42 are merged. D4, D5, D6, D7, W2 to W5 real data, and Q1 to Q8 remain downstream of the data path.
 NEEDS A HUMAN: see "Needs a human" below.
-NEXT: D3b replaces `saveReport` and then the human deploys and switches Vapi to `/api/vapi/webhook`. D4/D5 and W5/D7 follow their gates.
+NEXT: merge #39 and #42, then Andrew builds the real D3b save on `feat/d3b-save-impl` from `C:\Users\aktru\projects\hackathon-d3b`. That save must use D3a's frozen type, not the provisional helper type from #45.
+D3a UPDATE (this branch): webhook built and reviewed; `saveReport` is intentionally a failing D3b stub until D3b replaces it.
 ```
 
 ## Tasks
@@ -24,7 +25,7 @@ NEXT: D3b replaces `saveReport` and then the human deploys and switches Vapi to 
 | S4 Vapi assistant | Done | PR #16, #23, #32. Assistant v4 is live. `docs/vapi-prompt.md` |
 | S5a capture route (temporary) | Removed | Replaced by D3a `POST /api/vapi/webhook` |
 | S5 paid test call and sample | Done | PR #32. `docs/samples/`, spend log in `docs/budget.md` |
-| S6 contracts | **PR open, waiting for a human merge** | `docs/tasks/S6-contracts.md`, `docs/reviews/S6.md` |
+| S6 contracts | Done | PR #34; `docs/tasks/S6-contracts.md`, `docs/reviews/S6.md` |
 | S7 UX screen notes | Done | PR #4 |
 | S8 pitch, DevPost, demo script | Drafts merged (the humans own it) | PR #25 |
 | D1 schema | Merged, **PROVISIONAL** | PR #27. `reports` and the complaint link must be updated after S6: `docs/reviews/D1.md` |
@@ -32,6 +33,12 @@ NEXT: D3b replaces `saveReport` and then the human deploys and switches Vapi to 
 | W1 prep, W2/W3 screens on mock data, W4 map component | Merged as prep | PR #14, #18, #20, #21. PR #28 open |
 | Public map page | Merged, **needs spec approval** | PR #22. The public map is cut from the spec (section 4) |
 | W1 wiring, real reads, demo seed, D6 complaint writes | Merged | PR #33, #35, #36, #37. D6 differs from the contract: `docs/contracts.md` 5.8 and unknown 18 |
+| Shared UI pieces | Done | PR #43 |
+| App shell | Done | PR #47 |
+| D3a webhook | In progress | PR #42; freezes the final `ValidatedReport` in `lib/ingest/types.ts` |
+| D3b helpers | Merged, **not the save** | PR #45: input caps, alias map, provisional input type, fake-report builders, and 38 tests |
+| D3b save | **Blocked, not started** | Future branch `feat/d3b-save-impl`, Andrew's folder `C:\Users\aktru\projects\hackathon-d3b`; waits for #39 and #42. Delete the provisional `lib/ingest/report-input.ts` type when #42 lands and use D3a's type. |
+| D4, D5, W5, D7 | Not started | Still downstream of the D3a/D3b data path |
 | D3a | Built on this branch | Authenticated, bounded, normalized webhook; `saveReport` is intentionally a failing D3b stub |
 | D3b, D4, D5, W5, D7 | Not started | D3b must land before any Vapi URL switch |
 
@@ -39,6 +46,8 @@ NEXT: D3b replaces `saveReport` and then the human deploys and switches Vapi to 
 | PR | Branch | Owner | Note |
 |---|---|---|---|
 | #28 | `chore/w1-prep` | JerrZane | 12-hour session cap, public `/map` vs `/dashboard/map` |
+| #39 | `feat/schema-d3-d4-d5` | unknown | Schema prerequisite for D3b save; not merged |
+| #42 | `feat/d3a-vapi-webhook-impl` | unknown | D3a prerequisite; not merged |
 
 ## Needs a human
 1. **Vapi server URL.** Do not switch it until D3b is deployed and the authenticated webhook check returns 200 with a stored row. The target is `https://bg.verilen.com/api/vapi/webhook`.

@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
 import { t } from "@/lib/i18n/strings";
 import "./tokens.css";
+import "@/components/ui/ui.css";
 import "./globals.css";
 
 // Self-hosted by next/font at build time (no link tag, no request to Google from the browser).

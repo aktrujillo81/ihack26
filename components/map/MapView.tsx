@@ -1,3 +1,4 @@
+import { Panel } from "@/components/ui/Panel";
 import { TILE_SOURCE } from "@/lib/config/map";
 import { listComplaints, listNeedsLocation, listWaterPoints, type DataContext } from "@/lib/data/complaints";
 import { t } from "@/lib/i18n/strings";
@@ -40,11 +41,13 @@ export async function MapView({ ctx, view = "authenticated" }: { ctx: DataContex
     <div>
       {needsLocationCount > 0 && <p>{t("map.needsLocationCount", { n: needsLocationCount })}</p>}
       {pins.length === 0 ? (
-        <p>{t("map.empty")}</p>
+        <p className="ww-state">{t("map.empty")}</p>
       ) : (
         <>
-          <Renderer pins={pins} tileSource={TILE_SOURCE} />
-          <MapLegend />
+          <Panel as="div" padded={false} className="ww-map-panel">
+            <MapLegend />
+            <Renderer pins={pins} tileSource={TILE_SOURCE} />
+          </Panel>
           <PinList pins={pins} />
         </>
       )}

@@ -3,9 +3,10 @@ import "server-only";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, notInArray, sql, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
+import { DEMO_DATA_MARKER_KEY } from "@/lib/config/demo";
 import { DATA_LIST_HARD_LIMIT } from "@/lib/config/ui";
 import { getDb } from "@/lib/db";
-import { complaints, historyEvents, notes, partners, reports, users, waterPoints } from "@/lib/db/schema";
+import { complaints, configuration, historyEvents, notes, partners, reports, users, waterPoints } from "@/lib/db/schema";
 import type {
   Complaint,
   HistoryEvent,
@@ -568,3 +569,30 @@ export const NO_CALLER_CONTACT_FIELDS: [
   NoForbiddenKeys<LastReportReceived>,
   NoForbiddenKeys<PublicPin>,
 ] = [true, true, true, true, true, true];
+
+// ---------------------------------------------------------------------------
+// Sample data indicator
+// ---------------------------------------------------------------------------
+
+/**
+ * Is the data this user sees invented demo data? True while the row that
+ * `npm run db:seed:demo` writes (key `demo_seed` in `configuration`) exists in
+ * the user's own organization and regions. Read-only, scoped like every other
+ * read, and it returns nothing but a yes or no. Any problem answers `false`: a
+ * missing tag is better than a broken page. PROVISIONAL: when real calls start
+ * to arrive (D3), the team must decide whether demo rows stay beside real ones.
+ */
+export async function isSampleData(ctx: DataContext): Promise<boolean> {
+  if (!usable(ctx)) return false;
+  try {
+    const [row] = await getDb()
+      .select({ id: configuration.id })
+      .from(configuration)
+      .where(and(scope(configuration, ctx), eq(configuration.key, DEMO_DATA_MARKER_KEY)))
+      .limit(1);
+    return !!row;
+  } catch {
+    console.error("[data] read_failed");
+    return false;
+  }
+}

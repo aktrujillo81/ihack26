@@ -29,6 +29,16 @@ export const durationType = pgEnum("duration_type", ["today", "few_days", "week_
 export const verificationState = pgEnum("verification_state", ["unverified", "verified", "merged", "archived"]);
 export const locationSource = pgEnum("location_source", ["landmark_only", "map_pin", "gps", "geocoded"]);
 export const complaintStatus = pgEnum("complaint_status", ["open", "passed_on", "fixed"]);
+/** Contracts 5.2, in priority order. One stored reason per flagged report. */
+export const needsReviewReason = pgEnum("needs_review_reason", [
+  "malformed_payload",
+  "no_structured_data",
+  "processing_error",
+  "unusable_location",
+  "ambiguous_match",
+  "invalid_fields",
+  "not_confirmed",
+]);
 
 export const organizations = pgTable("organizations", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -98,8 +108,13 @@ export const waterPoints = pgTable("water_points", {
   longitude: numeric("longitude", { precision: 9, scale: 6 }),
   mergedIntoId: uuid("merged_into_id"),
   needsReview: boolean("needs_review").default(false).notNull(),
+  /** Normalized location text used by matching (contracts 5.3, D4). Null until D4 writes it. */
+  locationKey: text("location_key"),
   ...timestamps,
 }, (table) => [
+  // Target of report_candidates' scoped foreign key.
+  unique("water_points_scope_id_unique").on(table.organizationId, table.regionId, table.id),
+  index("water_points_location_key_idx").on(table.organizationId, table.regionId, table.locationKey),
   foreignKey({
     columns: [table.organizationId, table.regionId],
     foreignColumns: [regions.organizationId, regions.id],
@@ -119,6 +134,11 @@ export const complaints = pgTable("complaints", {
   priorityReason: text("priority_reason").notNull(),
   reportCount: integer("report_count").default(0).notNull(),
   needsReview: boolean("needs_review").default(false).notNull(),
+  // Most severe values over the complaint's reports (contracts 5.5). Written by D5.
+  problem: problemType("problem").default("unknown").notNull(),
+  peopleAffected: integer("people_affected"),
+  servesSchoolOrClinic: boolean("serves_school_or_clinic"),
+  duration: durationType("duration").default("unknown").notNull(),
   passedOnPartnerId: uuid("passed_on_partner_id").references(() => partners.id),
   passedOnNote: text("passed_on_note"),
   fixedAt: timestamp("fixed_at", { withTimezone: true }),
@@ -131,6 +151,9 @@ export const complaints = pgTable("complaints", {
   }),
   check("complaints_priority_score_nonnegative", sql`${table.priorityScore} >= 0`),
   check("complaints_report_count_nonnegative", sql`${table.reportCount} >= 0`),
+  check("complaints_people_affected_nonnegative", sql`${table.peopleAffected} is null or ${table.peopleAffected} >= 0`),
+  // At most one active complaint per water point (contracts 4.1 item 8).
+  uniqueIndex("complaints_one_active_per_water_point_idx").on(table.waterPointId).where(sql`${table.status} in ('open', 'passed_on')`),
 ]);
 
 export const reports = pgTable("reports", {
@@ -151,6 +174,10 @@ export const reports = pgTable("reports", {
   languageSpoken: text("language_spoken"),
   transcript: text("transcript"),
   needsReview: boolean("needs_review").default(false).notNull(),
+  needsReviewReason: needsReviewReason("needs_review_reason"),
+  /** Vapi's call reference, used only to ignore repeat deliveries. Not caller data. */
+  providerCallRef: text("provider_call_ref"),
+  endedReason: text("ended_reason"),
   receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
   ...timestamps,
 }, (table) => [
@@ -160,6 +187,43 @@ export const reports = pgTable("reports", {
     name: "reports_organization_region_fk",
   }),
   check("reports_people_affected_nonnegative", sql`${table.peopleAffected} is null or ${table.peopleAffected} >= 0`),
+  check("reports_needs_review_has_reason", sql`${table.needsReview} = false or ${table.needsReviewReason} is not null`),
+  check("reports_ended_reason_allowed", sql`${table.endedReason} is null or ${table.endedReason} in ('customer-ended-call', 'assistant-said-end-call-phrase', 'other')`),
+  // Target of report_candidates' scoped foreign key.
+  unique("reports_scope_id_unique").on(table.organizationId, table.regionId, table.id),
+  uniqueIndex("reports_provider_call_ref_idx").on(table.organizationId, table.providerCallRef).where(sql`${table.providerCallRef} is not null`),
+]);
+
+/**
+ * Water points that fit an ambiguous report (contracts 5.3). Not history: a row
+ * is removed only when its report is attached, and a merge repoints rows to the
+ * survivor (4.1 item 11, D4).
+ */
+export const reportCandidates = pgTable("report_candidates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  regionId: uuid("region_id").notNull().references(() => regions.id),
+  reportId: uuid("report_id").notNull(),
+  waterPointId: uuid("water_point_id").notNull(),
+  ...timestamps,
+}, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "report_candidates_organization_region_fk",
+  }),
+  foreignKey({
+    columns: [table.organizationId, table.regionId, table.reportId],
+    foreignColumns: [reports.organizationId, reports.regionId, reports.id],
+    name: "report_candidates_report_scope_fk",
+  }),
+  foreignKey({
+    columns: [table.organizationId, table.regionId, table.waterPointId],
+    foreignColumns: [waterPoints.organizationId, waterPoints.regionId, waterPoints.id],
+    name: "report_candidates_water_point_scope_fk",
+  }),
+  unique("report_candidates_pair_unique").on(table.reportId, table.waterPointId),
+  index("report_candidates_water_point_idx").on(table.waterPointId),
 ]);
 
 export const notes = pgTable("notes", {
@@ -312,6 +376,7 @@ export type Partner = typeof partners.$inferSelect;
 export type WaterPoint = typeof waterPoints.$inferSelect;
 export type Complaint = typeof complaints.$inferSelect;
 export type Report = typeof reports.$inferSelect;
+export type ReportCandidate = typeof reportCandidates.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type HistoryEvent = typeof historyEvents.$inferSelect;
 export type Configuration = typeof configuration.$inferSelect;
