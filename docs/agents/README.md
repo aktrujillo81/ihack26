@@ -6,9 +6,15 @@ Each has its own file in this folder. An agent reads only its own file plus the 
 These are the same model with different instructions. The point is different questions, not independent minds. So each agent must disagree when its job says to, and must say `unknown` instead of guessing.
 
 ## How it works
-- The humans talk only to the **Orchestrator**. The Orchestrator starts and coordinates the others.
+- The humans talk only to the **Orchestrator**. The Orchestrator starts the other five agents.
+- Agents never message each other directly. The Orchestrator relays everything and records a summary in `docs/reviews/`.
+- The Orchestrator manages git: a new branch from `main` for each new feature, and a pull request when asked to merge. Humans do the actual merge.
+- Changes and decisions are tracked in `docs/` (see `orchestrator.md`).
 - Every agent first reads: `AGENTS.md`, `docs/spec.md`, `docs/contracts.md` (once it exists), and its own file here.
 - Humans approve three things: the **spec**, the **plan** for each task, and the **code** before merge. Everything else can run without them.
+
+## Agreement gate
+Before any doc is written or any change is made, the Orchestrator seeks agreement from all agents. If anyone disagrees, it revises and retries, up to three times. If at most one agent still disagrees, the work proceeds and the dissent is reported to the humans. If two or more still disagree, nothing proceeds until the humans decide. A dissent that cites a red line blocks the step regardless. Full rules and the report format are in `orchestrator.md`.
 
 ## The three rounds (every task)
 1. **Plan.** The Orchestrator writes a task brief that answers: What is the goal? What could break? How will we test it? The agents involved reply with risks and their proposed approach. Disagreements are settled by the authority table below. Humans approve the plan for any P0 task or any change to a shared contract.

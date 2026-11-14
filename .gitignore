@@ -1,0 +1,36 @@
+# Environment variables and secrets (never commit these)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Raw call payloads (may contain caller phone numbers)
+docs/samples/raw/
+
+# Dependencies
+node_modules/
+
+# Next.js and Vercel
+.next/
+out/
+.vercel/
+
+# Build and test output
+build/
+dist/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Supabase local files
+supabase/.branches/
+supabase/.temp/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

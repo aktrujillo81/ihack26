@@ -1,6 +1,6 @@
 # Well Watch: Product Brief (put this file at docs/spec.md)
 
-**Status:** Draft v3 for handoff to the agent team. Written for iHack 2026 (International category). Updated Sat Nov 14, 2026, 12:05 AM, with 16 hours left. Designed to grow, scoped to fit the time (see section 4).
+**Status:** Draft v4 for handoff to the agent team. Written for iHack 2026 (International category). Five developers share the work through the task list in section 4. Designed to grow, scoped to fit the time.
 **Reading rule:** Where this brief says **unknown**, do not guess. Verify it, or record it in Open Questions (section 12).
 **Priority labels:** P0 = needed for the demo. P1 = build only after every P0 item works end to end, in the order listed. Anything under "Cut from this build" is future work: do not build it.
 
@@ -84,27 +84,68 @@ The data design must still allow these later (section 5).
 - A mobile app.
 - Multiple countries or live multi-organization onboarding. The data design supports it, but only one organization and region are set up.
 
-### Schedule
-16 hours left at 12:05 AM Saturday. The competition ends at 4 PM (confirmed). Breakfast, workshops, and lunch also take time.
+### Task list
+Each task is sized to one branch and one pull request. The Orchestrator assigns tasks to the five developers. Any developer can take a task whose "Needs" are done.
 
-| Time | Goal |
-|---|---|
-| 12 to 1 AM | Humans approve this brief, set up accounts, update the Vapi assistant, make one test call, and save the raw payload. The Orchestrator writes the P0 task briefs for approval |
-| 1 to 8 AM | Agents build P0 |
-| **8 AM, checkpoint** | The P0 demo path works end to end. If it does not, switch to the fallback below and tell the humans immediately |
-| 8 to 11 AM | P1, in the order listed, only if P0 is done |
-| **Noon, feature freeze** | Only bug fixes after this |
-| Noon to 2 PM | Two rehearsals, backup video, DevPost, pitch polish |
-| 2 PM on | Final checks, setup at the demo space, buffer |
+- Tasks that change the same file are done one at a time: the contracts file, the schema, and the Vapi endpoint.
+- Web app tasks use mock data at first, so they don't wait on the data tasks.
+- Up to five PRs may be open at once, one per developer.
+- At the start, these can run in parallel: S1, S7, and S8. S4 can start once S2 is done.
+- After S6, the data tasks (D) and the web app tasks (W) run in parallel.
 
-**Fallback:** If P0 is not working at the 8 AM checkpoint, demo the smallest working path: a call creates a complaint, a signed-in responder sees it in the dashboard, and changes its status. Water points may come from the starter data.
+**Setup**
+| ID | Priority | Task | Needs |
+|---|---|---|---|
+| S1 | P0 | Merge the `.gitignore` and add `.env.example` (names only). Humans turn on branch protection for `main` | none |
+| S2 | P0 | Humans create the Supabase and Vercel projects and get the Vapi key. Keys are shared privately and set in `.env.local` and Vercel | S1 |
+| S3 | P0 | App scaffold: Next.js, Supabase client, base layout, and a health route deployed to a public URL | S1, S2 |
+| S4 | P0 | Update the Vapi assistant: save the prompt as `docs/vapi-prompt.md`, apply section 8, set the maximum call length and silence timeout, and check whether recording is on | S2 |
+| S5 | P0 | One paid test call (with a human's OK). Remove personal data and save the payload in `docs/samples/` | S3, S4 |
+| S6 | P0 | Write `docs/contracts.md` from the real payload: data shapes, tables, endpoints, rules, and permissions | S5 |
+| S7 | P0 | UX screen notes for the web app tasks: states and wording | none |
+| S8 | P0 | Pitch outline, DevPost entry, and demo script (the humans) | none |
 
-**Approval rhythm:**
-- Humans approve the P0 plans once, as a batch.
-- Merges are approved in batches at set times while humans are awake, about hourly.
-- Sleep is staggered: two people from about 1 AM and two from about 4 AM, at least 5 hours each. Tired reviewers rubber-stamp code.
-- Two humans stay off the build to write the pitch, the DevPost entry, and the backup video.
+**Data and API**
+| ID | Priority | Task | Needs |
+|---|---|---|---|
+| D1 | P0 | Database schema, migrations, and access rules: organizations, regions, users and roles, water points, reports, complaints, history events, partners, notes, and configuration | S6 |
+| D2 | P0 | Seed script: one organization and region, demo accounts for each role, starter water points, and partners | D1 |
+| D3 | P0 | Vapi endpoint: verify the request, validate, remove personal data, save, and record the last report received | D1, S6 |
+| D4 | P0 | Water point matching, new unverified water points, and `needs_review` | D3 |
+| D5 | P0 | Scoring, color, duplicate merging, and the score reason, with unit tests | S6 (scoring), D4 (merging) |
+| D6 | P0 | Complaint API: list, detail, status changes, notes, history events, and permission checks | D1 |
+| D7 | P0 | Live update setup for the map and dashboard | D1 |
 
+**Web app**
+| ID | Priority | Task | Needs |
+|---|---|---|---|
+| W1 | P0 | Sign-in, sign-out, role-aware navigation, and protected routes | S3, D1 |
+| W2 | P0 | Complaint list page | D6 (mock data first) |
+| W3 | P0 | Complaint detail page: reports, transcripts, score reason, timeline, notes, status controls, and copyable summary | D6 (mock data first), S7 |
+| W4 | P0 | Map page with status colors, labels, and live updates | D7 (mock data first) |
+| W5 | P0 | "Needs review" and "Needs location" lists, and the "last report received" indicator | D3, D4 |
+
+**Quality and release**
+| ID | Priority | Task | Needs |
+|---|---|---|---|
+| Q1 | P0 | Security review with tests: cross-organization access denied, Viewer cannot edit, no personal data in storage, logs, or screens | D6, W1 |
+| Q2 | P0 | Edge-case tests from section 10: bad payload, duplicate, new water point, and ambiguous landmark | D5, D6 |
+| Q3 | P0 | Demo data reset script, and separate dev and demo data | D2 |
+| Q4 | P0 | Run the full demo path three times in a row (budgeted calls, with a human's OK) | D3 to D6, W2 to W5 |
+| Q5 | P0 | Lens review (Builder, Adopter, Responder) of the build. Fix problems or record them as unknowns | Q4 |
+| Q6 | P0 | Tag a known-good commit, confirm the deployed URL works from outside the venue network, check environment variables on Vercel, and check the Vapi balance | Q4 |
+| Q7 | P0 | Backup video of the demo path | Q4 |
+| Q8 | P0 | Two full rehearsals, one with a failure. Everyone can explain the whole flow in 60 seconds | Q4 |
+
+**P1** (in this order, only after every P0 task works end to end)
+| ID | Task | Needs |
+|---|---|---|
+| P1-1 | Water point tools: verify, edit, place a pin, and merge | D4, W4 |
+| P1-2 | "Pass on to" with seeded partners | D6, W3 |
+| P1-3 | Filters, search, and summary metrics | W2 |
+| P1-4 | Audit log screen | D6 |
+
+**If P0 is at risk,** tell the humans right away. The smallest demo that still works: a call creates a complaint, a signed-in responder sees it in the dashboard and changes its status, and water points come from the starter data.
 ---
 
 ## 5. Design for expansion
@@ -260,7 +301,8 @@ These weights are configuration, not constants in the code.
 - **Accessibility:** Color is never the only signal. Text is readable from across a room.
 - **Maintainability:** Any change to a route, table, or rule updates `docs/contracts.md` in the same PR. Scoring, matching, merging, and permissions have tests.
 - **Auditability:** Status changes, edits, merges, and role changes are logged with who and when.
-- **Cost:** Calls use Vapi credits. Keep call length capped and track the balance.
+- **Cost:** The Vapi budget is $5 in total, at about $0.09 per minute (roughly 55 minutes of calls). Cap call length, log every paid call, and get a human's OK before each one. See `docs/budget.md`.
+- **Keys:** The humans provide the Vapi API key and webhook credential, and the Supabase URL, anon key, and service role key. They live only in `.env.local` and Vercel environment variables. The service role key is used only on the server. They are shared privately, because the repo is public.
 
 ---
 
@@ -316,8 +358,8 @@ The pitch must say this plainly and describe the product as a one-district pilot
 1. Which tool runs the agents (Claude Code, Codex, or another) and how each agent file is loaded.
 2. Sign-in method. Default if undecided: email and password through Supabase Auth.
 3. Map provider. Default if undecided: Leaflet with OpenStreetMap. Check the tile usage terms.
-4. Who is awake to approve and when (see the approval rhythm in section 4).
-5. Usage and credit budget for the AI tools and for Vapi test calls, and what to cut first if they run out.
+4. Who approves merges, and who covers when someone is away.
+5. Decided: the Vapi budget is $5 (see section 9). Still open: the usage budget for the AI tools, and what to cut first if credits run out.
 6. What happens to demo data and transcripts after the event.
 7. Decided: the competition ends at 4 PM Saturday.
 
@@ -334,6 +376,7 @@ The pitch must say this plainly and describe the product as a one-district pilot
 10. How long transcripts are kept.
 11. How a real responder would be alerted when not looking at the app (roadmap item).
 12. Decided: no second language in this build. English only.
+13. Whether $0.09 per minute is the all-in rate, and whether Vapi rounds each call up to a full minute. Check after the first paid call.
 
 ---
 
@@ -368,7 +411,7 @@ Full list in `AGENTS.md`. In short:
 - A bad payload, a duplicate report, a new water point, and an ambiguous landmark are each handled as described in section 10.
 - Scoring, matching, merging, and permissions have tests.
 - All P0 items work end to end before any P1 work is merged.
-- The noon feature freeze was respected.
+- The feature freeze set by the humans was respected.
 - All three lenses (Builder, Adopter, Responder) have reviewed this brief and the build. Every "no" has a fix and every "unknown" is written down.
 - A backup video of the demo exists.
 - Every team member can explain the whole flow in 60 seconds.
@@ -395,6 +438,6 @@ Full list in `AGENTS.md`. In short:
 - Produce from this brief: `docs/contracts.md`, the data model, the task list, and tests.
 - The first task is to capture a real Vapi payload (unknown 1), then write the contracts from it.
 - Build P0 end to end before starting P1. Set up organization, region, and role fields in the first version of the data model, even though the demo uses one of each.
-- Follow the schedule in section 4. If P0 is not working at the 8 AM checkpoint, tell the humans immediately and switch to the fallback.
+- Work through the task list in section 4. If P0 is at risk, tell the humans immediately and switch to the fallback.
 - Do not build anything listed under "Cut from this build."
 - Any ambiguity this brief does not resolve goes into Open Questions. Do not silently choose.
