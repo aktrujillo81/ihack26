@@ -32,13 +32,17 @@ organization but has no region owner.
 
 ### Organizations and access
 
-- `organizations`: `id`, `name`, timestamps.
-- `regions`: `id`, `organization_id`, `name`, `slug`, timestamps.
+- `organizations`: `id`, `name`, optional `archived_at`, timestamps.
+- `regions`: `id`, `organization_id`, `name`, `slug`, optional `archived_at`,
+  timestamps.
 - `users`: `id`, `organization_id`, `region_id`, `auth_subject`, `email`,
   `display_name`, `role`, `active`, timestamps.
 - Allowed roles: `org_admin`, `responder`, `viewer`.
-- `auth_subject` is the external/auth-library subject identifier. The exact
-  authentication library remains undecided.
+- `auth_subject` is Better Auth's immutable `user.id`. The seed script creates
+  this mapping and every authenticated request looks the user up by it.
+- Every scoped table has a composite foreign key from
+  (`organization_id`, `region_id`) to `regions`. A row cannot claim an
+  organization that does not own its region.
 
 ### Water points
 
@@ -70,8 +74,9 @@ organization but has no region owner.
 
 - `partners`: organization/region-scoped partner directory records.
 - `notes`: appendable complaint notes with the author user and scope.
-- `history_events`: append-only audit/history records. They may reference a
-  complaint, water point, and actor, with optional before/after JSON data.
+- `history_events`: append-only audit/history records. A database trigger
+  rejects updates and deletes. Events may reference a complaint, water point,
+  and actor, with optional before/after JSON data.
 - `configuration`: organization/region-scoped JSON configuration for scoring,
   colors, allowed values, and duplicate rules.
 

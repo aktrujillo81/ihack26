@@ -1,6 +1,7 @@
 import {
   boolean,
   check,
+  foreignKey,
   integer,
   jsonb,
   numeric,
@@ -8,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -30,6 +32,7 @@ export const complaintStatus = pgEnum("complaint_status", ["open", "passed_on", 
 export const organizations = pgTable("organizations", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   ...timestamps,
 });
 
@@ -38,8 +41,10 @@ export const regions = pgTable("regions", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   ...timestamps,
 }, (table) => [
+  unique("regions_organization_id_id_unique").on(table.organizationId, table.id),
   uniqueIndex("regions_organization_slug_idx").on(table.organizationId, table.slug),
 ]);
 
@@ -54,6 +59,11 @@ export const users = pgTable("users", {
   active: boolean("active").default(true).notNull(),
   ...timestamps,
 }, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "users_organization_region_fk",
+  }),
   uniqueIndex("users_auth_subject_idx").on(table.authSubject),
   uniqueIndex("users_organization_email_idx").on(table.organizationId, table.email),
 ]);
@@ -67,7 +77,13 @@ export const partners = pgTable("partners", {
   contact: text("contact"),
   active: boolean("active").default(true).notNull(),
   ...timestamps,
-});
+}, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "partners_organization_region_fk",
+  }),
+]);
 
 export const waterPoints = pgTable("water_points", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -83,6 +99,11 @@ export const waterPoints = pgTable("water_points", {
   needsReview: boolean("needs_review").default(false).notNull(),
   ...timestamps,
 }, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "water_points_organization_region_fk",
+  }),
   check("water_points_latitude_range", sql`${table.latitude} is null or (${table.latitude} >= -90 and ${table.latitude} <= 90)`),
   check("water_points_longitude_range", sql`${table.longitude} is null or (${table.longitude} >= -180 and ${table.longitude} <= 180)`),
 ]);
@@ -102,6 +123,11 @@ export const complaints = pgTable("complaints", {
   fixedAt: timestamp("fixed_at", { withTimezone: true }),
   ...timestamps,
 }, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "complaints_organization_region_fk",
+  }),
   check("complaints_priority_score_nonnegative", sql`${table.priorityScore} >= 0`),
   check("complaints_report_count_nonnegative", sql`${table.reportCount} >= 0`),
 ]);
@@ -127,6 +153,11 @@ export const reports = pgTable("reports", {
   receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
   ...timestamps,
 }, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "reports_organization_region_fk",
+  }),
   check("reports_people_affected_nonnegative", sql`${table.peopleAffected} is null or ${table.peopleAffected} >= 0`),
 ]);
 
@@ -138,7 +169,13 @@ export const notes = pgTable("notes", {
   authorUserId: uuid("author_user_id").notNull().references(() => users.id),
   body: text("body").notNull(),
   ...timestamps,
-});
+}, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "notes_organization_region_fk",
+  }),
+]);
 
 export const historyEvents = pgTable("history_events", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -152,7 +189,13 @@ export const historyEvents = pgTable("history_events", {
   afterData: jsonb("after_data"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "history_events_organization_region_fk",
+  }),
+]);
 
 export const configuration = pgTable("configuration", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -162,6 +205,11 @@ export const configuration = pgTable("configuration", {
   value: jsonb("value").notNull(),
   ...timestamps,
 }, (table) => [
+  foreignKey({
+    columns: [table.organizationId, table.regionId],
+    foreignColumns: [regions.organizationId, regions.id],
+    name: "configuration_organization_region_fk",
+  }),
   uniqueIndex("configuration_scope_key_idx").on(table.organizationId, table.regionId, table.key),
 ]);
 
