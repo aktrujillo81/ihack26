@@ -2,17 +2,17 @@
 
 Read this first in every session. The Orchestrator keeps it current.
 
-**Last updated:** Sat 2026-11-14, about 6:00 AM Mountain Time, by the Orchestrator.
+**Last updated:** Sat 2026-11-14, about 9:30 AM Mountain Time, by the Orchestrator.
 **Deadline:** 4:00 PM Saturday. Feature freeze time: **unknown** (proposed: 1:30 PM Mountain; the humans set it).
 **Vapi balance:** 4.73 credits of 5.00 (3 paid calls, $0.27). Floor until rehearsals: 2.25. Only Andrew places paid calls, each with a human's OK.
 
 ## Report
 ```
-DONE: S1, S3, S4, S5 (with S5a), S7, D1 (merged as PROVISIONAL), A1. Evidence: merged PRs in docs/changelog.md.
-IN PROGRESS: S6 contracts: gate passed 5 of 5, review PASS from all four reviewers, PR open for a human to merge (branch docs/s6-contracts). W1 prep (PR #28, open).
-BLOCKED: D3, D4, D5, D6, D7, W2 to W5 real data, Q1 to Q8: all wait for S6.
+DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, contract-follow-code documentation (#41), shared UI pieces (#43), and app shell (#47). PR #45 merged D3b's schema-independent helpers only; D3b save is not done. Evidence: merged PRs in docs/changelog.md.
+IN PROGRESS: D3a (PR #42), W1 prep (PR #28, open), and the D3/D4/D5 schema work (PR #39, open).
+BLOCKED: D3b save implementation until #39 and #42 are merged. D4, D5, D6, D7, W2 to W5 real data, and Q1 to Q8 remain downstream of the data path.
 NEEDS A HUMAN: see "Needs a human" below.
-NEXT: after S6 merges, D3 (Vapi endpoint) first, because it changes the schema and removes the capture route. D6 and D7 can start beside it. W tasks swap the mock for the API as in docs/contracts-swap-plan.md.
+NEXT: merge #39 and #42, then Andrew builds the real D3b save on `feat/d3b-save-impl` from `C:\Users\aktru\projects\hackathon-d3b`. That save must use D3a's frozen type, not the provisional helper type from #45.
 ```
 
 ## Tasks
@@ -24,7 +24,7 @@ NEXT: after S6 merges, D3 (Vapi endpoint) first, because it changes the schema a
 | S4 Vapi assistant | Done | PR #16, #23, #32. Assistant v4 is live. `docs/vapi-prompt.md` |
 | S5a capture route (temporary) | Done | PR #26. Removed when D3 lands |
 | S5 paid test call and sample | Done | PR #32. `docs/samples/`, spend log in `docs/budget.md` |
-| S6 contracts | **PR open, waiting for a human merge** | `docs/tasks/S6-contracts.md`, `docs/reviews/S6.md` |
+| S6 contracts | Done | PR #34; `docs/tasks/S6-contracts.md`, `docs/reviews/S6.md` |
 | S7 UX screen notes | Done | PR #4 |
 | S8 pitch, DevPost, demo script | Drafts merged (the humans own it) | PR #25 |
 | D1 schema | Merged, **PROVISIONAL** | PR #27. `reports` and the complaint link must be updated after S6: `docs/reviews/D1.md` |
@@ -32,12 +32,19 @@ NEXT: after S6 merges, D3 (Vapi endpoint) first, because it changes the schema a
 | W1 prep, W2/W3 screens on mock data, W4 map component | Merged as prep | PR #14, #18, #20, #21. PR #28 open |
 | Public map page | Merged, **needs spec approval** | PR #22. The public map is cut from the spec (section 4) |
 | W1 wiring, real reads, demo seed, D6 complaint writes | Merged | PR #33, #35, #36, #37. D6 differs from the contract: `docs/contracts.md` 5.8 and unknown 18 |
-| D3 (a, b), D4, D5, W5, D7 | Not started | A Codex audit of main (2026-11-14): P0 about 38%, P1 about 6%. Nothing connects a phone call to a complaint yet |
+| Shared UI pieces | Done | PR #43 |
+| App shell | Done | PR #47 |
+| D3a webhook | In progress | PR #42; freezes the final `ValidatedReport` in `lib/ingest/types.ts` |
+| D3b helpers | Merged, **not the save** | PR #45: input caps, alias map, provisional input type, fake-report builders, and 38 tests |
+| D3b save | **Blocked, not started** | Future branch `feat/d3b-save-impl`, Andrew's folder `C:\Users\aktru\projects\hackathon-d3b`; waits for #39 and #42. Delete the provisional `lib/ingest/report-input.ts` type when #42 lands and use D3a's type. |
+| D4, D5, W5, D7 | Not started | Still downstream of the D3a/D3b data path |
 
 ## Open PRs (limit: five)
 | PR | Branch | Owner | Note |
 |---|---|---|---|
 | #28 | `chore/w1-prep` | JerrZane | 12-hour session cap, public `/map` vs `/dashboard/map` |
+| #39 | `feat/schema-d3-d4-d5` | unknown | Schema prerequisite for D3b save; not merged |
+| #42 | `feat/d3a-vapi-webhook-impl` | unknown | D3a prerequisite; not merged |
 
 ## Needs a human
 1. **Vapi server URL.** It still points at a closed Cloudflare tunnel, so a call made now reaches nothing. Change it to `https://bg.verilen.com/api/vapi/capture` once the host has pulled `main` and has `VAPI_WEBHOOK_SECRET` set. It changes again to the real endpoint when D3 lands.
