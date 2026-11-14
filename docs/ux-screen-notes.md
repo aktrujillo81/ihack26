@@ -12,7 +12,7 @@
 | No caller details | No names or phone numbers are shown (spec). Raw call IDs are also hidden (a UX choice, not a spec rule). Transcripts appear only on the detail page, only to signed-in users with access to the region. Transcript text is never copied into lists, the map, "Copy summary", or logs. Spoken location text is free text: whether it is scrubbed of names is unknown (PR-3), so Security must confirm. |
 | Pin and status colors | Colors follow spec section 7 (red, yellow, green) and are always secondary to the label and shape. |
 | No safety advice or repair promises | No screen says water is safe or unsafe, when something will be fixed, or who will fix it. "Passed on" is described as a recorded step only. |
-| `unknown` is honest | Shown as "Unknown" in neutral grey text with no severity styling. Unknown people, school or clinic, and duration add no points. A problem of `unknown` scores +1 and its pin is yellow, per spec section 7, but its label reads "Unknown problem" and is never styled as severe. |
+| `unknown` is honest | Shown as "Unknown" in neutral grey text with no severity styling. Unknown people, school or clinic, and duration add no points. A problem of `unknown` scores +1 and its pin is yellow, per spec section 7, but its label reads "Unknown" (`problem.unknown`) and is never styled as severe. |
 | One main action per screen | Named in each screen below. |
 | Why is always shown | Priority always has its reason. Items always show report count and whether they are unverified or need review. |
 | Risky actions are confirmable and reversible | Status changes ask for confirmation. Fixed can be reopened. |

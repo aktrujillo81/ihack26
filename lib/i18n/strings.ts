@@ -55,7 +55,7 @@ const en = {
   "duration.week_or_more": "A week or more",
   "duration.unknown": "Unknown",
 
-  // School or clinic
+  // School or clinic. Callers build the key with `String(value)`; the `unknown` value maps to schoolClinic.unknown.
   "schoolClinic.true": "Serves a school or clinic",
   "schoolClinic.false": "Does not serve a school or clinic",
   "schoolClinic.unknown": "Unknown",
@@ -73,6 +73,7 @@ const en = {
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
   "list.showing": "Showing {n} of {total}",
+  // PROVISIONAL: the notes only give "8: {reason}" as an example, and the reason format is unknown.
   "list.priorityReason": "{score}: {reason}",
 
   // Complaint detail
@@ -110,7 +111,8 @@ const en = {
   "location.empty": "Every water point has a location.",
   "location.placePin": "Place pin",
 
-  // Last report received
+  // Last report received. {timeAgo} and {time} are formatted by the caller. Any relative-time
+  // wording such as "5 minutes ago" is user-facing text and must come from this file when it is added.
   "lastReport.loading": "Checking for reports…",
   "lastReport.ago": "Last report received {timeAgo}, at {time}",
   "lastReport.none": "No reports received yet.",
