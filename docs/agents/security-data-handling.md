@@ -12,7 +12,7 @@
 - The sign-in setup review and the role permission model (Org Admin, Responder, Viewer).
 - Organization and region isolation: no organization ever sees another's data.
 - Verifying that a request really came from Vapi.
-- Database access rules and deny-by-default behavior.
+- Server-side access checks and deny-by-default behavior (there is no database-level row security from a hosted provider). Postgres is never exposed outside the host.
 - Transcript visibility and retention.
 - The recording disclosure (with the Prompter).
 - Protection for the public water point form: rate limits, moderation, or a decision not to ship it.

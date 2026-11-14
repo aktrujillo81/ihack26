@@ -4,7 +4,9 @@
 iHack 2026 project (International category). People call a Vapi phone number to report a broken water point, including ones the system doesn't know yet. Vapi sends structured data to our server. We create or match the water point, score the complaint, and show it in a web app where NGO staff sign in, track complaints, pass them to partners, and mark them fixed.
 
 ## Stack (confirm and edit)
-- Next.js + Supabase (including its sign-in), deployed on Vercel
+- Next.js (App Router) and PostgreSQL, both self-hosted by the team. No Supabase, no Vercel.
+- Only the Next.js server is public, on one port, through a Cloudflare Tunnel. Postgres listens only on the host and is never exposed.
+- Sign-in uses a proven auth library that stores users and sessions in our Postgres (default: Better Auth, email and password).
 - Vapi for the phone line and call data
 - TODO: confirm with the team
 
@@ -39,7 +41,7 @@ Work runs in three rounds: Plan, Build, Review. Before any doc is written or any
 13. Never commit to `main` or force-push. All changes go through a pull request that a human merges.
 14. Track every change and decision inside `docs/`.
 15. Never place a paid Vapi call without a human's OK. The Vapi budget is $5 in total, about $0.09 per minute. See `docs/budget.md`.
-16. The repo is public. Keys live only in `.env.local` and Vercel environment variables. The Supabase service role key is used only on the server, never in browser code. Never commit raw call payloads.
+16. The repo is public. Keys live only in `.env.local` (development) and the `.env` file on the host server. The database URL and auth secret are used only on the server, never in browser code. The browser never talks to Postgres directly. Never commit raw call payloads.
 
 ## Workflow
 - The Orchestrator manages git. A new feature gets a new branch from an up-to-date `main`. When asked to merge, it opens a pull request. A human merges.

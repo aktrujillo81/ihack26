@@ -14,7 +14,7 @@
 - Live update data for the map and dashboard.
 - The history and audit events.
 - Configuration (scoring weights, colors, allowed values) kept as data, not repeated in code.
-- Deploy configuration and the list of environment variables (`.env.example`, names only).
+- Deploy configuration for the self-hosted server (build, start, restart on reboot, migrations, backups) and the list of environment variables (`.env.example`, names only).
 - Lead author of `docs/contracts.md`. Keeps it complete and current.
 - Tests for scoring, matching, merging, permissions, and bad payloads.
 
