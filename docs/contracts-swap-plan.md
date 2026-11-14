@@ -1,5 +1,7 @@
 # Swap plan: provisional UI files to `docs/contracts.md`
 
+> **Status update:** the data layer now reads D1's tables (`lib/data/complaints.ts`). The mock data and the mock-backed copy of the data layer live only in `tests/fixtures/` and are used by unit tests. The rest of this page still applies to the types and the pieces that wait for S6. See "What the signed-in screens read" in `docs/contracts.md`.
+
 For whoever owns `docs/contracts.md` (S6). Nothing here is a contract. It lists what the web app guessed from `docs/spec.md`, so each guess can be checked and replaced.
 
 | Group | File | `contracts.md` must match | Swap steps |

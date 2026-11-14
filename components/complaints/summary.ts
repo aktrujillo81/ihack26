@@ -27,6 +27,7 @@ export function buildSummary(detail: ComplaintDetail): string {
     `${t("list.col.reports")}: ${complaint.reportCount}`,
     `${t("list.col.priority")}: ${t("list.priorityReason", { score: complaint.priorityScore, reason: oneLine(complaint.scoreReason) })}`,
   ];
-  if (passedOnTo) lines.push(`${t("detail.passedOnTo")} ${oneLine(passedOnTo.name)}`);
+  const passedOn = passedOnTo?.name ?? complaint.passedOnNote;
+  if (passedOn) lines.push(`${t("detail.passedOnTo")} ${oneLine(passedOn)}`);
   return lines.join("\n");
 }

@@ -1,6 +1,6 @@
 # Web app plan: W1 to W4 (Person 3)
 
-Status: W1 is blocked, W2 and W3 wait for W1's session seam, and the map (W4) component is built (PR for `feat/map-component`). This file is the plan for the rest and what is left to wire.
+Status: W1 (sign-in, sign-out, proxy, guards, protected layout and navigation) and the W2, W3 and map pages are wired to the real session in `feat/auth-wiring`. They still read mock data through `lib/data/complaints.ts`, so signed-in users see the empty states until the data layer reads the database. Writes (D6), W5 and P1-1 are not started.
 
 ## Shape every screen follows
 - **Route (server component or handler):** reads the verified session, builds a `DataContext` from it (`organizationId`, `regionIds`) and the user's role. This is the only place a context is created. Unauthenticated requests are redirected before any data is read.
@@ -18,7 +18,7 @@ Status: W1 is blocked, W2 and W3 wait for W1's session seam, and the map (W4) co
 | `/complaints` list screen: `ComplaintList({ ctx })` | Session seam | Columns provisional (DB-1). States per UX notes. Priority has a number and a text reason. No transcripts. |
 | `/complaints/[id]` detail: `ComplaintDetail({ ctx, id, role })` | Session seam | Not-found and denied use one identical message (`detail.notFoundOrDenied`). Copy summary never includes transcripts. |
 | Status, note and pass-on actions | D6, session seam | Server-enforced role check, confirm dialog, history event |
-| `/map` page: `<Suspense fallback={<MapLoading />}><MapView ctx={ctx} /></Suspense>` | Session seam | Component exists. Page and nav link only. |
+| `/dashboard/map` page (signed-in): `<Suspense fallback={<MapLoading />}><MapView ctx={ctx} /></Suspense>` | Session seam | Component exists. Page and nav link only. `/map` is the separate public, status-only map (already built) and stays public. |
 | Map pin click opens the complaint | Route for detail | `complaintId` is already on authenticated pins (MP-7, P1) |
 | Needs-location count link | Route for the Needs location list (W5) | Currently plain text; target route unknown |
 | Live updates | D7 (unknown mechanism; default is polling) | Not built |

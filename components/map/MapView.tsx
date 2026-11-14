@@ -24,7 +24,7 @@ export async function MapView({ ctx, view = "authenticated" }: { ctx: DataContex
     listNeedsLocation(ctx),
   ]);
 
-  const failure = [waterPoints, complaints].find((r) => r.status === "error");
+  const failure = [waterPoints, complaints, needsLocation].find((r) => r.status === "error");
   if (failure?.status === "error") {
     return <p role="alert">{failure.error === "denied" ? t("common.denied") : t("common.error")}</p>;
   }

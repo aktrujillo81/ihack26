@@ -3,7 +3,7 @@
 Read this first in every session. The Orchestrator keeps it current.
 
 **Last updated:** Sat 2026-11-14, about 6:00 AM Mountain Time, by the Orchestrator.
-**Deadline:** 4:00 PM Saturday (about 10 hours left). Feature freeze time: **unknown** (the humans set it).
+**Deadline:** 4:00 PM Saturday. Feature freeze time: **unknown** (proposed: 1:30 PM Mountain; the humans set it).
 **Vapi balance:** 4.73 credits of 5.00 (3 paid calls, $0.27). Floor until rehearsals: 2.25. Only Andrew places paid calls, each with a human's OK.
 
 ## Report
@@ -31,7 +31,8 @@ NEXT: after S6 merges, D3 (Vapi endpoint) first, because it changes the schema a
 | A1 sign-in and roles | Done | PR #31, `docs/reviews/A1.md` |
 | W1 prep, W2/W3 screens on mock data, W4 map component | Merged as prep | PR #14, #18, #20, #21. PR #28 open |
 | Public map page | Merged, **needs spec approval** | PR #22. The public map is cut from the spec (section 4) |
-| D2 to D7, W1 to W5 on real data, Q1 to Q8, P1 | Not started | Wait for S6 |
+| W1 wiring, real reads, demo seed, D6 complaint writes | Merged | PR #33, #35, #36, #37. D6 differs from the contract: `docs/contracts.md` 5.8 and unknown 18 |
+| D3 (a, b), D4, D5, W5, D7 | Not started | A Codex audit of main (2026-11-14): P0 about 38%, P1 about 6%. Nothing connects a phone call to a complaint yet |
 
 ## Open PRs (limit: five)
 | PR | Branch | Owner | Note |

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { addNoteAction } from "@/lib/actions/form-actions";
-import { INITIAL_ACTION_STATE, actionMessageKey } from "@/lib/actions/state";
+import { INITIAL_ACTION_STATE, actionMessageKey, type ActionState } from "@/lib/actions/state";
 import { MAX_NOTE_LENGTH } from "@/lib/config/limits";
 import { t } from "@/lib/i18n/strings";
 
@@ -14,14 +14,21 @@ import "./complaints.css";
  * action refuses everyone else. The helper text warns against caller details.
  *
  * The text is kept in state, so a refused or failed save never wipes what the
- * person typed. It is cleared only after a real save (the "saved" outcome,
- * which nothing returns until the complaint API is connected).
+ * person typed. It is cleared only after a real save, and typing works again
+ * straight away. The note's author is the signed-in user, set on the server.
  */
 export function NoteForm({ complaintId }: { complaintId: string }) {
-  const [state, formAction, pending] = useActionState(addNoteAction, INITIAL_ACTION_STATE);
   const [text, setText] = useState("");
+  const [state, formAction, pending] = useActionState(
+    async (previous: ActionState, formData: FormData): Promise<ActionState> => {
+      const next = await addNoteAction(previous, formData);
+      if (next.status === "saved") setText("");
+      return next;
+    },
+    INITIAL_ACTION_STATE,
+  );
   const messageKey = actionMessageKey(state);
-  const shown = state.status === "saved" ? "" : text;
+  const saved = state.status === "saved";
   return (
     <form action={formAction} className="ww-note-form" aria-busy={pending}>
       <input type="hidden" name="complaintId" value={complaintId} />
@@ -33,7 +40,7 @@ export function NoteForm({ complaintId }: { complaintId: string }) {
         maxLength={MAX_NOTE_LENGTH}
         required
         disabled={pending}
-        value={shown}
+        value={text}
         onChange={(event) => setText(event.target.value)}
       />
       <p>{t("detail.noteHelp")}</p>
@@ -41,7 +48,7 @@ export function NoteForm({ complaintId }: { complaintId: string }) {
         {t("detail.addNote")}
       </button>
       {messageKey !== null && (
-        <p role={state.status === "saved" ? "status" : "alert"} className={state.status === "saved" ? undefined : "ww-state-error"}>
+        <p role={saved ? "status" : "alert"} className={saved ? "ww-saved" : "ww-state-error"}>
           {t(messageKey)}
         </p>
       )}

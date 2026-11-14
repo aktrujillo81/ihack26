@@ -368,6 +368,22 @@ Any other pair, or a request whose `expectedStatus` is not the current status
 characters. `before_data` and `after_data` of `status_changed`, `passed_on` and
 `reopened` hold codes only (`{ "status": "open" }`), never note text.
 
+**What is Built today differs from the rules above (D6, PR #37, checked when
+PR #34 was merged with main).** The built writes are the server actions in
+"Complaint writes" (section 7), not the HTTP routes 6.4 and 6.5. The differences
+below are **open: a human decides which side changes** (section 9); until then
+the code is what runs and this table is what the contract wants.
+
+| Topic | Contract (5.8, 6.4, 6.5) | Built (#37) |
+|---|---|---|
+| Transport | `POST /api/complaints/{id}/status` and `/notes` | Server actions, no HTTP route |
+| Stale check | `expectedStatus`, 409 | `version` (`updated_at`), result `conflict` |
+| `passed_on` to `open` | Allowed, with a note (spec change, awaiting approval) | Refused (`invalid`), because the spec does not list it |
+| `fixed` to `open` | 409 if the water point already has an active complaint | No such check; the unique index in 4.1 item 8 does not exist yet |
+| Pass-on note | 1 to 2000 characters, never in `before_data`/`after_data` | Max 200 characters, **copied into `after_data.passedOnNote`** |
+| Note text | 1 to 2000 characters | 1 to 1000 characters |
+| Partner | `partnerId` optional | Not set (no picker) |
+
 ### 5.9 History event types
 `created`, `report_added`, `status_changed`, `passed_on`, `reopened`,
 `note_added`, `edited`, `pin_moved`, `verified`, `merged`, `review_cleared`,
@@ -585,6 +601,131 @@ Not HTTP endpoints. For W1's wiring points.
 - `readSessionFromHeaders()`: the same, using the current request's headers.
 - `signInWithPassword(email, password, headers?)` returns `"ok" | "invalid" | "no_region" | "rate_limited" | "error"`. Unknown email and wrong password both give `"invalid"`. `"no_region"` only after the password was accepted. Its own limit: 5 per 60 s per `cf-connecting-ip`. Failures are logged as `[auth] sign_in_failed reason=<result>`, never with the email.
 
+### Web pages and who may open them (task W1)
+Pages, not API endpoints. `proxy.ts` (Next.js 16) only checks that a session
+cookie **exists** and redirects signed-out visitors; it validates nothing, so
+**every protected page, layout and action validates the session itself**
+(`requirePageSession()` in `lib/auth/page-guard.ts`, the guards in
+`lib/auth/guards.ts`). The rules are in `lib/permissions/routes.ts` and
+`lib/permissions/proxy-rules.ts`.
+
+| Path | Who | Notes |
+|---|---|---|
+| `/sign-in` | anyone | A signed-in user is sent to `/complaints`. `?reason=expired` shows "Your session ended". |
+| `/` | anyone | Shows nothing: signed in goes to `/complaints`, else `/sign-in`. |
+| `/map` | anyone | PUBLIC, status only (type and status of each water point, no detail). **PROPOSED, NOT APPROVED:** the spec lists the public map as cut. Shows nothing unless `PUBLISHED_MAP_ORGANIZATION_ID` and `PUBLISHED_MAP_REGION_IDS` are set. |
+| `/api/health` | anyone | See above. |
+| `/api/auth/*` | self-authenticating | Only POST sign-in and sign-out reach Better Auth (above). The proxy lets this prefix through without a cookie because it must. |
+| `/api/vapi/*` | self-authenticating | Shared secret in constant time; refuses everything while unset. TEMPORARY (S5a). The proxy lets this prefix through without a cookie because Vapi has none. |
+| `/complaints` | Viewer, Responder, Org Admin | Complaint list. Role needs `view`. |
+| `/complaints/[id]` | Viewer, Responder, Org Admin | Complaint detail. A missing id and another organization's id show the identical message. |
+| `/dashboard/map` | Viewer, Responder, Org Admin | The signed-in map (the public one is `/map`). |
+
+Without a session cookie: any other page redirects (307) to `/sign-in`, any
+other `/api/*` path answers `401 {"error":"unauthorized"}`. With a cookie the
+request reaches the page, which refuses it if the session is not valid (the
+page redirects to `/sign-in?reason=expired`). Redirect targets are fixed paths;
+nothing from the request is copied into them. `/needs-review` and
+`/needs-location` are denied by default and have no pages yet (W5).
+
+Sign-out is a server action (`lib/auth/sign-out.ts`): it ends the session on the
+server and goes to `/sign-in`. Sign-in is a server action that calls
+`signInWithPassword()`; on success it redirects to `/complaints`; on any failure
+it returns a message and sets no cookie.
+
+### What the signed-in screens read (`lib/data/complaints.ts`)
+Every screen reads through this one file, with the `DataContext` built from the
+validated session (organization and region). **Every query filters by that
+organization and those regions on every table it touches**, including joined
+ones. A context that is missing, empty or has a non-uuid id returns nothing,
+never everything. Another organization's record and a missing record answer
+identically (`not_found_or_denied`). Lists select named columns and never
+`transcript`. The real queries are tested against Postgres in
+`tests/integration/data-reads.test.ts` (two organizations, three regions).
+
+All of it is **real** (complaints, water points, reports, notes, history events,
+partners, last report). What D1 does not store, and what the screens do about
+it (**PROVISIONAL, waits for S6 and D4/D5**, see `docs/reviews/D1.md`):
+
+| The screens need | D1 has | What is done |
+|---|---|---|
+| A complaint's problem, people affected, school or clinic, duration | Only on `reports`, not on `complaints` | Derived at read time: the most severe known values across the complaint's reports (spec section 7). No reports: all unknown. |
+| A review reason, and the candidate water points for an ambiguous match | No column | Reason is null, candidates empty. W5 needs a column or a table. |
+| A description of each history event | `event_type`, `before_data`, `after_data`, `note` | The screen builds the sentence from those (translatable). Unknown event types show "Change recorded". |
+| The name of a water point | `location_text` (spoken) and the type only | No name. The public map labels a point by its type. |
+| A version for the overwrite check (D6) | `updated_at` | `updated_at` as UTC text to the microsecond (`version`). |
+| Who it was passed to | `passed_on_partner_id` and free text `passed_on_note` | Shows the partner name, else the note. |
+| A report's channel | enum `phone`, `web`, `other` | The app's list now includes `other`. |
+| A report's people affected, school or clinic | nullable | Null reads as `unknown`. |
+
+Things to know (found by the red-line-8 review of these reads):
+
+- **Lists never carry caller-derived text.** `transcript` and `summary` are
+  returned by the detail read only. A list, including the needs-review list,
+  has neither.
+- **The schema allows cross-scope links.** Only the (organization, region) pair
+  is tied to `regions` by a composite key. A report, note, history event or
+  complaint can point at another organization's complaint, water point, partner
+  or author. So the data layer filters EVERY table it reads, and tests insert such
+  rows on purpose (`tests/integration/data-fixtures.ts`). D1 should add
+  composite foreign keys (organization with each id column) so the database
+  refuses them; until then the filters are the only defence.
+- A note's or history event's author name is shown only if that user belongs to the
+  same organization. Names of staff in OTHER regions of the same organization are
+  shown (staff names, not caller data).
+- `before_data` and `after_data` are passed to the screen as stored; the screen
+  reads only `status` and `passedOnNote`. Whatever D6 writes there must be safe to
+  show (no contact values, no note text).
+- A complaint's shown problem, duration and so on are derived from ALL its
+  reports, so after a reopen they can differ from the stored score and reason next
+  to them. The order "slow before dirty" is a choice; the spec is silent.
+- Lists are cut off at `DATA_LIST_HARD_LIMIT` (1000, PROPOSED) until pagination
+  exists. The public map's read selects only the columns a pin needs.
+
+### Complaint writes (task D6, `lib/data/complaint-writes.ts`)
+Two server actions in `lib/actions/complaints.ts`, called by the forms through
+`lib/actions/form-actions.ts`. Nothing here contacts anyone: "pass on" is a
+recorded step (red line 5).
+
+| Action | Input | Permission | Result states |
+|---|---|---|---|
+| `changeComplaintStatus` | `complaintId`, `status` (`open`, `passed_on`, `fixed`), `passedOnTo` (required, max 200, for `passed_on`), `version` | `pass_on` for `passed_on`, else `change_status` | `saved`, `conflict`, `unauthenticated`, `denied`, `not_found`, `invalid`, `error` |
+| `addComplaintNote` | `complaintId`, `text` (1 to 1000 after trim) | `add_note` | same |
+
+Order of checks: session, then the complaint is looked up inside the session's
+organization and regions (another organization, another region, a missing id and
+a malformed id all answer `not_found`), then `requireActionInScope` (a Viewer is
+`denied` whatever the payload), then the input, then the write. Organization,
+region and author come from the stored complaint and the session, never from the
+request.
+
+- **Allowed steps:** open to passed on or fixed; passed on to fixed; fixed to open
+  (reopen). Anything else, including the same status, is `invalid`.
+- **Version check:** the form sends the `version` it was shown (`updated_at` as
+  UTC text to the microsecond). The write locks the complaint row, compares, and
+  refuses with `conflict` if it moved. Two requests with the same version: exactly
+  one is saved. Notes do not change the version.
+- **Same transaction:** the change and its `history_events` row are written
+  together; if either fails both are rolled back (`error`).
+- **History event:** `status_changed`, `passed_on` or `reopened`, with
+  `before_data {status}` and `after_data {status[, passedOnNote]}`; `note_added`
+  with `after_data {noteId}` (no note text). Actor is the signed-in user.
+  Reopen clears `fixed_at` and the pass-on fields.
+- **Append-only (red line 9):** the write code only inserts into `history_events`
+  and the database trigger refuses update and delete. Both are tested.
+- `passedOnNote` is free text typed by staff and is copied into the history
+  event, so the form tells staff not to type caller names or numbers (red line 3).
+  Nothing can check this automatically.
+- The author must be an active user of the same organization and in one of the
+  session's regions; the role is taken from the validated session.
+- Errors log the fixed code `[data] write_failed` only. The page is refreshed
+  after `saved`.
+- Not done: setting `passed_on_partner_id` (no partner picker yet), and `review`
+  actions (W5).
+
+Tested in `tests/integration/complaint-writes.test.ts` (Postgres) and
+`tests/unit/complaint-actions.test.ts` (what the actions pass to the write).
+
 ### Seed (`npm run db:seed`, task A1, Built)
 Creates "Demo Organization" and "Demo Region" (`slug` `demo-region`), then per
 role a Better Auth user and credential account and a `users` row
@@ -596,6 +737,44 @@ hashed with Better Auth's `hashPassword`, never printed. Idempotent: reuses
 existing rows, never changes an existing `users` row, and updates the password
 hashes to the current values. Never calls sign-up. **To build in D2/D3:** also
 creates the `intake.phone` row and the default config keys of section 8.
+
+### Demo data (`npm run db:seed:demo`, a separate command)
+Run **after** `npm run db:seed`. Adds invented demo data to the demo organization
+and region: 13 water points (verified, unverified, merged, archived; with and
+without coordinates; one with no complaint), 7 complaints (every status and every
+problem type; one needs review), 13 reports with transcripts (3 unmatched and
+flagged, never dropped), 3 notes, 2 partners (no contact details) and the history
+events. Times are "hours before the run", so the demo looks recent. Scores follow
+the spec's formula (a unit test recomputes them). No caller details: no names, phone
+numbers or emails (tests scan the data and the stored rows). No credentials.
+- **Refuses anything but the development database (an allowlist):** it accepts a
+  `DATABASE_URL` only if it is a plain URL with host `127.0.0.1`, `localhost` or
+  `[::1]`, the port written and exactly **5434**, and **no query string and no
+  fragment**. It also refuses if `PGHOST`, `PGHOSTADDR`, `PGPORT`, `PGSERVICE` or
+  `PGSERVICEFILE` is set, and any run with `NODE_ENV=production`. This matters
+  because the database driver also honors `?port=` and `?host=` in the URL and
+  the `PG*` variables, and reads `#` differently from the URL parser, so a check
+  of the URL's port alone can be fooled into connecting to 5433. Both the command
+  line (before the database module is loaded) and `runDemoSeed` itself check the
+  same `DATABASE_URL`, so neither can be skipped. Exit code 1, and a message that
+  never prints the connection string. There is no override, and 5433 can never be
+  allowed. Use `npm run db:local` (port 5434).
+- **Will not guess the organization:** it finds "Demo Organization" by name (names
+  are not unique in D1). It stops if two active organizations have that name, or
+  if the organization already holds water points, complaints, reports, notes or
+  partners that this seed did not write.
+- **Idempotent:** a marker row (`demo_seed`) in `configuration` stops a second run,
+  including two at the same moment. It never deletes anything (history is
+  append-only, red line 9). To start over, delete the local `.pgdata/` folder.
+- It needs the demo organization, region and accounts from `npm run db:seed`, and
+  stops with that instruction if they are missing.
+- **Invented, including the history:** every row is made up, and the history
+  events carry made-up past times and the demo responder as the actor. Nothing
+  marks a row as demo except the organization's name and the "Demo" partner
+  names, so do not point real Vapi calls at this organization. The coordinates are
+  invented values in a real region (the real district is unknown).
+- Note for A1's owner: `npm run db:seed` itself has no port guard, and it writes
+  password hashes, so it is the more dangerous command.
 
 ### `GET /api/health` (task S3, Built)
 - **Auth:** None. Public. **200:** `{ "status": "ok", "db": "ok" }`. **503:** `{ "status": "error", "db": "down" }`.
@@ -656,3 +835,4 @@ read only through `lib/config/env.ts` (server-only).
 | 15 | Whether the stale-report threshold (15 minutes) is right | UX, humans | Approve or change `ui.staleReportMinutes` |
 | 16 | Several phone lines mapped to several organizations or regions | Backend | Future work; one `intake.phone` row now |
 | 17 | The map provider and tile terms | Frontend, humans | Spec unknown 9 |
+| 18 | The differences between 5.8/6.4/6.5 and the built complaint writes (#37): transport, `passed_on` to `open`, the active-complaint check on reopen, note lengths, and pass-on text stored in `after_data` | Humans (Backend, Security) | Decide per row in the table after 5.8; the pass-on text in `after_data` also touches red line 3 |

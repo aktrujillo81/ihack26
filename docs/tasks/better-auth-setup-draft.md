@@ -70,7 +70,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: { enabled: true, disableSignUp: true }, // accounts come from the seed script
   session: {
-    expiresIn: 60 * 60 * 24 * 6, // 6 days: below MAX_SESSION_LIFETIME_MS (7 days, lib/auth/session.ts) so clock skew or a sliding refresh never trips the cap
+    expiresIn: 60 * 60 * 11, // 11 hours: the humans decided 12 hours (MAX_SESSION_LIFETIME_MS, lib/auth/session.ts); stay just under so clock skew or a sliding refresh never trips the cap. A1 v3 owns the real value.
     cookieCache: { enabled: false }, // default; keeps revocation immediate
   },
   rateLimit: {
@@ -100,7 +100,7 @@ export const { GET, POST } = toNextJsHandler(auth);
 - Add both names (empty) to `.env.example`. Server only; never `NEXT_PUBLIC_`. They live in `.env.local` and the `.env` on the host server.
 
 ## 7. Sessions and rate limiting
-- **Sessions** are stored in the database by default. `expiresIn` defaults to 604800 seconds (7 days), which equals the proposed cap in `lib/auth/session.ts`. `updateAge` (1 day) extends a session as it is used; because `parseSession` refuses a session that expires more than `MAX_SESSION_LIFETIME_MS` from now, keep `expiresIn` at or below the cap.
+- **Sessions** are stored in the database by default. `expiresIn` defaults to 604800 seconds (7 days), which is longer than the 12-hour cap in `lib/auth/session.ts`, so it must be lowered (the humans decided staff sessions last 12 hours). `updateAge` (1 day) extends a session as it is used; because `parseSession` refuses a session that expires more than `MAX_SESSION_LIFETIME_MS` from now, keep `expiresIn` at or below the cap.
 - **Cookie cache** is off by default. The docs warn that with it on, a revoked session can stay valid on other devices until the cache `maxAge` ends. Leave it off.
 - **Revocation:** sign-out ends the current session (`auth.api.signOut({ headers: await headers() })` on the server, with `nextCookies()` for cookies). Revoking others: `revokeSession`, `revokeOtherSessions`, `revokeSessions`.
 - **Rate limit defaults:** enabled in production only, window 10 s, max 100; `/sign-in/email` is 3 per 10 s. Default storage is **memory**: per process, lost on restart, and the docs say it may not suit serverless. One self-hosted Next.js server makes this acceptable; `storage: "database"` needs another table and `drizzle-kit generate`.

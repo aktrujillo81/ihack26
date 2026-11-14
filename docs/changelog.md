@@ -36,6 +36,10 @@ This file was created on 2026-11-14 during S6. Rows up to PR #32 were filled in 
 | 4:34 AM | #30 | A1 | `drizzle.config.ts`: `.env.local` wins over `.env` | Backend |
 | 5:30 AM | #31 | A1 | Better Auth sign-in on D1's `users` table | Backend, Security, Frontend, UX, Phone / AI Prompter (`docs/reviews/A1.md`) |
 | 5:36 AM | #32 | S4, S5 | Cleaned sample payload from test call 3, three test calls logged, Vapi v3 and v4 recorded | Phone / AI Prompter |
+| (merged after the table was last updated) | #33 | W1 | Sign-in, sign-out, proxy and page guards wired to the real session | not recorded here |
+| (same) | #35 | D1, W2, W3 | Signed-in screens read real data (scoped by session) | not recorded here |
+| (same) | #36 | Demo | Demo seed on the local database only (port 5434) | not recorded here |
+| (same) | #37 | D6 | Complaint writes: status change, pass on, reopen, notes, version check, same-transaction history. Differs from contract 5.8/6.4/6.5: see contracts.md section 5.8 and unknown 18 | not recorded here |
 
 ## S5 results (from PR #32)
 - Three paid calls, $0.27 in total, balance 4.73. Calls 1 and 2 (assistant v3) arrived with no extracted data. Call 3 (v4) carried all nine fields.

@@ -30,14 +30,43 @@ export interface RouteRule {
   navLabelKey?: PlainKey;
 }
 
-/** Reachable without signing in. Exact matches only. */
-export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health"];
+/**
+ * Reachable without signing in. Exact matches only, so "/map/anything" is NOT
+ * public. "/map" is the PUBLIC status-only map (no session, no detail); the
+ * signed-in map lives at "/dashboard/map". A path must never be in both this
+ * list and ROUTE_RULES (a test checks that).
+ *
+ * PROPOSED, NOT APPROVED: "/map" being public. The public read-only map is
+ * listed as cut from this build in docs/spec.md section 4. A human must approve
+ * it and record the decision in docs/decisions.md; until then, remove "/map"
+ * from this list to make it signed-in-only. (The page also shows nothing unless
+ * the PUBLISHED_MAP_* settings are set.)
+ */
+export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health", "/map"];
 
+/**
+ * Route groups whose own handler authenticates every request, so the proxy lets
+ * them through without a session cookie. They are NOT public: each handler
+ * refuses what it should.
+ * - "/api/auth/": Better Auth. app/api/auth/[...all]/route.ts answers 404 for
+ *   everything except POST sign-in and sign-out (docs/contracts.md).
+ * - "/api/vapi/": the Vapi webhook. It checks a shared secret in constant time
+ *   and refuses every request while the secret is unset (TEMPORARY S5a capture
+ *   route; the real endpoint, D3, must do the same).
+ * Anything added here must authenticate itself in its handler.
+ */
+export const SELF_AUTHENTICATING_PREFIXES: readonly string[] = ["/api/auth/", "/api/vapi/"];
+
+/**
+ * The navigation shows only routes that exist. "/needs-review" and
+ * "/needs-location" are rules (so they are denied by default) but have no
+ * navLabelKey until their pages are built (W5), so no link points at a 404.
+ */
 export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/complaints", action: "view", navLabelKey: "nav.complaints" },
-  { path: "/map", action: "view", navLabelKey: "nav.map" },
-  { path: "/needs-review", action: "view", navLabelKey: "common.needsReview" },
-  { path: "/needs-location", action: "view", navLabelKey: "common.needsLocation" },
+  { path: "/dashboard/map", action: "view", navLabelKey: "nav.map" },
+  { path: "/needs-review", action: "view" },
+  { path: "/needs-location", action: "view" },
 ];
 
 /** Only these characters may appear in a path we will match: letters, digits and - _ . ~ / */
@@ -51,12 +80,21 @@ const PLAIN_PATH = /^\/[A-Za-z0-9\-_.~/]*$/;
 function normalize(pathname: string): string | null {
   const path = pathname.split(/[?#]/)[0] ?? "";
   if (!PLAIN_PATH.test(path)) return null;
-  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+  // Repeated slashes anywhere (including at the end, "/map//") are refused, not collapsed.
+  if (path.includes("//")) return null;
+  return path.length > 1 ? path.replace(/\/$/, "") : path;
 }
 
 export function isPublicPath(pathname: string): boolean {
   const path = normalize(pathname);
   return path !== null && PUBLIC_PATHS.includes(path);
+}
+
+/** True for a path below one of SELF_AUTHENTICATING_PREFIXES. The bare prefix itself ("/api/auth") is not. */
+export function isSelfAuthenticatingPath(pathname: string): boolean {
+  const path = normalize(pathname);
+  if (path === null || path.split("/").some((segment) => segment === ".." || segment === ".")) return false;
+  return SELF_AUTHENTICATING_PREFIXES.some((prefix) => path.startsWith(prefix) && path.length > prefix.length);
 }
 
 /** The action a route needs, or null if no rule covers it. Matches whole path segments, case-sensitively. */

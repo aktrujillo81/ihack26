@@ -75,10 +75,11 @@ const en = {
   "signIn.noRegion": "Your account is not set up for any region yet. Ask your organization's admin.",
   "signIn.expired": "Your session ended. Please sign in again.",
   // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
-  "signIn.notConfigured": "Sign-in is not set up yet.",
+  "signIn.rateLimited": "Too many sign-in attempts. Please wait a minute and try again.",
   "nav.complaints": "Complaints",
   "nav.map": "Map",
   "nav.signOut": "Sign out",
+  "nav.signOutFailed": "Sign-out did not work. Please try again.",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
@@ -118,8 +119,16 @@ const en = {
   "detail.passOn": "Pass on",
   "detail.addNote": "Add note",
   "detail.noteLabel": "Note",
-  "detail.notAvailable": "This action is not available yet.",
+  "detail.conflict": "This complaint was changed by someone else. Reload the page and try again.",
   "detail.invalidInput": "Please check what you entered.",
+  "history.system": "System",
+  "history.created": "Complaint created",
+  "history.reportAdded": "Report added",
+  "history.statusChanged": "Status changed from {from} to {to}",
+  "history.passedOn": "Passed on to {who}",
+  "history.reopened": "Reopened",
+  "history.noteAdded": "Note added",
+  "history.other": "Change recorded",
   "detail.saved": "Saved.",
 
   // Map
