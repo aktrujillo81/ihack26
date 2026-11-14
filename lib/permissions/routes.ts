@@ -1,0 +1,92 @@
+/**
+ * Which action each route needs, and the navigation derived from it. One
+ * table drives both, so a link that is shown and the server check for its
+ * route can never disagree. Hiding a link is a convenience; the server runs
+ * the same check on every request.
+ *
+ * PROVISIONAL: the route paths are proposals. docs/contracts.md defines none
+ * yet. Change them here, in one place.
+ *
+ * DEFAULT DENY: a path that is not public and not listed is refused. A path
+ * containing anything but plain URL characters (percent-encoding, backslash,
+ * semicolon, control or non-ASCII characters) is refused outright, so encoded
+ * tricks like "/complaints/%2e%2e/admin" never match a rule.
+ *
+ * NOT ENFORCED YET. When W1 wires this into Next's proxy/middleware, that is
+ * not the only defence: every server component, route handler and action must
+ * also call a guard from lib/auth/guards.ts, because middleware can be
+ * bypassed. Still to decide when wiring: how /_next/*, static files, the Vapi
+ * webhook (authenticated by signature, not session) and sign-out are handled;
+ * none has a rule here, so all are denied today.
+ */
+import type { PlainKey } from "../i18n/strings";
+import { can, type Action } from "./matrix";
+
+export interface RouteRule {
+  /** A path prefix. "/complaints" also covers "/complaints/abc". */
+  path: string;
+  action: Action;
+  /** Present only for routes that appear in the navigation. */
+  navLabelKey?: PlainKey;
+}
+
+/** Reachable without signing in. Exact matches only. */
+export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health"];
+
+export const ROUTE_RULES: readonly RouteRule[] = [
+  { path: "/complaints", action: "view", navLabelKey: "nav.complaints" },
+  { path: "/map", action: "view", navLabelKey: "nav.map" },
+  { path: "/needs-review", action: "view", navLabelKey: "common.needsReview" },
+  { path: "/needs-location", action: "view", navLabelKey: "common.needsLocation" },
+];
+
+/** Only these characters may appear in a path we will match: letters, digits and - _ . ~ / */
+const PLAIN_PATH = /^\/[A-Za-z0-9\-_.~/]*$/;
+
+/**
+ * Strip query, hash and a trailing slash. Returns null for any path that is not
+ * plain (encoded, backslash, semicolon, control or non-ASCII characters), which
+ * matches nothing and is denied.
+ */
+function normalize(pathname: string): string | null {
+  const path = pathname.split(/[?#]/)[0] ?? "";
+  if (!PLAIN_PATH.test(path)) return null;
+  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+export function isPublicPath(pathname: string): boolean {
+  const path = normalize(pathname);
+  return path !== null && PUBLIC_PATHS.includes(path);
+}
+
+/** The action a route needs, or null if no rule covers it. Matches whole path segments, case-sensitively. */
+export function requiredActionForPath(pathname: string, rules: readonly RouteRule[] = ROUTE_RULES): Action | null {
+  const path = normalize(pathname);
+  if (path === null || path.split("/").some((segment) => segment === ".." || segment === ".")) return null;
+  if (path.includes("//")) return null;
+  const rule = rules
+    .filter((r) => path === r.path || path.startsWith(`${r.path}/`))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  return rule?.action ?? null;
+}
+
+export type RouteAccess = "public" | "allowed" | "denied";
+
+/** Public paths pass. Everything else needs a listed rule and a role that has its action. */
+export function accessForPath(pathname: string, role: unknown, rules: readonly RouteRule[] = ROUTE_RULES): RouteAccess {
+  if (isPublicPath(pathname)) return "public";
+  const action = requiredActionForPath(pathname, rules);
+  return action !== null && can(role, action) ? "allowed" : "denied";
+}
+
+export interface NavItem {
+  href: string;
+  labelKey: PlainKey;
+}
+
+/** Links to show this role. A convenience only: the server still checks each route. */
+export function navItemsFor(role: unknown, rules: readonly RouteRule[] = ROUTE_RULES): NavItem[] {
+  return rules
+    .filter((r): r is RouteRule & { navLabelKey: PlainKey } => r.navLabelKey !== undefined && can(role, r.action))
+    .map((r) => ({ href: r.path, labelKey: r.navLabelKey }));
+}

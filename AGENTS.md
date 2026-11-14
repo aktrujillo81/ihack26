@@ -8,7 +8,7 @@ iHack 2026 project (International category). People call a Vapi phone number to 
 - Only the Next.js server is public, on one port, through a Cloudflare Tunnel. Postgres listens only on the host and is never exposed.
 - Sign-in uses a proven auth library that stores users and sessions in our Postgres (default: Better Auth, email and password).
 - Vapi for the phone line and call data
-- TODO: confirm with the team
+- Live updates use our own API (default: polling), not a third-party realtime service. The stack decisions are recorded in `docs/decisions.md`.
 
 ## Source of truth
 - `docs/spec.md`: the product brief (what and why). Humans approve changes.
@@ -52,3 +52,13 @@ Work runs in three rounds: Plan, Build, Review. Before any doc is written or any
 - Shared files (`docs/contracts.md`, the schema, shared types) are edited by one task at a time.
 - When an AI assistant gets something wrong, add a line to `docs/ai-mistakes.md`.
 - When the team makes a real decision, add a line to `docs/decisions.md`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

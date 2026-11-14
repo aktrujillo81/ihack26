@@ -38,3 +38,6 @@ Thumbs.db
 # Next.js generated and TypeScript build info
 next-env.d.ts
 *.tsbuildinfo
+
+# Local Postgres data from `npm run db:local` (embedded-postgres)
+.pgdata/

@@ -74,6 +74,11 @@ const en = {
   "signIn.invalid": "That email or password is not right.",
   "signIn.noRegion": "Your account is not set up for any region yet. Ask your organization's admin.",
   "signIn.expired": "Your session ended. Please sign in again.",
+  // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
+  "signIn.notConfigured": "Sign-in is not set up yet.",
+  "nav.complaints": "Complaints",
+  "nav.map": "Map",
+  "nav.signOut": "Sign out",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
@@ -96,6 +101,26 @@ const en = {
   "detail.copySummary": "Copy summary",
   "detail.copied": "Copied",
   "detail.noteHelp": "Don't enter caller names or phone numbers.",
+  // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
+  "list.col.waterPoint": "Water point",
+  "list.col.problem": "Problem",
+  "list.col.people": "People affected",
+  "list.col.schoolClinic": "School or clinic",
+  "list.col.duration": "How long",
+  "list.col.reports": "Reports",
+  "list.col.priority": "Priority",
+  "list.col.status": "Status",
+  "list.col.updated": "Last update",
+  "common.timeUtc": "{time} UTC",
+  "detail.reportsTitle": "Reports",
+  "detail.notesTitle": "Notes",
+  "detail.timelineTitle": "Timeline",
+  "detail.passOn": "Pass on",
+  "detail.addNote": "Add note",
+  "detail.noteLabel": "Note",
+  "detail.notAvailable": "This action is not available yet.",
+  "detail.invalidInput": "Please check what you entered.",
+  "detail.saved": "Saved.",
 
   // Map
   "map.empty": "No water points with a location yet.",

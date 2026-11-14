@@ -59,6 +59,8 @@
 | Error (server) | `common.error` |
 | Denied (no access to any region) | "Your account is not set up for any region yet. Ask your organization's admin." (`signIn.noRegion`) |
 | Session expired | "Your session ended. Please sign in again." (`signIn.expired`). Unsaved work is not discarded silently. |
+| Not configured (PROPOSED, temporary) | "Sign-in is not set up yet." (`signIn.notConfigured`). Shown until the authentication service is connected. Signing in never succeeds in this state. |
+| Navigation (PROPOSED) | Links shown by role: "Complaints" (`nav.complaints`), "Map" (`nav.map`), "Needs review" (`common.needsReview`), "Needs location" (`common.needsLocation`), and "Sign out" (`nav.signOut`). Hiding a link is a convenience only; the server checks every route. Route paths are proposals. |
 | Needs review | Not applicable. |
 
 ### SCREEN: Complaint list (the dashboard home)
@@ -156,7 +158,7 @@
 
 ### SCREEN: Public map (PROPOSED; cut from the spec, built on request)
 **WHO SEES IT:** Anyone, without signing in. **MAIN ACTION:** None (look at the map). **STATUS:** `docs/spec.md` section 4 lists the public read-only map as cut from this build. This screen exists only because a human asked for it, and needs the spec change approved.
-**SHOWS:** Each water point that has a location, as a pin with a shape and always-visible text: its type (`type.*`, because the data has no water point name), its status (Open, Passed on, Fixed, or No open complaint) and "Unverified" when it applies. A legend and a text list repeat every pin.
+**SHOWS:** Each water point that has a location, as a pin with a shape and always-visible text: its type (`type.*`, because the data has no water point name), and its status (Open, Passed on, Fixed, or No open complaint). Unverified water points are not shown by default (PROPOSED: they come straight from a caller's words and have an exact location); if a human turns them on, they carry the word "Unverified" and a dashed outline. A legend and a text list repeat every pin.
 **NEVER SHOWS:** report details, transcripts, spoken location text, counts of reports or reporters, problem, people affected, dates, notes, ids, or anything about callers.
 **Color:** by status only (open red circle, passed on yellow diamond, fixed green check, no open complaint green square). This differs from the spec's problem-based colors because the problem must not be public. The word and shape carry the meaning.
 | State | Wording (key) |
@@ -166,6 +168,19 @@
 | Empty, or not published | "No water points with a location yet." (`map.empty`). The map is empty, not an error, when no organization is configured for publishing. |
 | Error | "Something went wrong. Please try again." (`common.error`) |
 | Tiles fail | "The map background could not load. Water points are still listed below." (`map.tilesFailed`) |
+
+### PROPOSED wording for the complaint screens (not in the first draft)
+| Key | Wording |
+|---|---|
+| `list.col.waterPoint` / `problem` / `people` / `schoolClinic` / `duration` / `reports` / `priority` / `status` / `updated` | Water point / Problem / People affected / School or clinic / How long / Reports / Priority / Status / Last update |
+| `common.timeUtc` | {time} UTC |
+| `detail.reportsTitle` / `notesTitle` / `timelineTitle` | Reports / Notes / Timeline |
+| `detail.passOn` | Pass on |
+| `detail.addNote` / `detail.noteLabel` | Add note / Note |
+| `detail.notAvailable` | This action is not available yet. (Shown until the complaint API is connected; nothing is saved.) |
+| `detail.invalidInput` | Please check what you entered. |
+
+Status changes allowed (spec DB-3 and section 10): Open to Passed on or Fixed, Passed on to Fixed, Fixed back to Open. Passed on back to Open is not listed in the spec and is refused (unknown). Passing on needs a note of who it is passed to (free text until the partner directory exists, P1-2).
 
 ## 4. Role differences
 | Screen | Viewer | Responder | Org Admin |
