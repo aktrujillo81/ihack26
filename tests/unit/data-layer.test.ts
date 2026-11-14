@@ -1,10 +1,9 @@
 /**
  * PROVISIONAL tests for lib/data/complaints.ts. Run with:
- *   npx tsx --test tests/unit/data-layer.test.ts
- * (No package.json yet; wire into the real test runner after S3.)
+ *   npm test   (Vitest; node:assert is used for assertions)
  */
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import {
   MOCK_CONTEXT,
   getComplaint,

@@ -16,6 +16,11 @@ export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "en";
 
 const en = {
+  // App shell. PROVISIONAL: placeholder home page from S3 until the dashboard (W2) exists; not yet in docs/ux-screen-notes.md.
+  "app.name": "Well Watch",
+  "app.tagline": "Water point reports from a phone call, for NGO coordinators.",
+  "home.placeholder": "The coordinator web app is being built. Sign-in, complaints, and the map are coming next.",
+
   // Shared
   "common.loading": "Loading…",
   "common.error": "Something went wrong. Please try again.",
