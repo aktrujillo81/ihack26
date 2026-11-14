@@ -35,6 +35,7 @@
 | `priority.high`, `priority.medium`, `priority.low` | High, Medium, Low (PROVISIONAL, from docs/design/) |
 | `app.subtitle`, `nav.workspace`, `nav.signedInAs`, `role.org_admin`, `role.responder`, `role.viewer` | Operations console, Workspace, Signed in as, Org Admin, Responder, Viewer (PROVISIONAL, from docs/design/operations-console.html) |
 | `page.complaints.subtitle`, `page.map.subtitle` | Page subtitles (PROVISIONAL; the map one is written here, not in the design) |
+| `list.summary.*`, `list.filter.*`, `list.search.label`, `list.sortBy`, `list.noMatches`, `list.clearFilters` | The list's summary captions (Awaiting action, With a partner, Closed out, Staff check needed), filter label and All, Search water points, Sort by {column}, No complaints match. Try a different filter or search., Clear filters (PROVISIONAL, from docs/design/operations-console.html) |
 | `common.needsLocation` | Needs location |
 | `status.open` | Open |
 | `status.passed_on` | Passed on |
