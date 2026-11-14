@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   AuthError,
@@ -18,6 +18,15 @@ import { t } from "@/lib/i18n/strings";
 const NOW = Date.parse("2026-11-14T12:00:00Z");
 const FUTURE = "2026-11-14T20:00:00Z"; // 8 hours after NOW, inside the 12-hour cap
 const PAST = "2026-11-13T12:00:00Z";
+
+// Freeze the clock so guards called without a `now` argument see NOW, not the real time.
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 const session = (role: Role, extra: Record<string, unknown> = {}) => ({
   userId: "u-1",
