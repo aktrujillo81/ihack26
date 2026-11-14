@@ -201,3 +201,13 @@ describe("expiry must be strict ISO and not too far away", () => {
     expect(parseSession(session("viewer", { expiresAt: FUTURE }), NOW, 48 * 60 * 60 * 1000)).not.toBeNull();
   });
 });
+
+describe("default maximum session lifetime", () => {
+  it("is 7 days: 6 days is accepted, 8 days is refused", async () => {
+    const { MAX_SESSION_LIFETIME_MS } = await import("@/lib/auth/session");
+    expect(MAX_SESSION_LIFETIME_MS).toBe(7 * 24 * 60 * 60 * 1000);
+    const days = (n: number) => new Date(NOW + n * 24 * 60 * 60 * 1000).toISOString();
+    expect(parseSession(session("viewer", { expiresAt: days(6) }), NOW)).not.toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: days(8) }), NOW)).toBeNull();
+  });
+});

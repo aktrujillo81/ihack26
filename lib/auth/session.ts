@@ -38,7 +38,7 @@ const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:
  * session claiming to expire later is refused. The real value belongs in
  * configuration and is unknown.
  */
-export const MAX_SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
+export const MAX_SESSION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Strictly validates an untrusted value. Returns a session only if every field
