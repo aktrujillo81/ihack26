@@ -18,6 +18,14 @@ export const serverEnv = {
   get vapiWebhookSecret(): string | undefined {
     return process.env.VAPI_WEBHOOK_SECRET || undefined;
   },
+  /**
+   * Server-only key for the keyed HMAC of the Vapi call id (docs/contracts.md section 2).
+   * A separate secret, at least 32 characters. Undefined when unset or too short: the webhook then answers 503.
+   */
+  get vapiCallRefKey(): string | undefined {
+    const value = process.env.VAPI_CALL_REF_KEY;
+    return value && value.length >= 32 ? value : undefined;
+  },
   /** Signs session cookies. At least 32 characters. */
   get betterAuthSecret() {
     const value = required("BETTER_AUTH_SECRET");
