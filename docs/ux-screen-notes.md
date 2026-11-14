@@ -8,10 +8,11 @@
 | Rule | How every screen meets it |
 |---|---|
 | Color is never the only signal (red line 11) | Every status and pin shows a text label and a shape: open = circle "Open", passed on = diamond "Passed on", fixed = check mark "Fixed". Unverified = dashed outline plus the word "Unverified". |
-| Projector legibility | Body text at least 18px, key labels at least 24px, high-contrast text (at least 7:1), pins at least 40px, map labels at least 16px with a solid background. |
-| No caller details | No names, phone numbers, or raw call IDs are shown. Transcripts appear only on the detail page, only to signed-in users with access to the region. |
+| Projector legibility | Body text at least 18px, key labels at least 24px, high-contrast text (at least 7:1), pins at least 40px, map labels at least 20px with a solid background. Information is never hover-only, because projectors and touch screens have no hover. |
+| No caller details | No names or phone numbers are shown (spec). Raw call IDs are also hidden (a UX choice, not a spec rule). Transcripts appear only on the detail page, only to signed-in users with access to the region. Transcript text is never copied into lists, the map, "Copy summary", or logs. Spoken location text is free text: whether it is scrubbed of names is unknown (PR-3), so Security must confirm. |
+| Pin and status colors | Colors follow spec section 7 (red, yellow, green) and are always secondary to the label and shape. |
 | No safety advice or repair promises | No screen says water is safe or unsafe, when something will be fixed, or who will fix it. "Passed on" is described as a recorded step only. |
-| `unknown` is honest | Shown as "Unknown" in neutral grey with no severity styling. It adds no points and never uses red or yellow. |
+| `unknown` is honest | Shown as "Unknown" in neutral grey text with no severity styling. Unknown people, school or clinic, and duration add no points. A problem of `unknown` scores +1 and its pin is yellow, per spec section 7, but its label reads "Unknown problem" and is never styled as severe. |
 | One main action per screen | Named in each screen below. |
 | Why is always shown | Priority always has its reason. Items always show report count and whether they are unverified or need review. |
 | Risky actions are confirmable and reversible | Status changes ask for confirmation. Fixed can be reopened. |
@@ -71,8 +72,8 @@
 | Unknown values | Shown as `common.unknown`. People affected unknown shows "Unknown", never 0. |
 | Needs review | A "Needs review" badge with an icon on the row (`common.needsReview`). Row sorts into the Needs review list as well. |
 | Unverified water point | "Unverified" badge with a dashed row border. |
-| Long lists | Paginated (P1-3 adds filters and search). Until then show the first 50 with "Showing {n} of {total}" (`list.showing`). |
-| Priority | Number plus reason, for example "7: broken, serves school, 3 reports" (`list.priorityReason`). The reason comes from the data, not invented in the UI. |
+| Long lists | Paginated (P1-3 adds filters and search). Until then show the first page with "Showing {n} of {total}" (`list.showing`). Page size is configuration, not a constant (proposal; value unknown). |
+| Priority | The score number plus the reason text from the data (`list.priorityReason`), for example "8: {reason}". The UI never builds or edits the reason itself. |
 
 ### SCREEN: Complaint detail
 **WHO SEES IT:** Viewer (read-only), Responder, Org Admin. **MAIN ACTION:** Change the status (Responder and Org Admin). Viewers have no main action.
@@ -84,8 +85,8 @@
 | Empty (no notes) | "No notes yet." (`detail.notesEmpty`) |
 | Empty (no transcript) | "No transcript was captured for this report." (`detail.transcriptEmpty`) |
 | Error | `common.error` with `common.retry` |
-| Denied (other region or organization) | "You can't view this complaint." (`detail.denied`). Gives no hint that it exists. |
-| Not found | "This complaint was not found." (`detail.notFound`) |
+| Denied or not found (other region or organization, or missing) | One identical message for both: "This complaint was not found or you can't view it." (`detail.notFoundOrDenied`). Two different messages would reveal that a record exists in another organization. The server should return indistinguishable responses (Security to confirm). |
+| Unknown values | Problem, people affected, school or clinic, and duration use the shared `unknown` wording from section 2 and never look severe. |
 | Needs review | Banner: "Needs review: the system couldn't match this to a water point with confidence." (`detail.needsReviewBanner`) |
 | Unverified | Banner: "This water point has not been verified yet." (`detail.unverifiedBanner`) |
 | Viewer | Status controls and note box are not rendered. The server still refuses any attempt. |
@@ -93,19 +94,22 @@
 | Pass on (note field) | "Who is it passed to?" (`detail.passedOnTo`). This records a step only. Nothing is sent. Helper text: "This records the hand-off. It does not send a message." (`detail.passedOnHelp`) |
 | Fixed | Button "Mark fixed" (`detail.markFixed`). After fixing, "Reopen" is available (`detail.reopen`). |
 | Save failed | "Your change was not saved. Please try again." (`detail.saveFailed`). The screen keeps the user's text. |
-| Copy summary | Button "Copy summary" (`detail.copySummary`), confirmation "Copied" (`detail.copied`). The summary contains water point, location, problem, people affected, duration, priority reason, status. No caller details. |
+| Copy summary | Button "Copy summary" (`detail.copySummary`), confirmation "Copied" (`detail.copied`). The summary contains water point, location, problem, people affected, duration, priority reason, status. It never includes transcript text or caller details. |
+| Notes | Helper text under the note box: "Don't enter caller names or phone numbers." (`detail.noteHelp`) |
 
 ### SCREEN: Map
 **WHO SEES IT:** Viewer, Responder, Org Admin. **MAIN ACTION:** Click a pin to open its complaint (P1, MP-7).
 **SHOWS FIRST:** All water points with coordinates in the user's regions, plus a legend.
-**PINS:** Shape and label together. Open = red circle "Open", passed on = red or yellow diamond "Passed on", fixed = green check "Fixed". Red or yellow follows the problem rule in the spec section 7. Unverified = dashed outline with "Unverified". The legend lists every shape and word.
+**PINS:** Shape and label together. Open = circle "Open", passed on = diamond "Passed on", fixed = check "Fixed". Color follows spec section 7: red for open or passed on with `no_water` or `broken`, yellow for the other problems including `unknown`, green for fixed. Unverified = dashed outline with "Unverified". Water points flagged needs review that have coordinates also get a "Needs review" label and icon, so low-confidence items look different (MP-3). The legend lists every shape and word.
 | State | Wording (key) |
 |---|---|
 | Loading | `common.loading` over the empty map |
 | Empty | "No water points with a location yet." (`map.empty`) with a link to the Needs location list |
 | Error | `common.error`. If only the tiles fail: "The map background could not load. Water points are still listed below." (`map.tilesFailed`) |
 | Denied | `common.denied` |
-| Live update | The map updates without refresh. When a pin changes, its label briefly gets an "Updated" tag (`map.updated`). |
+| Unknown values | An unknown problem or type shows "Unknown" in the label. The pin is yellow per spec section 7 but is never styled as severe. |
+| Needs review | Items with no matched water point cannot be pins. They are listed in the Needs review list, and the map links to it. |
+| Live update | The map updates without refresh. As a proposal (not in the spec), a changed pin briefly gets an "Updated" tag (`map.updated`). |
 | Needs location | Water points without coordinates are not pins. A counter links to that list: "{n} water points need a location" (`map.needsLocationCount`). |
 | Tile terms | **Open:** the map library and OpenStreetMap tile usage terms are unconfirmed. See section 5. |
 | Privacy | The map shows water point, status and report count only. No transcripts and no caller details. |
@@ -122,6 +126,7 @@
 | Reasons | "Several water points could match" (`review.reasonAmbiguous`), "Location could not be understood" (`review.reasonUnusable`), "Report was incomplete" (`review.reasonIncomplete`), "Not about water" (`review.reasonOffTopic`). If the reason is not available: "Reason unknown" (`review.reasonUnknown`). |
 | Several matches | Never shows one chosen water point. Lists the candidates: "Possible matches: {names}" (`review.candidates`). |
 | Needs review flag | Each row has the badge and icon, not color alone. |
+| Unknown values | Shown as `common.unknown`, never as 0 and never styled as severe. |
 
 ### SCREEN: Needs location list
 **WHO SEES IT:** Viewer (read-only), Responder, Org Admin. **MAIN ACTION:** Place a pin (Responder and Org Admin, P1-1). Until P1-1, the main action is to open the complaint.
@@ -132,7 +137,7 @@
 | Empty | "Every water point has a location." (`location.empty`) |
 | Error | `common.error` with `common.retry` |
 | Denied | `common.denied` |
-| Row | Water point, spoken location text, report count, "Unverified" badge if so. |
+| Row | Water point, spoken location text, report count, "Unverified" badge if so. Unknown type shows `common.unknown`. |
 | Pin action (P1-1) | Button "Place pin" (`location.placePin`). Hidden for Viewers, and the server still refuses. |
 
 ### COMPONENT: "Last report received" indicator
@@ -140,7 +145,7 @@
 | State | Wording (key) |
 |---|---|
 | Loading | "Checking for reports…" (`lastReport.loading`) |
-| Normal | "Last report received {time ago}" (`lastReport.ago`), with the exact time on hover or focus. |
+| Normal | "Last report received {time ago}, at {exact time}" (`lastReport.ago`). The exact time is always in the text, not only on hover. |
 | Empty (none ever) | "No reports received yet." (`lastReport.none`) |
 | Stale | After a configured number of hours (the threshold is configuration, value unknown): "Last report received {time ago}. If you expected more, check that the phone line is working." (`lastReport.stale`). A warning icon plus text, not color alone. |
 | Error | "Couldn't check for new reports." (`lastReport.error`) |
@@ -161,4 +166,7 @@
 4. **Needs review reasons:** the exact reason values are unknown until the contracts exist.
 5. **Score reason format:** whether the backend returns a ready-made sentence or parts is unknown.
 6. **Spoken wording:** the words said on the call belong to the Phone / AI Prompter and are not set here.
-7. **Not yet checked:** this file has not been checked on a projector, on a phone, or as each role, because no screens exist yet. The UX checklist runs at build review.
+7. **Scrubbing of spoken location text:** whether names are removed from free-text locations is unknown. Security to confirm.
+8. **Denied vs not found:** this file assumes the server returns indistinguishable responses for other-organization records. Unverified.
+9. **Task IDs and change tracking:** task IDs (W1 to W5, P1-1) are taken from the spec task list. `docs/status.md` and `docs/changelog.md` do not exist yet, so this PR cannot update them.
+10. **Not yet checked:** this file has not been checked on a projector, on a phone, or as each role, because no screens exist yet. The UX checklist runs at build review.
