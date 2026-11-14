@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq, isNull, sql } from "drizzle-orm";
 
+import { serverEnv } from "@/lib/config/env";
 import { getDb } from "@/lib/db";
 import { complaints, configuration, historyEvents, notes, organizations, partners, regions, reports, users, waterPoints } from "@/lib/db/schema";
 import { SEED_ACCOUNTS, SEED_ORGANIZATION, SEED_REGION } from "./data";
@@ -18,6 +19,15 @@ const HOUR_MS = 60 * 60 * 1000;
 
 export type DemoSeedResult = { status: "seeded"; organizationId: string; counts: Record<string, number> } | { status: "already_seeded" };
 
+/** The URL the database module connects with, read through the env module (red line 16). Unset reads as undefined, which the guard refuses. */
+export function configuredDatabaseUrl(): string | undefined {
+  try {
+    return serverEnv.databaseUrl;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Adds the demo water points, complaints, reports, notes, partners and history
  * to the demo organization and region that `npm run db:seed` created. Safe to
@@ -32,7 +42,7 @@ Refusing to run against production is done HERE as well as in the command line
  * pass their own allowed ports. 5433 can never be allowed.
  */
 export async function runDemoSeed(now: Date = new Date(), options: Pick<GuardOptions, "allowedPorts"> = {}): Promise<DemoSeedResult> {
-  assertDevelopmentDatabase(process.env.DATABASE_URL, { allowedPorts: options.allowedPorts });
+  assertDevelopmentDatabase(configuredDatabaseUrl(), { allowedPorts: options.allowedPorts });
   const ago = (hours: number) => new Date(now.getTime() - hours * HOUR_MS);
 
   return getDb().transaction(async (tx) => {

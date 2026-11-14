@@ -23,7 +23,15 @@ for (const file of [".env.local", ".env"]) {
 
 async function main() {
   try {
-    assertDevelopmentDatabase(process.env.DATABASE_URL);
+    // Read through the env module (red line 16), imported only now that the env files are loaded.
+    const { serverEnv } = await import("@/lib/config/env");
+    let url: string | undefined;
+    try {
+      url = serverEnv.databaseUrl;
+    } catch {
+      url = undefined; // unset: the guard refuses
+    }
+    assertDevelopmentDatabase(url);
   } catch (error) {
     if (error instanceof UnsafeDatabaseError) {
       console.error(`[db:seed:demo] ${error.message}`);

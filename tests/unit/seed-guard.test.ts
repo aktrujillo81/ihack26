@@ -177,18 +177,22 @@ describe("the command line and the seed both check, and neither can be skipped b
   const demo = readFileSync("db/seed/demo.ts", "utf8");
 
   it("the command line calls the guard before the demo module (and so the database) is imported", () => {
-    const guardCall = index.indexOf("assertDevelopmentDatabase(process.env.DATABASE_URL)");
+    const guardCall = index.indexOf("assertDevelopmentDatabase(url)");
     const demoImport = index.indexOf('await import("./demo")');
     expect(guardCall).toBeGreaterThan(-1);
     expect(demoImport).toBeGreaterThan(guardCall);
     expect(index.split(/\r?\n/).filter((l) => l.startsWith("import "))).toEqual(['import { assertDevelopmentDatabase, UnsafeDatabaseError } from "./guard";']);
   });
 
-  it("runDemoSeed checks the same DATABASE_URL itself, before it touches the database", () => {
-    const check = demo.indexOf("assertDevelopmentDatabase(process.env.DATABASE_URL");
+  it("runDemoSeed checks the configured database URL itself (read through the env module), before it touches the database", () => {
+    const check = demo.indexOf("assertDevelopmentDatabase(configuredDatabaseUrl()");
     const firstDb = demo.indexOf("getDb()");
     expect(check).toBeGreaterThan(-1);
     expect(firstDb).toBeGreaterThan(check);
+  });
+
+  it("neither file reads the secret variables directly (red line 16: only lib/config/env.ts does)", () => {
+    for (const src of [index, demo]) expect(src).not.toMatch(/process\.env\.(BETTER_AUTH_SECRET|DATABASE_URL|SEED_)/);
   });
 
   it("is wired to its own npm script, separate from the account seed", () => {
