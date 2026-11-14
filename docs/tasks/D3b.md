@@ -5,7 +5,7 @@ GOAL: One server function takes the validated report that D3a hands over and sav
 OWNER: Andrew (D3b). D3a (endpoint, parsing, redaction, validation, migration, removal of `/api/vapi/capture`) is Backend's and is a separate task.
 
 ## Local database only
-Port 5434 only (`npm run db:local`). Never `db:migrate` and never write to production (port 5433). Tests and dev runs reuse the demo seed's allowlist guard (`lib/...` seed guard; plain host, port 5434, no query string, no `PG*` variables) and refuse to run otherwise. Never print a connection string.
+Port 5434 only (`npm run db:local`). Never `db:migrate` and never write to production (port 5433). The integration tests refuse to run on any other port through their setup (`tests/integration/test-db-target.ts`, `global-setup.ts`). The save function itself has no port guard, because it is the production save path (changed 2026-11-14 after CI on port 5432 failed; Security re-review). Never print a connection string.
 
 ## Input (what D3a hands over; names from Backend's reply, final type name and file: unknown, D3a freezes it first)
 A closed type, no free-form object, no transcript, no raw call ID, no caller name or number.

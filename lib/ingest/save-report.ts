@@ -2,8 +2,6 @@ import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
 
-import { assertDevelopmentDatabase } from "@/db/seed/guard";
-import { serverEnv } from "@/lib/config/env";
 import { DEFAULT_TEXT_MAX_LENGTH } from "@/lib/config/intake-defaults";
 import { getDb } from "@/lib/db";
 import { complaints, configuration, historyEvents, reportCandidates, reports, waterPoints } from "@/lib/db/schema";
@@ -15,9 +13,8 @@ import type { ValidatedReport } from "./types";
 export type SaveReportResult = { ok: true; repeat: boolean } | { ok: false; reason: "store_failed" };
 
 export async function saveReport(report: ValidatedReport): Promise<SaveReportResult> {
-  // This is deliberately before getDb(): a production URL must never be opened by this path.
-  assertDevelopmentDatabase(serverEnv.databaseUrl);
-
+  // No database-port guard here: this is the production save path. Test protection lives in
+  // tests/integration/test-db-target.ts and global-setup.ts (5434 only); the seed guard stays in db/seed/guard.ts.
   const db = getDb();
   const cleaned = cleanReport(report);
   let storedId: string;
