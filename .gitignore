@@ -34,3 +34,7 @@ backups/
 Thumbs.db
 .idea/
 .vscode/
+
+# Next.js generated and TypeScript build info
+next-env.d.ts
+*.tsbuildinfo
