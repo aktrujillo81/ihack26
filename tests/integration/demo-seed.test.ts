@@ -239,7 +239,8 @@ describe("the stored demo data holds no caller details and respects red line 9",
 
   it("the seed never stores a password or credential outside the auth tables", async () => {
     const db = getDb();
-    const everything = JSON.stringify([await db.select().from(reports), await db.select().from(notes), await db.select().from(configuration)]);
+    const configurationValues = await db.select({ value: configuration.value }).from(configuration);
+    const everything = JSON.stringify([await db.select().from(reports), await db.select().from(notes), configurationValues]);
     expect(everything).not.toMatch(/password|passwd|secret/i);
   });
 

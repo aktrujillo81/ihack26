@@ -51,8 +51,7 @@ export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health", 
  * - "/api/auth/": Better Auth. app/api/auth/[...all]/route.ts answers 404 for
  *   everything except POST sign-in and sign-out (docs/contracts.md).
  * - "/api/vapi/": the Vapi webhook. It checks a shared secret in constant time
- *   and refuses every request while the secret is unset (TEMPORARY S5a capture
- *   route; the real endpoint, D3, must do the same).
+ *   and refuses every request while the secret is unset.
  * Anything added here must authenticate itself in its handler.
  */
 export const SELF_AUTHENTICATING_PREFIXES: readonly string[] = ["/api/auth/", "/api/vapi/"];
