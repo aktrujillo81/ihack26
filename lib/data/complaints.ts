@@ -17,7 +17,7 @@
  *   (`not_found_or_denied`), so existence is not revealed.
  * - No caller details are returned. Partner `contact` is dropped from views.
  */
-import type { Complaint, HistoryEvent, LastReportReceived, Note, Partner, Report, WaterPoint } from "../domain/types";
+import type { Complaint, HistoryEvent, LastReportReceived, Note, Partner, Report, WaterPoint, WaterPointType } from "../domain/types";
 import {
   mockComplaints,
   mockHistoryEvents,
@@ -221,6 +221,111 @@ export function getLastReportReceived(ctx: DataContext): Promise<DataResult<Last
 }
 
 /**
+ * Which data may be published without signing in. NOT a user: it is a
+ * configuration choice (lib/config/public-map.ts), and when it is not set the
+ * public read returns nothing. PROVISIONAL: which organization and regions are
+ * public is an unknown decision (the public map is cut from the spec).
+ */
+export interface PublicScope {
+  organizationId: string;
+  regionIds: readonly string[];
+}
+
+/** The only statuses the public sees. Derived from complaints; no complaint is exposed. */
+export type PublicStatus = "open" | "passed_on" | "fixed" | "none";
+
+/**
+ * The ENTIRE public shape of a water point, by allowlist. It is built field by
+ * field in `toPublicPin`, never by spreading a record, so a field added to
+ * `WaterPoint` or `Complaint` cannot reach the public by accident.
+ *
+ * Deliberately absent: ids, spoken location text, report or reporter counts,
+ * problem, people affected, school or clinic, duration, score, notes,
+ * transcripts, dates, organization, region, review flags, partner.
+ * A water point has no name field in the data (only spoken location text, which
+ * is not public), so the public label is its type.
+ */
+export interface PublicPin {
+  /** A position in this response only. Not an internal id, and not stable between loads. */
+  key: string;
+  latitude: number;
+  longitude: number;
+  type: WaterPointType;
+  status: PublicStatus;
+  unverified: boolean;
+}
+
+/** The exact keys of `PublicPin`. A test fails if a pin has any other key. */
+export const PUBLIC_PIN_KEYS = ["key", "latitude", "longitude", "type", "status", "unverified"] as const;
+
+function publicStatusOf(complaints: Complaint[]): PublicStatus {
+  if (complaints.some((c) => c.status === "open")) return "open";
+  if (complaints.some((c) => c.status === "passed_on")) return "passed_on";
+  if (complaints.some((c) => c.status === "fixed")) return "fixed";
+  return "none";
+}
+
+function toPublicPin(index: number, wp: WaterPoint & { latitude: number; longitude: number }, complaints: Complaint[]): PublicPin {
+  return {
+    key: `pin-${index + 1}`,
+    latitude: wp.latitude,
+    longitude: wp.longitude,
+    type: wp.type,
+    status: publicStatusOf(complaints),
+    unverified: wp.verificationState === "unverified",
+  };
+}
+
+/**
+ * The public read. Returns only `PublicPin`s for active water points with
+ * coordinates in the public scope. Reads no session. A missing, empty or
+ * malformed scope returns `empty` (fail closed), never everything.
+ *
+ * SWAP POINT: with the real API this must be its own endpoint that selects
+ * only these columns, not a filter applied after reading full rows.
+ */
+export function listPublicWaterPoints(
+  scope: PublicScope | null,
+  options: { includeUnverified?: boolean } = {},
+): Promise<DataResult<PublicPin[]>> {
+  return guarded<PublicPin[]>(() => {
+    if (
+      !scope ||
+      typeof scope.organizationId !== "string" ||
+      scope.organizationId.length === 0 ||
+      !Array.isArray(scope.regionIds) ||
+      scope.regionIds.length === 0
+    ) {
+      return { status: "empty" };
+    }
+    const points = mockWaterPoints
+      .filter(
+        (wp): wp is WaterPoint & { latitude: number; longitude: number } =>
+          wp.organizationId === scope.organizationId &&
+          scope.regionIds.includes(wp.regionId) &&
+          wp.latitude !== null &&
+          wp.longitude !== null &&
+          wp.verificationState !== "merged" &&
+          wp.verificationState !== "archived" &&
+          // Unverified points come straight from a caller's words (a home could be reported as a water point).
+          // They are not published unless explicitly turned on.
+          (options.includeUnverified === true || wp.verificationState !== "unverified"),
+      )
+      // Ordered by public values only (position, then type). Ordering by id would leak the order records were created in.
+      .sort((a, b) => a.latitude - b.latitude || a.longitude - b.longitude || a.type.localeCompare(b.type));
+    return result(
+      points.map((wp, i) =>
+        toPublicPin(
+          i,
+          wp,
+          mockComplaints.filter((c) => c.waterPointId === wp.id && c.organizationId === wp.organizationId),
+        ),
+      ),
+    );
+  });
+}
+
+/**
  * Compile-time guard: no returned shape may contain a phone, email or contact
  * field, at any depth. If a field like that is added to a type returned above,
  * typecheck fails here.
@@ -238,4 +343,5 @@ export const NO_CALLER_CONTACT_FIELDS: [
   NoForbiddenKeys<NeedsReviewItem>,
   NoForbiddenKeys<WaterPoint>,
   NoForbiddenKeys<LastReportReceived>,
-] = [true, true, true, true, true];
+  NoForbiddenKeys<PublicPin>,
+] = [true, true, true, true, true, true];

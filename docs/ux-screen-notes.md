@@ -156,6 +156,19 @@
 | Error | "Couldn't check for new reports." (`lastReport.error`) |
 | Live | Updates without refresh. |
 
+### SCREEN: Public map (PROPOSED; cut from the spec, built on request)
+**WHO SEES IT:** Anyone, without signing in. **MAIN ACTION:** None (look at the map). **STATUS:** `docs/spec.md` section 4 lists the public read-only map as cut from this build. This screen exists only because a human asked for it, and needs the spec change approved.
+**SHOWS:** Each water point that has a location, as a pin with a shape and always-visible text: its type (`type.*`, because the data has no water point name), and its status (Open, Passed on, Fixed, or No open complaint). Unverified water points are not shown by default (PROPOSED: they come straight from a caller's words and have an exact location); if a human turns them on, they carry the word "Unverified" and a dashed outline. A legend and a text list repeat every pin.
+**NEVER SHOWS:** report details, transcripts, spoken location text, counts of reports or reporters, problem, people affected, dates, notes, ids, or anything about callers.
+**Color:** by status only (open red circle, passed on yellow diamond, fixed green check, no open complaint green square). This differs from the spec's problem-based colors because the problem must not be public. The word and shape carry the meaning.
+| State | Wording (key) |
+|---|---|
+| Title | "Water points" (`map.publicTitle`) |
+| Loading | "Loading…" (`common.loading`) |
+| Empty, or not published | "No water points with a location yet." (`map.empty`). The map is empty, not an error, when no organization is configured for publishing. |
+| Error | "Something went wrong. Please try again." (`common.error`) |
+| Tiles fail | "The map background could not load. Water points are still listed below." (`map.tilesFailed`) |
+
 ### PROPOSED wording for the complaint screens (not in the first draft)
 | Key | Wording |
 |---|---|

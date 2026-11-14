@@ -52,7 +52,4 @@ export async function MapView({ ctx, view = "authenticated" }: { ctx: DataContex
   );
 }
 
-/** Shown while `MapView` loads: use as the Suspense fallback around `MapView`. */
-export function MapLoading() {
-  return <p role="status">{t("common.loading")}</p>;
-}
+export { MapLoading } from "./MapLoading";
