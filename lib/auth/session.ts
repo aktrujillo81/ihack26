@@ -10,8 +10,8 @@ import type { Role } from "../domain/types";
  * into this shape and passes it through `parseSession`. Nothing else changes.
  *
  * Assumptions, all PROVISIONAL until D1 and docs/contracts.md exist:
- * - Auth provider: Better Auth (docs/decisions.md, 2026-11-14). AGENTS.md still
- *   says Supabase and is out of date.
+ * - Auth provider: Better Auth (docs/decisions.md, 2026-11-14; AGENTS.md agrees).
+ *   Its tables and session shape are not confirmed yet.
  * - A user belongs to ONE organization and one or more regions. The spec does
  *   not say this explicitly.
  * - The adapter must read role, organization and regions from the database or a
