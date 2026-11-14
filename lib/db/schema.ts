@@ -285,6 +285,7 @@ export const technicianTickets = pgTable("technician_tickets", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   regionId: uuid("region_id").notNull().references(() => regions.id),
   waterPointId: uuid("water_point_id").notNull().references(() => waterPoints.id),
+  complaintId: uuid("complaint_id").references(() => complaints.id),
   technicianUserId: uuid("technician_user_id").notNull().references(() => users.id),
   status: technicianTicketStatus("status").default("open").notNull(),
   locationText: text("location_text").notNull(),
