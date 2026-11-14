@@ -12,8 +12,9 @@ import type { Role } from "../domain/types";
  * Assumptions, all PROVISIONAL until D1 and docs/contracts.md exist:
  * - Auth provider: Better Auth (docs/decisions.md, 2026-11-14; AGENTS.md agrees).
  *   Its tables and session shape are not confirmed yet.
- * - A user belongs to ONE organization and one or more regions. The spec does
- *   not say this explicitly.
+ * - A user belongs to ONE organization and ONE region in the D1 draft
+ *   (users.organization_id, users.region_id), kept here as a list of regions so
+ *   several can be added later. ./user-session.ts maps a user row to this shape.
  * - The adapter must read role, organization and regions from the database or a
  *   signed server-side session, never from a client-readable cookie or header,
  *   and should look them up on every request so role changes and deactivation
