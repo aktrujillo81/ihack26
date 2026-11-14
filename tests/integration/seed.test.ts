@@ -26,12 +26,12 @@ describe("npm run db:seed", () => {
   it("is idempotent: running twice gives the same row counts", async () => {
     await runSeed();
     const first = await counts();
-    expect(first).toEqual({ auth_users: 3, auth_accounts: 3, organizations: 1, regions: 1, users: 3, sessions: 0 });
+    expect(first).toEqual({ auth_users: 4, auth_accounts: 4, organizations: 1, regions: 1, users: 4, sessions: 0 });
     // Every staff row points at its Better Auth user.
     const [link] = (await getDb().execute(
       sql`select count(*)::int as n from users u join auth_user a on a.id::text = u.auth_subject and a.email = u.email`,
     )) as unknown as { n: number }[];
-    expect(link.n).toBe(3);
+    expect(link.n).toBe(4);
     await runSeed();
     expect(await counts()).toEqual(first);
   });

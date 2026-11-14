@@ -15,9 +15,9 @@ import { ACTIONS } from "@/lib/permissions/matrix";
 import { ROLES, type Role } from "@/lib/domain/types";
 import { t } from "@/lib/i18n/strings";
 
-const NOW = Date.parse("2026-11-14T12:00:00Z");
-const FUTURE = "2026-11-14T20:00:00Z"; // 8 hours after NOW, inside the 12-hour cap
-const PAST = "2026-11-13T12:00:00Z";
+const NOW = Date.now();
+const FUTURE = new Date(NOW + 8 * 60 * 60 * 1000).toISOString();
+const PAST = new Date(NOW - 24 * 60 * 60 * 1000).toISOString();
 
 // Freeze the clock so guards called without a `now` argument see NOW, not the real time.
 beforeAll(() => {
@@ -199,7 +199,12 @@ describe("expiry must be strict ISO and not too far away", () => {
   });
 
   it("accepts ISO with Z or an offset, and with fractions", () => {
-    for (const ok of ["2026-11-14T20:00:00Z", "2026-11-14T20:00:00.250Z", "2026-11-14T22:00:00+02:00"]) {
+    const okValues = [
+      new Date(NOW + 8 * 60 * 60 * 1000).toISOString(),
+      new Date(NOW + 8 * 60 * 60 * 1000 + 250).toISOString(),
+      new Date(NOW + 8 * 60 * 60 * 1000).toISOString().replace("Z", "+00:00"),
+    ];
+    for (const ok of okValues) {
       expect(parseSession(session("viewer", { expiresAt: ok }), NOW), ok).not.toBeNull();
     }
   });

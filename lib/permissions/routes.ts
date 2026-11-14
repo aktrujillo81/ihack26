@@ -62,6 +62,7 @@ export const SELF_AUTHENTICATING_PREFIXES: readonly string[] = ["/api/auth/", "/
  * no navLabelKey until its page is built, so no link points at a 404.
  */
 export const ROUTE_RULES: readonly RouteRule[] = [
+  { path: "/technician", action: "technician_ticket", navLabelKey: "nav.technician" },
   { path: "/complaints", action: "view", navLabelKey: "nav.complaints" },
   { path: "/dashboard/map", action: "view", navLabelKey: "nav.map" },
   { path: "/needs-review", action: "view", navLabelKey: "nav.needsReview" },

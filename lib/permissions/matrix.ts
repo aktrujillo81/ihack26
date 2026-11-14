@@ -29,6 +29,7 @@ export const ACTIONS = [
   "manage_partners",
   "manage_regions", // set up by a seed script in this build
   "manage_users", // users and roles: set up by a seed script in this build
+  "technician_ticket",
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -53,6 +54,7 @@ export const PERMISSIONS: Readonly<Record<Role, readonly Action[]>> = {
   viewer: VIEW_ONLY,
   responder: RESPONDER,
   org_admin: ACTIONS,
+  technician: ["view", "technician_ticket"],
 };
 
 export function isRole(value: unknown): value is Role {

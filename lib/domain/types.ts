@@ -38,7 +38,7 @@ export const CHANNELS = ["phone", "web", "other"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 /** Spec section 2. */
-export const ROLES = ["org_admin", "responder", "viewer"] as const;
+export const ROLES = ["org_admin", "responder", "viewer", "technician"] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Contracts 5.2, in priority order (the same seven values as the database enum). */
@@ -150,6 +150,7 @@ export const HISTORY_EVENT_TYPES = [
   "pin_moved",
   "verified",
   "merged",
+  "technician_ticket_added",
 ] as const;
 export type HistoryEventType = (typeof HISTORY_EVENT_TYPES)[number];
 
@@ -176,6 +177,21 @@ export interface Note extends Scoped {
   text: string;
   createdAt: string;
   archivedAt?: string | null;
+}
+
+export interface TechnicianTicket extends Scoped {
+  id: string;
+  complaintId: string | null;
+  waterPointId: string;
+  technicianUserId: string;
+  status: "open" | "in_progress" | "completed";
+  locationText: string;
+  latitude: number;
+  longitude: number;
+  issueSummary: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Spec section 15: an organization that can fix a problem. */

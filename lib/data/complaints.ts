@@ -6,7 +6,7 @@ import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { DEMO_DATA_MARKER_KEY } from "@/lib/config/demo";
 import { DATA_LIST_HARD_LIMIT } from "@/lib/config/ui";
 import { getDb } from "@/lib/db";
-import { complaints, configuration, historyEvents, notes, partners, reports, users, waterPoints } from "@/lib/db/schema";
+import { complaints, configuration, historyEvents, notes, partners, reports, technicianTickets, users, waterPoints } from "@/lib/db/schema";
 import type {
   Complaint,
   HistoryEvent,
@@ -15,6 +15,7 @@ import type {
   Note,
   Partner,
   Report,
+  TechnicianTicket,
   WaterPoint,
   WaterPointType,
 } from "@/lib/domain/types";
@@ -94,6 +95,7 @@ export interface ComplaintDetail {
   history: HistoryEvent[];
   passedOnTo: PartnerView | null;
   partners?: PartnerView[];
+  technicianTickets: TechnicianTicket[];
 }
 
 /** A report as shown in a list: no transcript and no summary (both are caller-derived text and appear only on the detail page). */
@@ -318,7 +320,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
     if (!row) return notFound;
     const { complaint, version } = row;
 
-    const [pointRows, reportRows, noteRows, eventRows, partnerRows, directoryRows] = await Promise.all([
+    const [pointRows, reportRows, noteRows, eventRows, partnerRows, directoryRows, ticketRows] = await Promise.all([
       db.select().from(waterPoints).where(and(eq(waterPoints.id, complaint.waterPointId), scope(waterPoints, ctx))).limit(1),
       db.select().from(reports).where(and(eq(reports.complaintId, id), scope(reports, ctx))).orderBy(desc(reports.receivedAt)),
       db
@@ -342,6 +344,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
             .limit(1)
         : Promise.resolve([]),
       db.select({ id: partners.id, organizationId: partners.organizationId, regionId: partners.regionId, name: partners.name, type: partners.type }).from(partners).where(scope(partners, ctx)).orderBy(asc(partners.name)),
+      db.select().from(technicianTickets).where(and(eq(technicianTickets.complaintId, id), scope(technicianTickets, ctx))).orderBy(desc(technicianTickets.createdAt)),
     ]);
 
     // The contact column is not even loaded: only these named columns are selected.
@@ -382,6 +385,22 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
       })),
       passedOnTo: partnerRows[0] ? toPartnerView(partnerRows[0]) : null,
       partners: directoryRows.map(toPartnerView),
+      technicianTickets: ticketRows.map((ticket): TechnicianTicket => ({
+        id: ticket.id,
+        organizationId: ticket.organizationId,
+        regionId: ticket.regionId,
+        complaintId: ticket.complaintId,
+        waterPointId: ticket.waterPointId,
+        technicianUserId: ticket.technicianUserId,
+        status: ticket.status,
+        locationText: ticket.locationText,
+        latitude: toCoordinate(ticket.latitude) ?? 0,
+        longitude: toCoordinate(ticket.longitude) ?? 0,
+        issueSummary: ticket.issueSummary,
+        notes: ticket.notes,
+        createdAt: iso(ticket.createdAt),
+        updatedAt: iso(ticket.updatedAt),
+      })),
     };
     return { status: "ok", data: detail };
   });

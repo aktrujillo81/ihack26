@@ -49,6 +49,8 @@ This file was created on 2026-11-14 during S6. Rows up to PR #32 were filled in 
 | 2026-11-14 | NGO workflow | Location picker | Added an interactive Leaflet map to the complaint location editor; clicks and marker dragging populate coordinates before explicit save | Orchestrator, Frontend, UX |
 | 2026-11-14 | NGO workflow | Location picker | Centered the empty location picker on the configured demo region coordinates | Orchestrator |
 | 2026-11-14 | NGO workflow | Dashboard map | Set the shared dashboard map’s initial view to the configured demo region center | Orchestrator |
+| (this branch) | P1 follow-up | Technician complaint tickets | Technicians can add a scoped field ticket from complaint detail; the ticket links to the complaint, updates the water-point pin/location, and records a history event | Backend, Frontend, Security / Data Handling, Phone / AI Prompter, UX |
+| (this branch) | UI responsive pass | Responsive layouts | Made the shell, navigation, headers, complaint list/detail, technician workspace, maps, and sign-in layout adapt across phone, tablet, and desktop widths | Frontend, UX |
 
 ## S5 results (from PR #32)
 - Three paid calls, $0.27 in total, balance 4.73. Calls 1 and 2 (assistant v3) arrived with no extracted data. Call 3 (v4) carried all nine fields.

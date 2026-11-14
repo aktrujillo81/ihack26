@@ -272,7 +272,7 @@ describe("every page and route in app/ is guarded or on an explicit list", () =>
   it("every page under (dashboard) calls requirePageSession itself", () => {
     const dashboard = all.filter((f) => f.startsWith("app/(dashboard)/") && f.endsWith("page.tsx"));
     expect(dashboard.length).toBeGreaterThan(0);
-    for (const file of dashboard) expect(readFileSync(file, "utf8"), file).toMatch(/await requirePageSession\(\)/);
+    for (const file of dashboard) expect(readFileSync(file, "utf8"), file).toMatch(/await requirePageSession\(/);
   });
 
   it("the layout also checks, and the list of exceptions has not grown without a decision", () => {
