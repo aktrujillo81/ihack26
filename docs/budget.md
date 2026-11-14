@@ -31,3 +31,7 @@
 | 1 | 2026-11-14 04:36 (Mountain Time) | Andrew | First real test call (S5), via local tunnel capture | 1 m 33 s | $0.10 ($0.0988) | 4.90 |
 | 2 | 2026-11-14 05:03 (Mountain Time) | Andrew | Second test call (S5): checking structured extraction; none ran | 1 m 15 s | $0.08 ($0.0801) | 4.82 |
 | 3 | 2026-11-14 05:23 (Mountain Time) | Andrew | Third test call (S5), assistant v4: structured output ran, call ended itself | 1 m 17 s | $0.09 | 4.73 |
+| 4 | 2026-11-14 (late morning, Mountain Time) | Andrew | Fourth test call (S5), first call on the new webhook setup; the call picked up other voices and was confused | 1 m 22 s | $0.10 | unknown |
+| 5 | 2026-11-14 (late morning, Mountain Time) | Andrew | Fifth test call (S5), via /api/vapi/webhook: succeeded | 1 m 16 s | $0.09 | 4.45 (dashboard) |
+
+Note: after call 3 the balance was 4.73. Calls 4 and 5 add up to $0.19, but the dashboard showed 4.45 afterwards, a drop of $0.28. About $0.09 is unaccounted for and is probably one more call. Unknown until checked in the Vapi dashboard call log.
