@@ -1,5 +1,5 @@
 /* Projector-readable map styles. Labels are 20px or larger. Nothing depends on hover. */
-.ww-map {
+.leaflet-container.ww-map {
   width: 100%;
   height: 70vh;
   min-height: 420px;

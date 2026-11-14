@@ -14,14 +14,14 @@
 export interface TileSource {
   /** Leaflet URL template. Do not send no-cache headers or strip the Referer. */
   urlTemplate: string;
-  /** Must stay clearly visible (OSM policy). */
+  /** Must stay clearly visible and link to the copyright page (OSM policy). May contain HTML. */
   attribution: string;
   maxZoom: number;
 }
 
 export const OSM_TILE_SOURCE: TileSource = {
   urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  attribution: "© OpenStreetMap contributors",
+  attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
   maxZoom: 19,
 };
 

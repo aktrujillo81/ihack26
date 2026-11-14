@@ -28,6 +28,7 @@ export function PinGlyph({ shape, color, dashed = false }: { shape: PinShape; co
 /** Always-visible text for a pin: status, then flags, then report count. Never hover-only. */
 export function pinLabelLines(pin: MapPin): string[] {
   const lines = [t(pin.statusKey)];
+  if (pin.problem !== null) lines.push(t(`problem.${pin.problem}`));
   const flags = [pin.unverified ? t("common.unverified") : null, pin.needsReview ? t("common.needsReview") : null].filter(
     (f): f is string => f !== null,
   );

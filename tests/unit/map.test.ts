@@ -49,6 +49,26 @@ describe("buildPins", () => {
     expect(pinFor("wp-2")).toMatchObject({ complaintId: "c-2", reportCount: 1, color: "red" });
   });
 
+  it("red and yellow open pins differ in text too, not only color (problem is in the label)", () => {
+    const red = renderToStaticMarkup(createElement(PinList, { pins: [pinFor("wp-1")] }));
+    const yellow = buildPins(
+      [{ ...mockWaterPoints[0], id: "wp-y", latitude: 1, longitude: 2 }],
+      [{ ...mockComplaints[0], id: "c-y", waterPointId: "wp-y", status: "open", problem: "slow" }],
+      "authenticated",
+    );
+    const yellowHtml = renderToStaticMarkup(createElement(PinList, { pins: yellow }));
+    expect(red).toContain(t("problem.no_water"));
+    expect(yellowHtml).toContain(t("problem.slow"));
+    expect(yellow[0].color).toBe("yellow");
+  });
+
+  it("a red active complaint wins over a higher-scoring yellow one on the same water point", () => {
+    const wp = { ...mockWaterPoints[0], id: "wp-m", latitude: 1, longitude: 2 };
+    const yellowHigh = { ...mockComplaints[0], id: "c-ym", waterPointId: "wp-m", status: "open" as const, problem: "slow" as const, priorityScore: 20 };
+    const redLow = { ...mockComplaints[0], id: "c-rm", waterPointId: "wp-m", status: "open" as const, problem: "broken" as const, priorityScore: 3 };
+    expect(buildPins([wp], [yellowHigh, redLow], "authenticated")[0]).toMatchObject({ color: "red", complaintId: "c-rm" });
+  });
+
   it("every pin has a shape, a label key and a color", () => {
     for (const p of pins) {
       expect(p.shape).toBeTruthy();
@@ -63,6 +83,8 @@ describe("buildPins", () => {
     for (const p of publicPins) {
       expect(p.complaintId).toBeNull();
       expect(p.locationText).toBeNull();
+      expect(p.problem).toBeNull();
+      expect(p.needsReview).toBe(false);
     }
   });
 
@@ -112,5 +134,13 @@ describe("rendering", () => {
     const ctx = { organizationId: "org-other", regionIds: ["region-demo"] };
     expect((await listWaterPoints(ctx)).status).toBe("empty");
     expect((await listComplaints(ctx)).status).toBe("empty");
+  });
+});
+
+describe("tile source", () => {
+  it("links the OSM attribution to the copyright page and sends no prefetch or offline flags", async () => {
+    const { OSM_TILE_SOURCE } = await import("@/lib/config/map");
+    expect(OSM_TILE_SOURCE.attribution).toContain("https://www.openstreetmap.org/copyright");
+    expect(OSM_TILE_SOURCE.urlTemplate).toBe("https://tile.openstreetmap.org/{z}/{x}/{y}.png");
   });
 });

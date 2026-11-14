@@ -107,6 +107,8 @@ const en = {
   "map.legend": "Map key",
   "map.reports": "Reports: {n}",
   "map.listTitle": "Water points on the map",
+  "map.zoomIn": "Zoom in",
+  "map.zoomOut": "Zoom out",
 
   // Needs review list
   "review.empty": "Nothing needs review right now.",
