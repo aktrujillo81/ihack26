@@ -1,0 +1,4 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import "leaflet/dist/leaflet.css";
+export function PinPicker(){const ref=useRef<HTMLDivElement>(null);const [p,setP]=useState<{lat:number;lng:number}|null>(null);useEffect(()=>{let m:any,x:any;import("leaflet").then(L=>{if(!ref.current)return;m=L.map(ref.current).setView([-1.2921,36.8219],12);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors"}).addTo(m);m.on("click",(e:any)=>{x?.remove();x=L.marker(e.latlng).addTo(m);setP(e.latlng);});});return()=>m?.remove()},[]);return <div className="ww-tech-picker"><p>Click the map to drop the official well pin.</p><div ref={ref} className="ww-tech-map"/>{p&&<p>Pin: {p.lat.toFixed(6)}, {p.lng.toFixed(6)}</p>}<input name="latitude" type="hidden" value={p?.lat??""}/><input name="longitude" type="hidden" value={p?.lng??""}/></div>}

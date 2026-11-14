@@ -38,7 +38,7 @@ export const CHANNELS = ["phone", "web", "other"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 /** Spec section 2. */
-export const ROLES = ["org_admin", "responder", "viewer"] as const;
+export const ROLES = ["org_admin", "responder", "viewer", "technician"] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Contracts 5.2, in priority order (the same seven values as the database enum). */

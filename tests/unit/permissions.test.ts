@@ -34,6 +34,7 @@ const EXPECTED: Record<(typeof ROLES)[number], readonly Action[]> = {
     "merge_water_points",
   ],
   org_admin: [...ACTIONS],
+  technician: ["technician_ticket"],
 };
 
 describe("permission matrix", () => {

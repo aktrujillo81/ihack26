@@ -11,5 +11,5 @@ export const dynamic = "force-dynamic";
  */
 export default async function HomePage() {
   const session = await getOptionalSession();
-  redirect(session ? "/complaints" : "/sign-in");
+  redirect(session ? (session.role === "technician" ? "/technician" : "/complaints") : "/sign-in");
 }

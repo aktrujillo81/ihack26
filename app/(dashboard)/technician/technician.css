@@ -1,0 +1,15 @@
+.ww-tech { max-width: 980px; }
+.ww-tech-form { display: grid; gap: var(--ww-space-4); }
+.ww-tech-form label { display: grid; gap: var(--ww-space-2); color: var(--ww-ink); font-size: var(--ww-text-label); font-weight: 600; }
+.ww-tech-form input, .ww-tech-form select, .ww-tech-form textarea { width: 100%; min-height: var(--ww-control-height); box-sizing: border-box; border: 1px solid var(--ww-control-border); border-radius: var(--ww-radius-control); background: var(--ww-panel); color: var(--ww-ink); font: inherit; font-size: var(--ww-text-body); padding: var(--ww-space-2) var(--ww-space-3); }
+.ww-tech-form textarea { min-height: 112px; resize: vertical; }
+.ww-tech-heading h2, .ww-tech-tickets h2 { margin: 0; font-size: var(--ww-text-section); }
+.ww-tech-heading p, .ww-tech-help { margin: var(--ww-space-1) 0 0; color: var(--ww-ink-2); font-size: var(--ww-text-meta); }
+.ww-tech-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ww-space-4); }
+.ww-tech-form .ww-btn { justify-self: start; }
+.ww-tech-picker{display:grid;gap:var(--ww-space-2)}.ww-tech-map{height:360px;border:1px solid var(--ww-divider);border-radius:var(--ww-radius-control);overflow:hidden}
+.ww-tech-tickets { margin-top: var(--ww-space-7); }
+.ww-tech-tickets ul { display: grid; gap: var(--ww-space-3); padding: 0; list-style: none; }
+.ww-tech-tickets li { display: grid; gap: var(--ww-space-2); padding: var(--ww-space-4); }
+.ww-tech-tickets li span:last-child { color: var(--ww-ink-2); }
+@media (max-width: 640px) { .ww-tech-grid { grid-template-columns: 1fr; } }

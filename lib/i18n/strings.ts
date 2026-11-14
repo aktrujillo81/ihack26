@@ -83,6 +83,7 @@ const en = {
   "signIn.rateLimited": "Too many sign-in attempts. Please wait a minute and try again.",
   "nav.complaints": "Complaints",
   "nav.map": "Map",
+  "nav.technician": "Field tickets",
   // PROVISIONAL (W5, smallest version): wording not yet in docs/ux-screen-notes.md.
   "nav.needsReview": "Needs review",
   "page.needsReview.subtitle": "Reports the system could not match to a water point. Read only.",
@@ -102,6 +103,7 @@ const en = {
   "role.org_admin": "Org Admin",
   "role.responder": "Responder",
   "role.viewer": "Viewer",
+  "role.technician": "Technician",
   "page.complaints.subtitle": "Reports from callers, matched to known water points.",
   "page.map.subtitle": "Water points by status. Pins use a shape and a word as well as a color.",
 
