@@ -1,0 +1,102 @@
+/*
+ * Well Watch design tokens. Source: docs/style-guide.md.
+ * Use these variables only. No raw hex colors, font sizes or radii in components.
+ * Every contrast ratio noted here was calculated (WCAG 2.x relative luminance).
+ */
+:root {
+  /* Text */
+  --ww-ink: #0e1a2b;            /* 17.5:1 on panel */
+  --ww-ink-2: #3b4858;          /* 9.3:1 on panel */
+  --ww-ink-3: #5a6676;          /* 5.8:1 on panel, 5.4:1 on ground */
+  --ww-on-accent: #ffffff;      /* 6.7:1 on accent */
+
+  /* Surfaces */
+  --ww-ground: #f4f6f8;         /* page background */
+  --ww-panel: #ffffff;          /* cards, tables */
+  --ww-row-selected: #eaf2fb;   /* ink on this: 15.5:1 */
+  --ww-row-hover: #f4f7fb;
+  --ww-skeleton: #e5e9ef;
+
+  /* Lines */
+  --ww-divider: #d8dee6;        /* decorative only */
+  --ww-divider-soft: #e5e9ef;
+  --ww-control-border: #8794a5; /* 3.1:1 on panel, for controls */
+
+  /* Accent and focus */
+  --ww-accent: #0b5cad;         /* 6.7:1 on panel */
+  --ww-focus: #0b5cad;
+
+  /* Navigation */
+  --ww-nav: #0b1626;
+  --ww-nav-active: #1a2b44;     /* white on this: 14.3:1 */
+  --ww-nav-hover: #13233a;
+  --ww-nav-badge: #26395a;
+  --ww-nav-divider: #1f3050;
+  --ww-nav-text: #c9d3e0;       /* 12.0:1 on nav */
+  --ww-nav-muted: #8fa0b5;      /* 6.8:1 on nav */
+
+  /* Status: icon, chip fill, chip border, chip text */
+  --ww-open-icon: #b4380a;      /* 5.3:1 on chip */
+  --ww-open-bg: #fdede6;
+  --ww-open-border: #f0b8a0;
+  --ww-open-text: #7a2406;      /* 8.9:1 */
+
+  --ww-passed-icon: #a86a00;    /* 4.0:1 on chip (icon, needs 3:1) */
+  --ww-passed-bg: #fcf3dc;
+  --ww-passed-border: #e8cd85;
+  --ww-passed-text: #6b4300;    /* 7.8:1 */
+
+  --ww-fixed-icon: #0b7a5a;     /* 4.7:1 */
+  --ww-fixed-bg: #e3f4ee;
+  --ww-fixed-border: #a6d8c7;
+  --ww-fixed-text: #08503b;     /* 8.3:1 */
+
+  --ww-unknown-icon: #5a6676;   /* 5.1:1 */
+  --ww-unknown-bg: #eef1f4;
+  --ww-unknown-border: #8794a5; /* drawn dashed */
+  --ww-unknown-text: #3b4858;   /* 8.2:1 */
+
+  /* Priority bars */
+  --ww-bar-on: #0e1a2b;
+  --ww-bar-off: #c5cdd7;
+
+  /* Map */
+  --ww-map-land: #ecefed;
+  --ww-map-block: #dfe4e1;
+  --ww-map-park: #dce8df;
+  --ww-map-bank: #bbd2e0;
+  --ww-map-water: #cfe0ea;
+  --ww-map-road: #ffffff;
+  --ww-map-water-label: #3f5f73;
+
+  /* Type */
+  /* --font-plex-sans and --font-plex-mono are set by next/font in app/layout.tsx. */
+  --ww-font-sans: var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ww-font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ww-text-title: 26px;
+  --ww-text-section: 16px;
+  --ww-text-body: 15px;
+  --ww-text-label: 14px;
+  --ww-text-meta: 13px;
+  --ww-text-micro: 12px;        /* chips inside rows, map attribution only */
+  --ww-text-stat: 30px;
+  --ww-text-map-label: 15px;    /* raise to 20px for the projector view */
+
+  /* Shape and space */
+  --ww-shadow-card: 0 1px 2px rgba(14, 26, 43, 0.05);
+  --ww-title-tracking: -0.015em;
+  --ww-radius-chip: 6px;
+  --ww-radius-control: 8px;
+  --ww-radius-tile: 10px;
+  --ww-radius-card: 12px;
+  --ww-space-1: 4px;
+  --ww-space-2: 8px;
+  --ww-space-3: 12px;
+  --ww-space-4: 16px;
+  --ww-space-5: 20px;
+  --ww-space-6: 24px;
+  --ww-space-7: 32px;
+  --ww-nav-width: 248px;
+  --ww-control-height: 40px;
+  --ww-target-min: 44px;        /* icon-only and touch targets */
+}
