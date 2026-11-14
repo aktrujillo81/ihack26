@@ -19,6 +19,13 @@ DEPENDS ON: schema PR #39 (migration 0003) merged; contracts PR #41. D3b (Andrew
 - Say in `docs/contracts.md` and in the comment on `reports.provider_call_ref` in `lib/db/schema.ts` that it is stored **only as a keyed HMAC**, never the raw call id (the database cannot enforce it).
 - `ended_reason`: a value Vapi sends that is not one of the three known values is stored as `other` and never crashes the route (red line 6).
 
+## Switching Vapi to the webhook (hard rules, from the UX and Phone gate replies)
+1. **Do not switch the Vapi Server URL until D3b is merged and deployed.** With the stub in place every call gets 503 and nothing is stored: staff see an empty list and a stale indicator that reads as a quiet or broken line, and the report is lost unless Vapi retries (unknown).
+2. Deploy order: merge D3a, deploy (the capture route is gone from that moment and Vapi still points at it, so calls reach nothing until the switch: keep this window short), `curl` with a fake body and **no secret** (expect 401), then `curl` with the secret: **with the stub, 503 `store_failed` means the auth passed and the URL must NOT be switched yet; after D3b, expect 200 and a stored row.** Only then a human switches the URL in the Vapi dashboard and re-attaches the Bearer credential.
+3. The single paid end-to-end call comes after D3b replaces the stub (Andrew, with a human's OK, a written script; about $0.14 for 90 s, about $0.18 at the 120 s cap; log it as spend entry 4 in `docs/budget.md`). Pass: a complaint with `hand_pump`, and a replayed delivery does not duplicate it. If it fails, replay the cleaned sample by curl, not another call.
+4. Contracts must say: "last report received" moves only on a **stored** report (never on 401, 413, 500 or 503, and no separate "webhook received" timestamp); the indicator is the staff's only signal of a failed delivery and the fixed log codes are the operator's.
+5. Demo day: seed and sample data must not be taken for live calls; the indicator reads real rows only.
+
 ## Rules
 - Local database only (port 5434). Never `db:migrate`, never write to production (5433). No paid Vapi call (only Andrew, with a human's OK).
 - Tests build fake payloads at runtime. Never commit a raw payload. `docs/samples/` stays as the one cleaned sample.
