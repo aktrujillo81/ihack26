@@ -13,7 +13,7 @@
 - Language handling and what happens with an unsupported language.
 - The recording disclosure wording (with Security).
 - Test scripts, test call logs, and a record of what each prompt version changed.
-- Test credits: write the script before calling, prefer free checks where possible, and log every call made.
+- The Vapi budget ($5 in total, about $0.09 per minute). Follow `docs/budget.md`. Only this agent's task places paid test calls, only with a human's OK, and every call is logged. Write the script before calling, and reuse the saved sample payload instead of calling again.
 - Any other AI prompt text in the product, if one is added.
 
 ## Wins on
@@ -36,6 +36,7 @@ What the assistant says and asks callers.
 8. If calls are recorded or transcribed, say so in the greeting. If it is unknown whether recording is on, ask Security and the humans to check before judging.
 9. The prompt in the repo equals the prompt in Vapi. Never leave them different.
 10. Do not guess how Vapi behaves. Write `unknown`, test it, and record the result.
+11. Never place a paid call without a human's OK and a spend log entry in `docs/budget.md`.
 
 ## Current changes needed to the live assistant
 - Replace the closing line with the honest one in red line 7.

@@ -21,7 +21,7 @@ Orchestrator, Backend, Frontend, Security / Data Handling, Phone / AI Prompter, 
 
 > You are the [NAME] agent. Read AGENTS.md, docs/spec.md, docs/contracts.md, and docs/agents/[name].md. If you don't know, say unknown.
 
-Work runs in three rounds: Plan, Build, Review. All involved agents must pass before a human approves the merge. See `docs/agents/README.md`.
+Work runs in three rounds: Plan, Build, Review. Before any doc is written or any change is made, the Orchestrator seeks agreement from all agents and retries up to three times. One dissenter is allowed. Two or more block the step. Any disagreement is reported to the humans, and a dissent that cites a red line blocks the step. All involved agents must pass before a human approves the merge. See `docs/agents/README.md`.
 
 ## Rules (red lines)
 1. If you don't know, say "unknown". Do not guess routes, fields, tables, or behavior. Check `docs/contracts.md` or ask.
@@ -36,10 +36,15 @@ Work runs in three rounds: Plan, Build, Review. All involved agents must pass be
 10. Every record has an organization and region. Settings live in configuration, not scattered in code.
 11. Color is never the only signal.
 12. Build P0 end to end before P1, and P1 before P2.
+13. Never commit to `main` or force-push. All changes go through a pull request that a human merges.
+14. Track every change and decision inside `docs/`.
+15. Never place a paid Vapi call without a human's OK. The Vapi budget is $5 in total, about $0.09 per minute. See `docs/budget.md`.
+16. The repo is public. Keys live only in `.env.local` and Vercel environment variables. The Supabase service role key is used only on the server, never in browser code. Never commit raw call payloads.
 
 ## Workflow
-- One task = one branch = one small PR. Branch names: `type/short-name`.
-- Pull `main` before you start.
+- The Orchestrator manages git. A new feature gets a new branch from an up-to-date `main`. When asked to merge, it opens a pull request. A human merges.
+- One task = one branch = one small PR. Branch names: `type/short-name`. No more than five PRs open at once (one per developer).
+- Changes and decisions are tracked in `docs/`: `status.md`, `changelog.md`, `decisions.md`, `ai-mistakes.md`, `budget.md`, `reviews/`, and `tasks/`.
 - The reviewer runs the code and checks it against `docs/contracts.md` before merging.
 - After the feature freeze, only bug-fix PRs.
 - Shared files (`docs/contracts.md`, the schema, shared types) are edited by one task at a time.
