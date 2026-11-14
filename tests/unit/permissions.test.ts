@@ -155,3 +155,35 @@ describe("routes and navigation", () => {
     }
   });
 });
+
+describe("encoded and odd paths are refused", () => {
+  it("never match a rule, even for Org Admin", () => {
+    const odd = [
+      "/complaints/%2e%2e/admin",
+      "/complaints/%2E%2E/admin",
+      "/complaints%2fx",
+      "/complaints/..%2fadmin",
+      `/complaints/${String.fromCharCode(92)}..${String.fromCharCode(92)}admin`, // backslash path
+      `/complaints${String.fromCharCode(92)}x`,
+      "/complaints;x=1/y",
+      "/complaints/./x",
+      "/complaints/../admin",
+      "/complaints/\u0000",
+      "/complaints/\u202e",
+      "/complaints/é",
+      "/complaints/ x",
+      "complaints",
+      "",
+    ];
+    for (const path of odd) {
+      expect(requiredActionForPath(path), JSON.stringify(path)).toBeNull();
+      expect(accessForPath(path, "org_admin"), JSON.stringify(path)).toBe("denied");
+      expect(isPublicPath(path), JSON.stringify(path)).toBe(false);
+    }
+  });
+
+  it("plain paths still work", () => {
+    expect(requiredActionForPath("/complaints/abc-123_x.y~z")).toBe("view");
+    expect(accessForPath("/sign-in?reason=expired", undefined)).toBe("public");
+  });
+});

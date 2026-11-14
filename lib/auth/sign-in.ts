@@ -11,6 +11,11 @@ import type { SignInState } from "./sign-in-state";
  * WIRING POINT (W1, after D1): when Better Auth is configured, set
  * `AUTH_CONFIGURED` from real configuration, call its email and password
  * sign-in in the branch marked below, and redirect on success.
+ *
+ * Still to do when wiring (not done here): rate limiting and lockout; use the
+ * trimmed email; make an unknown email and a wrong password indistinguishable
+ * in message and timing; validate any return-to parameter as a same-origin
+ * relative path.
  */
 export const AUTH_CONFIGURED = false;
 

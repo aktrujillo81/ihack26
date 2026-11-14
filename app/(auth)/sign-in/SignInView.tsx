@@ -15,8 +15,7 @@ export interface SignInViewProps {
 
 /**
  * Presentational sign-in form: every state is a prop, so each can be rendered
- * and tested. Messages are text in a bordered box with a prefix word, never
- * color alone. Wording: docs/ux-screen-notes.md, "Sign-in".
+ * and tested. Messages are text in a bordered box, never color alone. Wording: docs/ux-screen-notes.md, "Sign-in".
  */
 export function SignInView({ state, pending, expired, formAction }: SignInViewProps) {
   const messageKey = signInMessageKey(state);

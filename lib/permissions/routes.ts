@@ -7,7 +7,17 @@
  * PROVISIONAL: the route paths are proposals. docs/contracts.md defines none
  * yet. Change them here, in one place.
  *
- * DEFAULT DENY: a path that is not public and not listed is refused.
+ * DEFAULT DENY: a path that is not public and not listed is refused. A path
+ * containing anything but plain URL characters (percent-encoding, backslash,
+ * semicolon, control or non-ASCII characters) is refused outright, so encoded
+ * tricks like "/complaints/%2e%2e/admin" never match a rule.
+ *
+ * NOT ENFORCED YET. When W1 wires this into Next's proxy/middleware, that is
+ * not the only defence: every server component, route handler and action must
+ * also call a guard from lib/auth/guards.ts, because middleware can be
+ * bypassed. Still to decide when wiring: how /_next/*, static files, the Vapi
+ * webhook (authenticated by signature, not session) and sign-out are handled;
+ * none has a rule here, so all are denied today.
  */
 import type { PlainKey } from "../i18n/strings";
 import { can, type Action } from "./matrix";
@@ -30,20 +40,30 @@ export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/needs-location", action: "view", navLabelKey: "common.needsLocation" },
 ];
 
-/** Strip query, hash and a trailing slash. Anything odd stays odd and will not match a rule. */
-function normalize(pathname: string): string {
+/** Only these characters may appear in a path we will match: letters, digits and - _ . ~ / */
+const PLAIN_PATH = /^\/[A-Za-z0-9\-_.~/]*$/;
+
+/**
+ * Strip query, hash and a trailing slash. Returns null for any path that is not
+ * plain (encoded, backslash, semicolon, control or non-ASCII characters), which
+ * matches nothing and is denied.
+ */
+function normalize(pathname: string): string | null {
   const path = pathname.split(/[?#]/)[0] ?? "";
+  if (!PLAIN_PATH.test(path)) return null;
   return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
 
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(normalize(pathname));
+  const path = normalize(pathname);
+  return path !== null && PUBLIC_PATHS.includes(path);
 }
 
 /** The action a route needs, or null if no rule covers it. Matches whole path segments, case-sensitively. */
 export function requiredActionForPath(pathname: string, rules: readonly RouteRule[] = ROUTE_RULES): Action | null {
   const path = normalize(pathname);
-  if (path.includes("..") || path.includes("//")) return null;
+  if (path === null || path.split("/").some((segment) => segment === ".." || segment === ".")) return null;
+  if (path.includes("//")) return null;
   const rule = rules
     .filter((r) => path === r.path || path.startsWith(`${r.path}/`))
     .sort((a, b) => b.path.length - a.path.length)[0];

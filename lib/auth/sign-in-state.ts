@@ -11,7 +11,7 @@ export type SignInState =
   | { status: "not_configured" }
   /** Wrong or missing details. One outcome for all of them, so nothing is revealed. */
   | { status: "invalid" }
-  /** Signed in but the account has no region (denied). */
+  /** Signed in but the account has no region (denied). PROVISIONAL: must be returned only after the password is verified. */
   | { status: "no_region" }
   | { status: "error" };
 

@@ -181,3 +181,23 @@ describe("messages", () => {
     for (const e of [new Error("boom"), "x", null, undefined, 5]) expect(t(failureMessageKey(e))).toBe("Something went wrong. Please try again.");
   });
 });
+
+describe("expiry must be strict ISO and not too far away", () => {
+  it("refuses loose date strings that Date.parse would accept", () => {
+    for (const loose of ["Dec 25 2099", "2099", "2026-11-15", "2026-11-15 12:00:00", "11/15/2026", "2026-11-15T12:00:00"]) {
+      expect(parseSession(session("viewer", { expiresAt: loose }), NOW), loose).toBeNull();
+    }
+  });
+
+  it("accepts ISO with Z or an offset, and with fractions", () => {
+    for (const ok of ["2026-11-15T12:00:00Z", "2026-11-15T12:00:00.250Z", "2026-11-15T14:00:00+02:00"]) {
+      expect(parseSession(session("viewer", { expiresAt: ok }), NOW), ok).not.toBeNull();
+    }
+  });
+
+  it("refuses a session that claims to last longer than the maximum", () => {
+    expect(parseSession(session("viewer", { expiresAt: "2099-01-01T00:00:00Z" }), NOW)).toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: FUTURE }), NOW, 60 * 60 * 1000)).toBeNull();
+    expect(parseSession(session("viewer", { expiresAt: FUTURE }), NOW, 48 * 60 * 60 * 1000)).not.toBeNull();
+  });
+});

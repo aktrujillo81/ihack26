@@ -11,6 +11,9 @@ import { parseSession, type Session } from "./session";
  * auth layer returns) and validates it itself, so a missing or malformed
  * session is refused. They fail closed: if anything is unclear, they throw.
  * Call them in every protected server component, route handler and action.
+ *
+ * D6 route handlers: return the same status and body for `not_found` and
+ * `out_of_scope`, and never serialise `error.kind` or `error.message` to a client.
  */
 
 export type AuthFailure =
