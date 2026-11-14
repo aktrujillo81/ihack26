@@ -73,6 +73,38 @@ Not HTTP endpoints. For W1's wiring points.
   server calls). Failures are logged as `[auth] sign_in_failed reason=<result>`,
   never with the email.
 
+### Web pages and who may open them (task W1)
+Pages, not API endpoints. `proxy.ts` (Next.js 16) only checks that a session
+cookie **exists** and redirects signed-out visitors; it validates nothing, so
+**every protected page, layout and action validates the session itself**
+(`requirePageSession()` in `lib/auth/page-guard.ts`, the guards in
+`lib/auth/guards.ts`). The rules are in `lib/permissions/routes.ts` and
+`lib/permissions/proxy-rules.ts`.
+
+| Path | Who | Notes |
+|---|---|---|
+| `/sign-in` | anyone | A signed-in user is sent to `/complaints`. `?reason=expired` shows "Your session ended". |
+| `/` | anyone | Shows nothing: signed in goes to `/complaints`, else `/sign-in`. |
+| `/map` | anyone | PUBLIC, status only (type and status of each water point, no detail). **PROPOSED, NOT APPROVED:** the spec lists the public map as cut. Shows nothing unless `PUBLISHED_MAP_ORGANIZATION_ID` and `PUBLISHED_MAP_REGION_IDS` are set. |
+| `/api/health` | anyone | See above. |
+| `/api/auth/*` | self-authenticating | Only POST sign-in and sign-out reach Better Auth (above). The proxy lets this prefix through without a cookie because it must. |
+| `/api/vapi/*` | self-authenticating | Shared secret in constant time; refuses everything while unset. TEMPORARY (S5a). The proxy lets this prefix through without a cookie because Vapi has none. |
+| `/complaints` | Viewer, Responder, Org Admin | Complaint list. Role needs `view`. |
+| `/complaints/[id]` | Viewer, Responder, Org Admin | Complaint detail. A missing id and another organization's id show the identical message. |
+| `/dashboard/map` | Viewer, Responder, Org Admin | The signed-in map (the public one is `/map`). |
+
+Without a session cookie: any other page redirects (307) to `/sign-in`, any
+other `/api/*` path answers `401 {"error":"unauthorized"}`. With a cookie the
+request reaches the page, which refuses it if the session is not valid (the
+page redirects to `/sign-in?reason=expired`). Redirect targets are fixed paths;
+nothing from the request is copied into them. `/needs-review` and
+`/needs-location` are denied by default and have no pages yet (W5).
+
+Sign-out is a server action (`lib/auth/sign-out.ts`): it ends the session on the
+server and goes to `/sign-in`. Sign-in is a server action that calls
+`signInWithPassword()`; on success it redirects to `/complaints`; on any failure
+it returns a message and sets no cookie.
+
 ## Tables
 
 The initial schema is in `lib/db/schema.ts`; migrations are in `db/migrations/`.

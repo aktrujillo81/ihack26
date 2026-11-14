@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { COMPLAINT_LIST_PAGE_SIZE } from "@/lib/config/ui";
 import type { ComplaintListItem, Loadable } from "@/lib/data/complaints";
 import { t } from "@/lib/i18n/strings";
@@ -45,7 +47,12 @@ export function ComplaintListView({ result, retryHref }: { result: Loadable<Comp
               <tr key={complaint.id} className={unverified ? "ww-row-unverified" : undefined}>
                 <td>{t("list.priorityReason", { score: complaint.priorityScore, reason: complaint.scoreReason })}</td>
                 <td>
-                  <strong>{waterPoint ? typeText(waterPoint.type) : t("common.unknown")}</strong>
+                  <Link
+                    href={`/complaints/${encodeURIComponent(complaint.id)}`}
+                    aria-label={waterPoint ? `${typeText(waterPoint.type)}, ${waterPoint.locationText}` : t("common.unknown")}
+                  >
+                    <strong>{waterPoint ? typeText(waterPoint.type) : t("common.unknown")}</strong>
+                  </Link>
                   <div>{waterPoint?.locationText ?? t("common.unknown")}</div>
                   {unverified && <span className="ww-badge">{t("common.unverified")}</span>}
                 </td>

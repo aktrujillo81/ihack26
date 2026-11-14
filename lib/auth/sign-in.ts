@@ -1,42 +1,68 @@
 import "server-only";
 
+import { MAX_PASSWORD_LENGTH } from "../config/auth";
 import type { SignInState } from "./sign-in-state";
 
 /**
- * Sign-in logic. Better Auth is not wired yet (D1 tables do not exist), so
- * sign-in never succeeds: valid-looking input gets `not_configured`, and no
- * session or cookie is ever created here. It must not be made to "work" with a
- * hardcoded user.
+ * Sign-in logic. It calls Better Auth through lib/auth/adapter.ts
+ * (`signInWithPassword`), which checks the password, applies the sign-in rate
+ * limit, refuses a user with no live region, and sets the session cookie ONLY
+ * when a session is created. Nothing here sets a cookie or creates a session
+ * itself, and every failure returns a state with no cookie.
  *
- * WIRING POINT (W1, after D1): when Better Auth is configured, set
- * `AUTH_CONFIGURED` from real configuration, call its email and password
- * sign-in in the branch marked below, and redirect on success.
+ * What it must never do: say whether an email exists, log or return the
+ * password, or report success for a failure. An unknown email and a wrong
+ * password give the same outcome.
  *
- * Still to do when wiring (not done here): rate limiting and lockout; use the
- * trimmed email; make an unknown email and a wrong password indistinguishable
- * in message and timing; validate any return-to parameter as a same-origin
- * relative path.
+ * Still to do (not here): a lockout per account. The adapter limits by client
+ * address only.
  */
-export const AUTH_CONFIGURED = false;
+
+/** What the provider reports. The same values as `SignInResult` in lib/auth/adapter.ts. */
+export type SignInProviderResult = "ok" | "invalid" | "no_region" | "rate_limited" | "error";
+
+export type SignInProvider = (email: string, password: string) => Promise<SignInProviderResult>;
+
+/** The real provider. Imported here so importing this module never loads Better Auth or the database. */
+const betterAuthProvider: SignInProvider = async (email, password) => {
+  const { signInWithPassword } = await import("./adapter");
+  return signInWithPassword(email, password);
+};
+
+/** A sign-in that worked. The action redirects; it is never shown as a state. */
+export type SignInOutcome = SignInState | { status: "signed_in" };
 
 const MAX_EMAIL = 254;
-const MAX_PASSWORD = 1024;
 
 /** Input comes straight from a form, so it is `unknown`. The password is never returned, logged or stored. */
-export function attemptSignIn(
+export async function attemptSignIn(
   input: { email: unknown; password: unknown },
-  configured: boolean = AUTH_CONFIGURED,
-): SignInState {
+  provider: SignInProvider = betterAuthProvider,
+): Promise<SignInOutcome> {
   const { email, password } = input;
   if (typeof email !== "string" || typeof password !== "string") return { status: "invalid" };
   const trimmed = email.trim();
   if (trimmed.length === 0 || trimmed.length > MAX_EMAIL || !trimmed.includes("@")) return { status: "invalid" };
-  if (password.length === 0 || password.length > MAX_PASSWORD) return { status: "invalid" };
+  if (password.length === 0 || password.length > MAX_PASSWORD_LENGTH) return { status: "invalid" };
 
-  if (!configured) return { status: "not_configured" };
+  let result: SignInProviderResult;
+  try {
+    result = await provider(trimmed, password);
+  } catch {
+    return { status: "error" };
+  }
 
-  // WIRING POINT: call Better Auth here. On a refused sign-in return { status: "invalid" },
-  // on a user with no region return { status: "no_region" }, on any thrown error { status: "error" }.
-  // Until that exists, fail closed: never report success.
-  return { status: "error" };
+  switch (result) {
+    case "ok":
+      return { status: "signed_in" };
+    case "invalid":
+      return { status: "invalid" };
+    case "no_region":
+      return { status: "no_region" };
+    case "rate_limited":
+      return { status: "rate_limited" };
+    default:
+      // Anything unrecognised is a failure, never a success.
+      return { status: "error" };
+  }
 }

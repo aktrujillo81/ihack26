@@ -75,7 +75,7 @@ const en = {
   "signIn.noRegion": "Your account is not set up for any region yet. Ask your organization's admin.",
   "signIn.expired": "Your session ended. Please sign in again.",
   // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
-  "signIn.notConfigured": "Sign-in is not set up yet.",
+  "signIn.rateLimited": "Too many sign-in attempts. Please wait a minute and try again.",
   "nav.complaints": "Complaints",
   "nav.map": "Map",
   "nav.signOut": "Sign out",

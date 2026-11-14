@@ -59,7 +59,11 @@
 | Error (server) | `common.error` |
 | Denied (no access to any region) | "Your account is not set up for any region yet. Ask your organization's admin." (`signIn.noRegion`) |
 | Session expired | "Your session ended. Please sign in again." (`signIn.expired`). Unsaved work is not discarded silently. |
-| Not configured (PROPOSED, temporary) | "Sign-in is not set up yet." (`signIn.notConfigured`). Shown until the authentication service is connected. Signing in never succeeds in this state. |
+| Too many attempts (PROPOSED) | "Too many sign-in attempts. Please wait a minute and try again." (`signIn.rateLimited`). Shown after 5 attempts in a minute from one address (the limit is configuration). It does not say whether the email exists. |
+| Already signed in | Opening the sign-in page while signed in goes straight to the complaint list. |
+| After signing in | The user goes to the complaint list (`/complaints`). The destination is fixed; it is never taken from the address or the form. |
+| Signed out, or session ended | Any protected page sends the user to the sign-in page. If a session cookie was present but is no longer valid, the page shows "Your session ended. Please sign in again." (`signIn.expired`); with no cookie, it shows no message. |
+| Sign out | A "Sign out" button (`nav.signOut`) in the page header ends the session on the server and goes to the sign-in page. |
 | Navigation (PROPOSED) | Links shown by role: "Complaints" (`nav.complaints`), "Map" (`nav.map`), "Needs review" (`common.needsReview`), "Needs location" (`common.needsLocation`), and "Sign out" (`nav.signOut`). Hiding a link is a convenience only; the server checks every route. Route paths are proposals. The "Map" link opens the signed-in map at `/dashboard/map`. `/map` is the separate public, status-only map and is not in the navigation. |
 | Needs review | Not applicable. |
 
