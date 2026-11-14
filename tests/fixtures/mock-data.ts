@@ -125,7 +125,7 @@ export const mockComplaints: Complaint[] = [
     id: "c-6", ...scope, waterPointId: "wp-6", status: "open", problem: "unknown", peopleAffected: "unknown",
     servesSchoolOrClinic: "unknown", duration: "today", reportCount: 1, priorityScore: 1,
     scoreReason: "Problem unknown (+1). Everything else unknown and adds nothing",
-    needsReview: true, needsReviewReason: "incomplete_report", passedOnPartnerId: null, passedOnNote: null, version: "v1",
+    needsReview: true, needsReviewReason: "invalid_fields", passedOnPartnerId: null, passedOnNote: null, version: "v1",
     createdAt: "2026-11-13T11:40:00Z", updatedAt: "2026-11-13T11:40:00Z",
   },
   // Open, "other" problem.
@@ -181,7 +181,7 @@ export const mockReports: Report[] = [
     peopleAffected: "unknown", servesSchoolOrClinic: "unknown", duration: "today", callerConfirmed: false,
     summary: "Caller reported a water problem near the Northgate bus stop but ended the call early.",
     languageSpoken: "English", transcript: "Assistant: Where is the water point? Caller: Northgate, near the bus stop. Caller: Sorry, I have to go.",
-    needsReview: true, needsReviewReason: "incomplete_report", candidateWaterPointIds: [], receivedAt: "2026-11-13T11:40:00Z",
+    needsReview: true, needsReviewReason: "invalid_fields", candidateWaterPointIds: [], receivedAt: "2026-11-13T11:40:00Z",
   },
   // Ambiguous: several water points fit, none chosen.
   {
@@ -208,7 +208,7 @@ export const mockReports: Report[] = [
     peopleAffected: "unknown", servesSchoolOrClinic: "unknown", duration: "unknown", callerConfirmed: false,
     summary: "The call was not about a water problem.",
     languageSpoken: "English", transcript: "Assistant: Where is the water point? Caller: I wanted to ask about something else.",
-    needsReview: true, needsReviewReason: "off_topic", candidateWaterPointIds: [], receivedAt: "2026-11-13T14:30:00Z",
+    needsReview: true, needsReviewReason: "no_structured_data", candidateWaterPointIds: [], receivedAt: "2026-11-13T14:30:00Z",
   },
   {
     id: "r-9", ...scope, channel: "phone", waterPointId: "wp-3", complaintId: "c-3",

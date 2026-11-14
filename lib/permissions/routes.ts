@@ -57,14 +57,14 @@ export const PUBLIC_PATHS: readonly string[] = ["/", "/sign-in", "/api/health", 
 export const SELF_AUTHENTICATING_PREFIXES: readonly string[] = ["/api/auth/", "/api/vapi/"];
 
 /**
- * The navigation shows only routes that exist. "/needs-review" and
- * "/needs-location" are rules (so they are denied by default) but have no
- * navLabelKey until their pages are built (W5), so no link points at a 404.
+ * The navigation shows only routes that exist. "/needs-review" has a page (W5)
+ * and a link. "/needs-location" is a rule (so it is denied by default) but has
+ * no navLabelKey until its page is built, so no link points at a 404.
  */
 export const ROUTE_RULES: readonly RouteRule[] = [
   { path: "/complaints", action: "view", navLabelKey: "nav.complaints" },
   { path: "/dashboard/map", action: "view", navLabelKey: "nav.map" },
-  { path: "/needs-review", action: "view" },
+  { path: "/needs-review", action: "view", navLabelKey: "nav.needsReview" },
   { path: "/needs-location", action: "view" },
 ];
 

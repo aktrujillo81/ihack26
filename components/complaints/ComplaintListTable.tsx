@@ -143,7 +143,7 @@ export function ComplaintListTable({ items }: { items: readonly ComplaintListIte
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
                               <path d="M5 21V4m0 0h11l-2 4 2 4H5" />
                             </svg>
-                            {t("common.needsReview")}
+                            {complaint.needsReviewReason ? t("common.needsReviewWithReason", { reason: complaint.needsReviewReason }) : t("common.needsReview")}
                           </span>
                         )}
                       </div>

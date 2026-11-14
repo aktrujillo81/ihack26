@@ -122,6 +122,23 @@ describe("lists carry no transcripts, summaries or caller details", () => {
     expect(ok(await listNeedsReview(w.ctxB)).map((i) => i.report.complaintId)).toEqual([w.c.cB.id]);
   });
 
+  it("the needs-review rows carry their stored reason, and another organization sees none of them", async () => {
+    const own = ok(await listNeedsReview(w.ctxA1));
+    expect(own.map((i) => i.report.needsReviewReason)).toEqual(["unusable_location"]);
+    const other = JSON.stringify(ok(await listNeedsReview(w.ctxB)));
+    expect(other).not.toContain(w.r.rReview.id);
+    expect(other).not.toContain("unusable_location");
+    expect(other).not.toContain("SECRET-REVIEW-TRANSCRIPT");
+    // A user with no usable scope sees nothing at all.
+    expect(ok(await listNeedsReview(w.ctxB)).every((i) => i.report.organizationId === w.B.org.id)).toBe(true);
+  });
+
+  it("a complaint shows the highest-priority stored reason among its reports", async () => {
+    const detail = ok(await getComplaint(w.ctxA1, w.c.cOpen.id));
+    const reasons = detail.reports.map((r) => r.needsReviewReason);
+    expect(detail.complaint.needsReviewReason === null || reasons.includes(detail.complaint.needsReviewReason)).toBe(true);
+  });
+
   it("no returned object has a phone, email or contact key, at any depth", async () => {
     const all = JSON.stringify([
       await listComplaints(w.ctxA1A2),

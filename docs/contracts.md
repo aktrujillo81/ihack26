@@ -649,8 +649,21 @@ Without a session cookie: any other page redirects (307) to `/sign-in`, any
 other `/api/*` path answers `401 {"error":"unauthorized"}`. With a cookie the
 request reaches the page, which refuses it if the session is not valid (the
 page redirects to `/sign-in?reason=expired`). Redirect targets are fixed paths;
-nothing from the request is copied into them. `/needs-review` and
-`/needs-location` are denied by default and have no pages yet (W5).
+nothing from the request is copied into them. `/needs-review` is a read-only
+page (W5, smallest version, below). `/needs-location` is denied by default and
+has no page yet.
+
+**`/needs-review` (built, W5 smallest version).** A signed-in page, any role
+(`view`), that lists the in-scope reports with `needs_review = true`, oldest
+first, from `listNeedsReview` in `lib/data/complaints.ts`. It shows only the
+reason code as words ("Needs review: unusable_location"), the received time,
+the problem and the spoken location, and a count. No transcript, summary,
+language, caller detail or action; no candidate picker (`candidates` stays
+empty). It is a page, not the `GET /api/needs-review` route in 6.7, which is
+still not built. The nav shows a link to it. Reports with no water point or
+complaint (reasons `malformed_payload`, `no_structured_data`,
+`processing_error`, `unusable_location`, `ambiguous_match`) are visible only
+here.
 
 Sign-out is a server action (`lib/auth/sign-out.ts`): it ends the session on the
 server and goes to `/sign-in`. Sign-in is a server action that calls
@@ -674,7 +687,7 @@ it (**PROVISIONAL, waits for S6 and D4/D5**, see `docs/reviews/D1.md`):
 | The screens need | D1 has | What is done |
 |---|---|---|
 | A complaint's problem, people affected, school or clinic, duration | Only on `reports`, not on `complaints` | Derived at read time: the most severe known values across the complaint's reports (spec section 7). No reports: all unknown. |
-| A review reason, and the candidate water points for an ambiguous match | No column | Reason is null, candidates empty. W5 needs a column or a table. |
+| A review reason, and the candidate water points for an ambiguous match | `reports.needs_review_reason`; `report_candidates` | The stored reason is read for reports and for the `/needs-review` page. A complaint has no reason column: its `needsReviewReason` is the highest-priority (5.2 order) reason among its reports, or null. Candidates stay empty until the picker is built. |
 | A description of each history event | `event_type`, `before_data`, `after_data`, `note` | The screen builds the sentence from those (translatable). Unknown event types show "Change recorded". |
 | The name of a water point | `location_text` (spoken) and the type only | No name. The public map labels a point by its type. |
 | A version for the overwrite check (D6) | `updated_at` | `updated_at` as UTC text to the microsecond (`version`). |
@@ -756,7 +769,7 @@ request.
 - Errors log the fixed code `[data] write_failed` only. The page is refreshed
   after `saved`.
 - Not done: setting `passed_on_partner_id` (no partner picker yet), and `review`
-  actions (W5).
+  actions (clearing needs review, 5.10).
 
 Tested in `tests/integration/complaint-writes.test.ts` (Postgres) and
 `tests/unit/complaint-actions.test.ts` (what the actions pass to the write).

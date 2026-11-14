@@ -83,6 +83,16 @@ const en = {
   "signIn.rateLimited": "Too many sign-in attempts. Please wait a minute and try again.",
   "nav.complaints": "Complaints",
   "nav.map": "Map",
+  // PROVISIONAL (W5, smallest version): wording not yet in docs/ux-screen-notes.md.
+  "nav.needsReview": "Needs review",
+  "page.needsReview.subtitle": "Reports the system could not match to a water point. Read only.",
+  "needsReview.empty": "No reports need review.",
+  "needsReview.count": "{count} to check",
+  "needsReview.col.reason": "Reason",
+  "needsReview.col.received": "Received",
+  "needsReview.col.problem": "Problem",
+  "needsReview.col.location": "Spoken location",
+  "common.needsReviewWithReason": "Needs review: {reason}",
   "nav.signOut": "Sign out",
   "nav.signOutFailed": "Sign-out did not work. Please try again.",
   // PROVISIONAL (wording from docs/design/operations-console.html): app shell and page headers.

@@ -41,16 +41,15 @@ export type Channel = (typeof CHANNELS)[number];
 export const ROLES = ["org_admin", "responder", "viewer"] as const;
 export type Role = (typeof ROLES)[number];
 
-/**
- * UNKNOWN in the spec: the real reason values. These four follow the cases in
- * spec section 7 and 10; `unknown` is used when no reason is available.
- */
+/** Contracts 5.2, in priority order (the same seven values as the database enum). */
 export const NEEDS_REVIEW_REASONS = [
-  "ambiguous_match",
+  "malformed_payload",
+  "no_structured_data",
+  "processing_error",
   "unusable_location",
-  "incomplete_report",
-  "off_topic",
-  "unknown",
+  "ambiguous_match",
+  "invalid_fields",
+  "not_confirmed",
 ] as const;
 export type NeedsReviewReason = (typeof NEEDS_REVIEW_REASONS)[number];
 
