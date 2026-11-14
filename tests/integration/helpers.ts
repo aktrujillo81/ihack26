@@ -5,7 +5,7 @@ import { getDb } from "@/lib/db";
 import { authAccount, authUser, organizations, regions, users } from "@/lib/db/schema";
 import type { Role } from "@/lib/domain/types";
 
-export const BASE = "http://127.0.0.1:6543";
+export const BASE = "http://127.0.0.1:3162";
 export const PASSWORD = "correct horse battery staple";
 
 /** Empties every table the auth tests use. Refuses to run anywhere but the test database. */

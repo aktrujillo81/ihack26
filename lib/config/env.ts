@@ -32,7 +32,7 @@ export const serverEnv = {
     if (value.length < 32) throw new Error("BETTER_AUTH_SECRET must be at least 32 characters");
     return value;
   },
-  /** The public origin, e.g. https://bg.verilen.com (or http://127.0.0.1:6543 locally). */
+  /** The public origin, e.g. https://wellwatch.verilen.com (or http://127.0.0.1:3162 locally). */
   get betterAuthUrl() {
     const value = required("BETTER_AUTH_URL");
     let url: URL;

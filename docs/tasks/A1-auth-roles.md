@@ -32,7 +32,7 @@ REUSED FROM v2 (already reviewed by Security, re-checked against D1):
     from the sign-in body
   - emailAndPassword with disableSignUp; min password 12; cookieCache off;
     disableSessionRefresh; secure cookies in production or on https; origin
-    check forced on; trustedOrigins = public host (+127.0.0.1:6543 in dev)
+    check forced on; trustedOrigins = public host (+127.0.0.1:3162 in dev)
   - Fixed 12-hour session from one config value (lib/config/auth.ts), capped
     in the session-create hook
   - Rate limits: Better Auth's on /api/auth and the adapter's own on
