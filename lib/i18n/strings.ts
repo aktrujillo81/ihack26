@@ -102,6 +102,11 @@ const en = {
   "map.tilesFailed": "The map background could not load. Water points are still listed below.",
   "map.updated": "Updated",
   "map.needsLocationCount": "{n} water points need a location",
+  // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
+  "map.noOpenComplaint": "No open complaint",
+  "map.legend": "Map key",
+  "map.reports": "Reports: {n}",
+  "map.listTitle": "Water points on the map",
 
   // Needs review list
   "review.empty": "Nothing needs review right now.",
@@ -136,6 +141,9 @@ type Placeholders<S extends string> = S extends `${string}{${infer P}}${infer Re
 export type ParamsFor<K extends StringKey> = [Placeholders<(typeof en)[K]>] extends [never]
   ? undefined
   : Record<Placeholders<(typeof en)[K]>, string | number>;
+
+/** Keys whose text has no `{placeholder}`, so they can be chosen at runtime and passed to `t(key)`. */
+export type PlainKey = { [K in StringKey]: ParamsFor<K> extends undefined ? K : never }[StringKey];
 
 /** Every locale must define every key. */
 type Table = Record<StringKey, string>;

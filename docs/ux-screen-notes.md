@@ -112,6 +112,7 @@
 | Unknown values | An unknown problem or type shows "Unknown" in the label. The pin is yellow per spec section 7 but is never styled as severe. |
 | Needs review | Items with no matched water point cannot be pins. They are listed in the Needs review list, and the map links to it. |
 | Live update | The map updates without refresh. As a proposal (not in the spec), a changed pin briefly gets an "Updated" tag (`map.updated`). |
+| Pin text (PROPOSED) | Always visible beside each pin: status (`status.*`, or "No open complaint" `map.noOpenComplaint` when the water point has none), then "Unverified" and "Needs review" when they apply, then "Reports: {n}" (`map.reports`). A legend titled "Map key" (`map.legend`) and a text list titled "Water points on the map" (`map.listTitle`) repeat every pin and work without a pointer. |
 | Needs location | Water points without coordinates are not pins. A counter links to that list: "{n} water points need a location" (`map.needsLocationCount`). |
 | Tile terms | **Open:** the map library and OpenStreetMap tile usage terms are unconfirmed. See section 5. |
 | Privacy | The map shows water point, status and report count only. No transcripts and no caller details. |

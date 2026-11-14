@@ -1,0 +1,91 @@
+/* Projector-readable map styles. Labels are 20px or larger. Nothing depends on hover. */
+.ww-map {
+  width: 100%;
+  height: 70vh;
+  min-height: 420px;
+  border: 3px solid #000;
+  /* Plain background used when there are no tiles, or when tiles fail. */
+  background-color: #eef1f4;
+  background-image: linear-gradient(#c9d0d8 1px, transparent 1px), linear-gradient(90deg, #c9d0d8 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.ww-map-notice {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border: 3px solid #000;
+  background: #fff3bf;
+  color: #000;
+  font-size: 20px;
+  font-weight: 700;
+}
+.ww-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 160px;
+}
+.ww-pin-label {
+  margin-top: 2px;
+  padding: 2px 8px;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+.ww-glyph {
+  flex: none;
+}
+.ww-fill-red {
+  fill: #c62828;
+}
+.ww-fill-yellow {
+  fill: #ffd600;
+}
+.ww-fill-green {
+  fill: #2e7d32;
+}
+.ww-legend {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border: 3px solid #000;
+  background: #fff;
+  color: #000;
+}
+.ww-legend-title,
+.ww-list-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+.ww-legend ul,
+.ww-pin-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ww-legend li,
+.ww-pin-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+}
+.ww-pin-list li {
+  min-width: 280px;
+}
+/* Keep the OSM attribution clearly visible (tile usage policy). */
+.leaflet-control-attribution {
+  font-size: 14px !important;
+  color: #000 !important;
+  background: #fff !important;
+}
+/* Visible keyboard focus on pins. */
+.ww-pin-marker:focus-visible {
+  outline: 4px solid #000;
+  outline-offset: 2px;
+}
