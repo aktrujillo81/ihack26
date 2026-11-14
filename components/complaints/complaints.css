@@ -16,17 +16,6 @@
 .ww-state-error p:last-child {
   margin-bottom: 0;
 }
-/* Loading and empty messages. */
-.ww-state {
-  margin: 0;
-  padding: var(--ww-space-4);
-  border: 1px solid var(--ww-divider);
-  border-radius: var(--ww-radius-tile);
-  background: var(--ww-panel);
-  color: var(--ww-ink-2);
-  font-size: var(--ww-text-body);
-}
-
 /* A saved message is a bordered box with text, like an error. The words carry the meaning. */
 .ww-saved {
   margin: var(--ww-space-3) 0 0;

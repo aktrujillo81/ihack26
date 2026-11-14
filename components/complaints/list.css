@@ -209,24 +209,6 @@
   text-overflow: ellipsis;
 }
 
-/* Flags (Needs review, Unverified): neutral outlined tag with a word, never color. */
-.ww-tag {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--ww-space-1);
-  padding: 1px var(--ww-space-2);
-  border: 1px solid var(--ww-control-border);
-  border-radius: var(--ww-radius-chip);
-  color: var(--ww-ink);
-  font-size: var(--ww-text-micro);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.ww-tag--dashed {
-  border-style: dashed;
-}
-
 /* Sortable header: a real button; the active column shows an arrow, and the th carries aria-sort. */
 .ww-sort {
   display: inline-flex;

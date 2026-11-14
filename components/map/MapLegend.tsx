@@ -43,13 +43,13 @@ export function MapLegend({
       <ul>
         {entries.map((e) => (
           <li key={e.key}>
-            <PinGlyph shape={e.shape} color={e.color} />
+            <PinGlyph shape={e.shape} color={e.color} size={20} />
             <span>{t(e.key)}</span>
           </li>
         ))}
         {includeUnverified && (
           <li>
-            <PinGlyph shape="circle" color="yellow" dashed />
+            <PinGlyph shape="circle" color="yellow" dashed size={20} />
             <span>{t("common.unverified")}</span>
           </li>
         )}

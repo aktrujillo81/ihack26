@@ -186,6 +186,8 @@ const en = {
   "map.publicTitle": "Water points",
   "map.zoomIn": "Zoom in",
   "map.zoomOut": "Zoom out",
+  // PROVISIONAL (wording from docs/design/operations-console.html): shown only while the plain grid is the basemap.
+  "map.basemapPlaceholder": "Basemap placeholder",
 
   // Needs review list
   "review.empty": "Nothing needs review right now.",

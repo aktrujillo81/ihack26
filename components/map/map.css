@@ -1,91 +1,222 @@
-/* Projector-readable map styles. Labels are 20px or larger. Nothing depends on hover. */
-.leaflet-container.ww-map {
-  width: 100%;
-  height: 70vh;
-  min-height: 420px;
-  border: 3px solid #000;
-  /* Plain background used when there are no tiles, or when tiles fail. */
-  background-color: #eef1f4;
-  background-image: linear-gradient(#c9d0d8 1px, transparent 1px), linear-gradient(90deg, #c9d0d8 1px, transparent 1px);
-  background-size: 48px 48px;
+/* The map panel (docs/style-guide.md section 8, docs/design/operations-console.html). Tokens only. Nothing depends on hover. */
+
+/* Projector view: one class on any ancestor raises the label to 20px and the pin to 36px (guide section 8). */
+.ww-map-projector {
+  --ww-text-map-label: 20px;
+  --ww-pin-size: 36px;
 }
-.ww-map-notice {
-  margin: 0 0 8px;
-  padding: 8px 12px;
-  border: 3px solid #000;
-  background: #fff3bf;
-  color: #000;
-  font-size: 20px;
-  font-weight: 700;
+
+.ww-map-panel {
+  overflow: hidden;
 }
-.ww-pin {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 160px;
-}
-.ww-pin-label {
-  margin-top: 2px;
-  padding: 2px 8px;
-  border: 2px solid #000;
-  background: #fff;
-  color: #000;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-align: center;
-}
-.ww-glyph {
-  flex: none;
-}
-.ww-fill-red {
-  fill: #c62828;
-}
-.ww-fill-yellow {
-  fill: #ffd600;
-}
-.ww-fill-green {
-  fill: #2e7d32;
-}
+
+/* The legend is the panel's title row: "Map key" and the status shapes with their words. */
 .ww-legend {
-  margin: 12px 0;
-  padding: 8px 12px;
-  border: 3px solid #000;
-  background: #fff;
-  color: #000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ww-space-3) var(--ww-space-6);
+  margin: 0;
+  padding: 14px var(--ww-space-5);
+  border-bottom: 1px solid var(--ww-divider);
 }
 .ww-legend-title,
 .ww-list-title {
-  margin: 0 0 6px;
-  font-size: 24px;
+  margin: 0;
+  font-size: var(--ww-text-section);
+  font-weight: 600;
 }
 .ww-legend ul,
 .ww-pin-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 24px;
+  gap: var(--ww-space-2) 22px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.ww-legend li,
+.ww-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ww-space-2);
+  font-size: var(--ww-text-label);
+  font-weight: 500;
+}
+
+/* The map itself. The grid is the plain background used when there are no tiles, or when tiles fail. */
+.ww-map-frame {
+  position: relative;
+}
+.leaflet-container.ww-map {
+  width: 100%;
+  height: 70vh;
+  min-height: 420px;
+  border: 0;
+  background-color: var(--ww-map-land);
+  background-image: linear-gradient(var(--ww-divider) 1px, transparent 1px), linear-gradient(90deg, var(--ww-divider) 1px, transparent 1px);
+  background-size: 48px 48px;
+  font-family: var(--ww-font-sans);
+}
+.ww-map-notice {
+  margin: var(--ww-space-3) var(--ww-space-5);
+  padding: var(--ww-space-2) var(--ww-space-3);
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-control);
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font-size: var(--ww-text-label);
+  font-weight: 500;
+}
+/* Said only while the plain grid is the basemap. */
+.ww-map-tag {
+  position: absolute;
+  top: var(--ww-space-3);
+  right: var(--ww-space-3);
+  z-index: 1000;
+  padding: 2px var(--ww-space-2);
+  border: 1px solid var(--ww-divider);
+  border-radius: var(--ww-radius-chip);
+  background: var(--ww-panel);
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+}
+
+/* Pins: the glyph, centered on the point, with its label chip beside it. */
+.ww-pin {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+.ww-pin .ww-glyph {
+  display: block;
+  width: var(--ww-pin-size, 30px);
+  height: var(--ww-pin-size, 30px);
+  margin: calc((30px - var(--ww-pin-size, 30px)) / 2);
+}
+.ww-pin-label {
+  position: absolute;
+  top: 50%;
+  left: calc(15px + var(--ww-pin-size, 30px) / 2 + 6px);
+  padding: 3px 9px;
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-chip);
+  background: var(--ww-panel);
+  box-shadow: var(--ww-shadow-card);
+  color: var(--ww-ink);
+  font-size: var(--ww-text-map-label);
+  font-weight: 600;
+  line-height: 1.3;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+.ww-pin-label-sub {
+  color: var(--ww-ink-2);
+  font-size: var(--ww-text-meta);
+  font-weight: 500;
+}
+.ww-glyph {
+  flex: none;
+}
+.ww-pin-ring {
+  fill: var(--ww-ink);
+}
+.ww-pin-halo {
+  fill: var(--ww-panel);
+}
+.ww-pin-dash {
+  fill: var(--ww-panel);
+  stroke: var(--ww-ink);
+  stroke-dasharray: 4 3;
+  stroke-width: 2;
+}
+.ww-pin-check {
+  stroke: var(--ww-panel);
+}
+/* Color follows the problem (spec section 7); the shape and the words say the status. */
+.ww-fill-red {
+  fill: var(--ww-open-icon);
+}
+.ww-fill-yellow {
+  fill: var(--ww-passed-icon);
+}
+.ww-fill-green {
+  fill: var(--ww-fixed-icon);
+}
+
+/* The text alternative to the map: the same pins as cards. */
+.ww-list-title {
+  margin: var(--ww-space-6) 0 var(--ww-space-3);
+}
+.ww-pin-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--ww-space-3);
+}
 .ww-pin-list li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ww-space-3);
+  padding: var(--ww-space-3) var(--ww-space-4);
+  border: 1px solid var(--ww-divider);
+  border-radius: var(--ww-radius-tile);
+  background: var(--ww-panel);
+  font-size: var(--ww-text-label);
+}
+
+/* Zoom controls: a bordered group of 40px buttons. */
+.leaflet-container .leaflet-bar,
+.leaflet-touch .leaflet-bar {
+  border: 1px solid var(--ww-control-border);
+  border-radius: var(--ww-radius-control);
+  box-shadow: none;
+}
+.leaflet-container .leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+  width: var(--ww-control-height);
+  height: var(--ww-control-height);
+  border-bottom: 1px solid var(--ww-divider);
+  background-color: var(--ww-panel);
+  color: var(--ww-ink);
   font-size: 20px;
+  line-height: var(--ww-control-height);
 }
-.ww-pin-list li {
-  min-width: 280px;
+.leaflet-container .leaflet-bar a:last-child,
+.leaflet-touch .leaflet-bar a:last-child {
+  border-bottom: 0;
 }
+.leaflet-container .leaflet-top.leaflet-left .leaflet-control {
+  margin-top: var(--ww-space-3);
+  margin-left: var(--ww-space-3);
+}
+
+/* Scale bar. */
+.leaflet-container .leaflet-control-scale-line {
+  padding: 2px var(--ww-space-2);
+  border: 2px solid var(--ww-ink);
+  border-top: 0;
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font-size: var(--ww-text-micro);
+  font-weight: 500;
+  text-shadow: none;
+}
+.leaflet-container .leaflet-bottom.leaflet-left .leaflet-control {
+  margin-bottom: 10px;
+  margin-left: var(--ww-space-3);
+}
+
 /* Keep the OSM attribution clearly visible (tile usage policy). */
-.leaflet-control-attribution {
-  font-size: 14px !important;
-  color: #000 !important;
-  background: #fff !important;
+.leaflet-container .leaflet-control-attribution {
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font-size: var(--ww-text-meta);
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: var(--ww-accent);
 }
 /* Visible keyboard focus on pins. */
 .ww-pin-marker:focus-visible {
-  outline: 4px solid #000;
+  outline: 3px solid var(--ww-focus);
   outline-offset: 2px;
 }
