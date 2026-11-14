@@ -155,6 +155,11 @@ export function listWaterPoints(ctx: DataContext, options: WaterPointOptions = {
   );
 }
 
+/** The mock data is a fixture, not a seeded demo: tests that want the Sample data tag mock this directly. */
+export async function isSampleData(_ctx: DataContext): Promise<boolean> {
+  return false;
+}
+
 /**
  * When the last report arrived, from the user's own scope only. `empty` means
  * none has ever arrived. Assumes every timestamp is an ISO string in UTC ("Z"),

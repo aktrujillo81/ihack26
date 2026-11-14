@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq, isNull, sql } from "drizzle-orm";
 
+import { DEMO_DATA_MARKER_KEY } from "@/lib/config/demo";
 import { serverEnv } from "@/lib/config/env";
 import { getDb } from "@/lib/db";
 import { complaints, configuration, historyEvents, notes, organizations, partners, regions, reports, users, waterPoints } from "@/lib/db/schema";
@@ -12,7 +13,7 @@ import { DEMO_COMPLAINTS, DEMO_NOTES, DEMO_PARTNERS, DEMO_POINTS, DEMO_REPORTS }
 export class DemoSeedError extends Error {}
 
 /** The marker row in D1's `configuration` table. If it exists the demo data is already there. */
-export const DEMO_MARKER_KEY = "demo_seed";
+export const DEMO_MARKER_KEY = DEMO_DATA_MARKER_KEY;
 export const DEMO_VERSION = 1;
 
 const HOUR_MS = 60 * 60 * 1000;
