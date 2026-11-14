@@ -18,8 +18,13 @@ Postgres is published on `127.0.0.1:$POSTGRES_PORT` (default 5433) only.
 Data lives in the `pgdata` Docker volume. `docker compose down` keeps the
 data; `docker compose down -v` deletes it.
 
-Backup (the `backups/` folder is gitignored):
+Backup (the `backups/` folder is gitignored). Backups contain transcripts, so
+keep them owner-only and never commit or share them:
 
 ```sh
-docker compose exec -T db pg_dump -U wellwatch wellwatch > backups/wellwatch-$(date +%F).sql
+mkdir -p backups && chmod 700 backups
+umask 077
+docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "backups/wellwatch-$(date +%F).sql"
 ```
+
+How long backups are kept is unknown (open question in `docs/spec.md`).

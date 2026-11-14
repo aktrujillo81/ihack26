@@ -13,7 +13,8 @@ const globalForDb = globalThis as unknown as { wellWatchSql?: postgres.Sql; well
 
 function connect(): Db {
   if (!globalForDb.wellWatchDb) {
-    globalForDb.wellWatchSql = postgres(serverEnv.databaseUrl, { max: 10 });
+    // connect_timeout (seconds) keeps /api/health from hanging if the database is unreachable.
+    globalForDb.wellWatchSql = postgres(serverEnv.databaseUrl, { max: 10, connect_timeout: 5 });
     globalForDb.wellWatchDb = drizzle(globalForDb.wellWatchSql, { schema });
   }
   return globalForDb.wellWatchDb;
@@ -31,6 +32,8 @@ export async function pingDb(): Promise<boolean> {
     await globalForDb.wellWatchSql!`select 1`;
     return true;
   } catch {
+    // Fixed code only: never log the error message or connection string.
+    console.error("[health] db_unreachable");
     return false;
   }
 }

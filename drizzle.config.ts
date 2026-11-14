@@ -1,10 +1,14 @@
 import { defineConfig } from "drizzle-kit";
 
-// drizzle-kit runs outside Next.js, so load .env ourselves (Node 20.12+).
-try {
-  process.loadEnvFile();
-} catch {
-  // No .env file: rely on variables already set in the environment.
+// drizzle-kit runs outside Next.js, so load env files ourselves (Node 20.12+),
+// with the same precedence as Next.js: shell env, then .env.local, then .env.
+// loadEnvFile never overwrites a variable that is already set.
+for (const file of [".env.local", ".env"]) {
+  try {
+    process.loadEnvFile(file);
+  } catch {
+    // File missing: fine.
+  }
 }
 
 const url = process.env.DATABASE_URL;
