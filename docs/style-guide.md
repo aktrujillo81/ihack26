@@ -150,4 +150,4 @@ Real tile basemap and clustering, the public map view, bulk actions, keyboard sh
 - **Complaints table:** grid `minmax(0,3.1fr) minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.2fr) 20px`, min-width 660px, no text wrapping in cells (truncate with ellipsis), sortable headers, 3-bar priority plus word, pager footer ("Showing 8 of 24").
 - **Filters:** segmented control (All / Open / Passed on / Fixed) with `aria-pressed`; search placeholder "Search water points".
 - **Basemap:** muted land #ECEFED, parks #DCE8DF, river #CFE0EA with bank #BBD2E0, building footprints #DFE4E1, roads white with casings, street names along the path. Label chips sit beside pins on the side with free space. Real build: use a licensed tile provider; seeded or cached OSM tiles are not allowed. Keep the "Basemap placeholder" tag until then.
-- **Sample data tag:** dashed-border "Sample data" tag in the header whenever data is not live.
+- **Sample data tag:** dashed-border "Sample data" tag in the header whenever data is not live. Hidden in the app since 2026-11-14 (human request).
