@@ -107,6 +107,7 @@ const en = {
   "map.legend": "Map key",
   "map.reports": "Reports: {n}",
   "map.listTitle": "Water points on the map",
+  "map.publicTitle": "Water points",
   "map.zoomIn": "Zoom in",
   "map.zoomOut": "Zoom out",
 

@@ -33,6 +33,8 @@ export interface MapPin {
   complaintId: string | null;
   /** Null in the public view. */
   locationText: string | null;
+  /** A label for the water point (its type), shown as the first line. Null for authenticated pins, which show the location text. */
+  title: PlainKey | null;
 }
 
 const RED_PROBLEMS = new Set(["no_water", "broken"]);
@@ -90,6 +92,7 @@ export function buildPins(waterPoints: WaterPoint[], complaints: Complaint[], vi
       reportCount: complaint?.reportCount ?? 0,
       complaintId: view === "authenticated" ? (complaint?.id ?? null) : null,
       locationText: view === "authenticated" ? wp.locationText : null,
+      title: null,
     });
   }
   return pins;
