@@ -195,7 +195,7 @@ active: those live only in `users`.
 - **Link:** `users.auth_subject` = `auth_user.id` (text, unique in D1, no FK). Lookups check the id is a non-empty string, ask for two rows and accept exactly one, and join `regions` (same organization, `archived_at` null) and `organizations` (`archived_at` null). `users.email` and `auth_user.email` are both set by the seed; nothing else changes either.
 
 ### Water points (Built in D1; changes in 4.1)
-- `water_points`: `id`, `organization_id`, `region_id`, `location_text`, `water_point_type`, `verification_state`, `location_source`, optional `latitude`, `longitude` (numeric(9,6), range-checked), optional `merged_into_id`, `needs_review`, timestamps.
+- `water_points`: `id`, `organization_id`, `region_id`, `location_text`, `water_point_type`, `verification_state`, `location_source`, optional `latitude`, `longitude` (numeric(9,6), range-checked), optional `merged_into_id`, `needs_review`, optional `location_key` (Built, migration 0003; text, null until D4 writes it; indexed with organization and region), timestamps. A unique constraint on (`organization_id`, `region_id`, `id`) is the target of `report_candidates`' scoped foreign key.
 - Types: `well`, `hand_pump`, `tap`, `borehole`, `other`, `unknown`.
 - Verification states: `unverified`, `verified`, `merged`, `archived`.
 - Location sources: `landmark_only`, `map_pin`, `gps`, `geocoded`.
@@ -203,8 +203,10 @@ active: those live only in `users`.
 - A merged point keeps its id and `merged_into_id` points to the survivor; reads follow the pointer.
 
 ### Reports and complaints (Built in D1; changes in 4.1)
-- `reports`: one caller submission. Stores no caller name or phone number. `organization_id`, `region_id`, optional `complaint_id` and `water_point_id` (both null while unattached), `channel`, the extracted fields, `transcript` (always null in P0), `needs_review`, `received_at`.
-- `complaints`: the current issue for a water point: `status`, `priority_score`, `priority_reason`, `report_count`, `needs_review`, optional `passed_on_partner_id` and `passed_on_note`, `fixed_at`.
+- `reports`: one caller submission. Stores no caller name or phone number. `organization_id`, `region_id`, optional `complaint_id` and `water_point_id` (both null while unattached), `channel`, the extracted fields, `transcript` (always null in P0), `needs_review`, `needs_review_reason` (enum of the seven codes in 5.2, null; a check refuses `needs_review` true with no reason), `provider_call_ref` (text, null; unique per organization where not null), `ended_reason` (text, null; a check allows only `customer-ended-call`, `assistant-said-end-call-phrase`, `other`), `received_at` (the three new columns are Built, migration 0003). A unique constraint on (`organization_id`, `region_id`, `id`) is the target of `report_candidates`' scoped foreign key.
+- `complaints`: the current issue for a water point: `status`, `priority_score`, `priority_reason`, `report_count`, `needs_review`, the most severe values over its reports `problem` (default `unknown`, not null), `people_affected` (null), `serves_school_or_clinic` (null), `duration` (default `unknown`, not null) (Built, migration 0003; written by D5, rules in 5.5), optional `passed_on_partner_id` and `passed_on_note`, `fixed_at`.
+- `report_candidates` (Built, migration 0003): water points that fit an ambiguous report. `id`, `organization_id`, `region_id`, `report_id`, `water_point_id`, timestamps. Composite foreign keys (`organization_id`, `region_id`, `report_id`) to `reports` and (`organization_id`, `region_id`, `water_point_id`) to `water_points`, so a pair across organizations or regions is refused; unique (`report_id`, `water_point_id`). Not history: a row is removed only when its report is attached, and a merge repoints rows to the survivor (behaviour is D4; the table allows both).
+- At most one complaint per `water_point_id` with `status` `open` or `passed_on` (partial unique index `complaints_one_active_per_water_point_idx`). Fixed complaints may repeat.
 - Channels: `phone`, `web`, `other`. Problems: `no_water`, `broken`, `dirty`, `slow`, `other`, `unknown`. Durations: `today`, `few_days`, `week_or_more`, `unknown`. Complaint statuses: `open`, `passed_on`, `fixed`.
 - Stored values for missing data: the four NOT NULL columns (`location_text`, `water_point_type`, `problem`, `duration`) store the text or enum value `unknown`. No NOT NULL column becomes nullable. `people_affected`, `serves_school_or_clinic`, `caller_confirmed`, `summary`, `language_spoken` are null when unknown.
 
@@ -217,22 +219,29 @@ active: those live only in `users`.
 Caller identity, raw Vapi payloads, API keys and passwords are not stored in
 these tables (staff password hashes live only in `auth_account`).
 
-### 4.1 Schema changes still needed (listed here, not made in S6)
-One migration per task, one task at a time (shared file).
+### 4.1 Schema changes (items 1 to 3, 5 to 8 and 11 Built in migration 0003, task D3-schema)
+One migration per task, one task at a time (shared file). Items 4, 9 and 10 are not in this migration.
 
 | # | Change | Task |
 |---|---|---|
-| 1 | `reports.provider_call_ref` text, null; partial unique index on (`organization_id`, `provider_call_ref`) where not null | D3 |
-| 2 | `reports.needs_review_reason` enum (list in 5.2), null; check: not null whenever `needs_review` is true | D3 |
-| 3 | `reports.ended_reason` text, null; check: `customer-ended-call`, `assistant-said-end-call-phrase`, or `other` | D3 |
+| 1 | `reports.provider_call_ref` text, null; partial unique index on (`organization_id`, `provider_call_ref`) where not null | D3 — **Built (0003)** |
+| 2 | `reports.needs_review_reason` enum (list in 5.2), null; check: not null whenever `needs_review` is true | D3 — **Built (0003)** |
+| 3 | `reports.ended_reason` text, null; check: `customer-ended-call`, `assistant-said-end-call-phrase`, or `other` | D3 — **Built (0003)** |
 | 4 | Seed creates one `configuration` row `intake.phone` and the default config keys (section 8) | D3 (and D2 seed) |
-| 5 | `water_points.location_key` text, null, with an index on (`organization_id`, `region_id`, `location_key`) | D4 |
-| 6 | Candidates table `report_candidates` (`report_id`, `water_point_id`, `organization_id`, `region_id`, composite scoped foreign keys, unique pair) | D4 |
-| 7 | `complaints.problem`, `people_affected`, `serves_school_or_clinic`, `duration`: the most severe values over its reports | D5 |
-| 8 | Partial unique index: at most one complaint per `water_point_id` with `status` in (`open`, `passed_on`) | D5 |
+| 5 | `water_points.location_key` text, null, with an index on (`organization_id`, `region_id`, `location_key`) | D4 — **Built (0003)** |
+| 6 | Candidates table `report_candidates` (`report_id`, `water_point_id`, `organization_id`, `region_id`, composite scoped foreign keys, unique pair) | D4 — **Built (0003)** |
+| 7 | `complaints.problem`, `people_affected`, `serves_school_or_clinic`, `duration`: the most severe values over its reports | D5 — **Built (0003)** |
+| 8 | Partial unique index: at most one complaint per `water_point_id` with `status` in (`open`, `passed_on`) | D5 — **Built (0003)** |
 | 9 | `complaints.needs_review_reason` is not stored: derived from its flagged reports (5.2) | D6 |
 | 10 | `history_events.event_type` allowed list (5.9) enforced by a check constraint | D6 |
-| 11 | A `report_candidates` row is removed (not history) only when its report is attached; a merge repoints candidates to the survivor | D4 |
+| 11 | A `report_candidates` row is removed (not history) only when its report is attached; a merge repoints candidates to the survivor | D4 — **Built (0003: the table allows removal and repointing; the behaviour is D4)** |
+
+**Backfill rules in migration 0003** (legacy rows; fresh databases have none):
+- Item 8 guard: the migration stops with an error, changing nothing, if any water point already has two active complaints.
+- Item 2: a report with `needs_review` true and no reason gets `not_confirmed` if attached and `caller_confirmed` is not true; `invalid_fields` if attached otherwise; `unusable_location` if unattached with location `unknown`; `processing_error` (least specific) for any other unattached report. Contracts give no rule: **unknown**, humans may change it.
+- Item 5: `location_key` stays null for existing points. The normalizer is D4's; D4 backfills with it. Matching never matches a null key.
+- Item 7: `problem`, `people_affected`, `serves_school_or_clinic`, `duration` are computed from each complaint's attached reports by the 5.5 rules. A complaint with no reports keeps `unknown`/null. Contracts do not say whether the two enum columns may be null: **unknown**; built NOT NULL default `unknown`, like `reports`.
+- Item 4 (seed rows `intake.phone` and the default config keys) is **not** in this migration: it needs the defaults module, which is D3a's. The demo seed (`npm run db:seed:demo`) now sets a reason on its flagged reports, two `report_candidates` for the ambiguous one, and the complaint facts.
 
 Also needed outside the schema: `lib/domain/types.ts`, `lib/data/complaints.ts`,
 `lib/domain/mock.ts`, strings and `docs/ux-screen-notes.md` follow the names in

@@ -4,8 +4,9 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { serverEnv } from "@/lib/config/env";
 import { getDb } from "@/lib/db";
-import { complaints, configuration, historyEvents, notes, organizations, partners, regions, reports, users, waterPoints } from "@/lib/db/schema";
+import { complaints, configuration, historyEvents, notes, organizations, partners, regions, reportCandidates, reports, users, waterPoints } from "@/lib/db/schema";
 import { SEED_ACCOUNTS, SEED_ORGANIZATION, SEED_REGION } from "./data";
+import { deriveComplaintFacts } from "@/lib/data/derive";
 import { assertDevelopmentDatabase, type GuardOptions } from "./guard";
 import { DEMO_COMPLAINTS, DEMO_NOTES, DEMO_PARTNERS, DEMO_POINTS, DEMO_REPORTS } from "./demo-data";
 
@@ -134,10 +135,15 @@ export async function runDemoSeed(now: Date = new Date(), options: Pick<GuardOpt
     for (const c of DEMO_COMPLAINTS) {
       const theirReports = DEMO_REPORTS.filter((r) => r.complaint === c.key);
       const lastTouchHours = Math.min(...theirReports.map((r) => r.hoursAgo), c.fixedHoursAgo ?? Infinity, c.passedOnNote ? 24 : Infinity, c.createdHoursAgo);
+      const facts = deriveComplaintFacts(theirReports.map((r) => ({ problem: r.problem, duration: r.duration, peopleAffected: r.people, servesSchoolOrClinic: r.school })));
       const [row] = await tx
         .insert(complaints)
         .values({
           ...scope,
+          problem: facts.problem,
+          peopleAffected: facts.peopleAffected === "unknown" ? null : facts.peopleAffected,
+          servesSchoolOrClinic: facts.servesSchoolOrClinic === "unknown" ? null : facts.servesSchoolOrClinic,
+          duration: facts.duration,
           waterPointId: pointIds.get(c.point)!,
           status: c.status,
           priorityScore: c.score,
@@ -156,7 +162,8 @@ export async function runDemoSeed(now: Date = new Date(), options: Pick<GuardOpt
 
     // Reports, including unmatched ones (needs review). Never dropped.
     for (const r of DEMO_REPORTS) {
-      await tx.insert(reports).values({
+      if (r.needsReview && !r.reason) throw new DemoSeedError(`Demo report ${r.key} needs review but has no reason.`);
+      const [reportRow] = await tx.insert(reports).values({
         ...scope,
         complaintId: r.complaint ? complaintIds.get(r.complaint) : null,
         waterPointId: r.point ? pointIds.get(r.point) : null,
@@ -172,10 +179,14 @@ export async function runDemoSeed(now: Date = new Date(), options: Pick<GuardOpt
         languageSpoken: "English",
         transcript: r.transcript,
         needsReview: r.needsReview ?? false,
+        needsReviewReason: r.reason ?? null,
         receivedAt: ago(r.hoursAgo),
         createdAt: ago(r.hoursAgo),
         updatedAt: ago(r.hoursAgo),
-      });
+      }).returning({ id: reports.id });
+      for (const key of r.candidates ?? []) {
+        await tx.insert(reportCandidates).values({ ...scope, reportId: reportRow.id, waterPointId: pointIds.get(key)! });
+      }
     }
 
     for (const n of DEMO_NOTES) {
