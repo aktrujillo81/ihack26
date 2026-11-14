@@ -29,6 +29,27 @@
       "when": 1794669674239,
       "tag": "0003_ancient_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794689647313,
+      "tag": "0004_right_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794692097006,
+      "tag": "0005_silky_doctor_faustus",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794693533589,
+      "tag": "0006_faithful_ares",
+      "breakpoints": true
     }
   ]
 }

@@ -21,7 +21,8 @@ const timestamps = {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 };
 
-export const userRole = pgEnum("user_role", ["org_admin", "responder", "viewer"]);
+export const userRole = pgEnum("user_role", ["org_admin", "responder", "viewer", "technician"]);
+export const technicianTicketStatus = pgEnum("technician_ticket_status", ["open", "in_progress", "completed"]);
 export const waterPointType = pgEnum("water_point_type", ["well", "hand_pump", "tap", "borehole", "other", "unknown"]);
 export const problemType = pgEnum("problem_type", ["no_water", "broken", "dirty", "slow", "other", "unknown"]);
 export const reportChannel = pgEnum("report_channel", ["phone", "web", "other"]);
@@ -144,6 +145,7 @@ export const complaints = pgTable("complaints", {
   fixedAt: timestamp("fixed_at", { withTimezone: true }),
   ...timestamps,
 }, (table) => [
+  unique("complaints_scope_id_unique").on(table.organizationId, table.regionId, table.id),
   foreignKey({
     columns: [table.organizationId, table.regionId],
     foreignColumns: [regions.organizationId, regions.id],
@@ -278,6 +280,30 @@ export const configuration = pgTable("configuration", {
   uniqueIndex("configuration_scope_key_idx").on(table.organizationId, table.regionId, table.key),
 ]);
 
+/** Field-maintenance records. A technician may create and read only their own tickets. */
+export const technicianTickets = pgTable("technician_tickets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  regionId: uuid("region_id").notNull().references(() => regions.id),
+  waterPointId: uuid("water_point_id").notNull().references(() => waterPoints.id),
+  complaintId: uuid("complaint_id").references(() => complaints.id),
+  technicianUserId: uuid("technician_user_id").notNull().references(() => users.id),
+  status: technicianTicketStatus("status").default("open").notNull(),
+  locationText: text("location_text").notNull(),
+  latitude: numeric("latitude", { precision: 9, scale: 6 }).notNull(),
+  longitude: numeric("longitude", { precision: 9, scale: 6 }).notNull(),
+  issueSummary: text("issue_summary").notNull(),
+  notes: text("notes"),
+  ...timestamps,
+}, (table) => [
+  foreignKey({ columns: [table.organizationId, table.regionId], foreignColumns: [regions.organizationId, regions.id], name: "technician_tickets_organization_region_fk" }),
+  foreignKey({ columns: [table.organizationId, table.regionId, table.waterPointId], foreignColumns: [waterPoints.organizationId, waterPoints.regionId, waterPoints.id], name: "technician_tickets_water_point_scope_fk" }),
+  foreignKey({ columns: [table.organizationId, table.regionId, table.complaintId], foreignColumns: [complaints.organizationId, complaints.regionId, complaints.id], name: "technician_tickets_complaint_scope_fk" }),
+  index("technician_tickets_technician_scope_idx").on(table.technicianUserId, table.organizationId, table.regionId),
+  check("technician_tickets_latitude_range", sql`${table.latitude} >= -90 and ${table.latitude} <= 90`),
+  check("technician_tickets_longitude_range", sql`${table.longitude} >= -180 and ${table.longitude} <= 180`),
+]);
+
 // ---------------------------------------------------------------------------
 // Better Auth core tables (task A1). Login identity only: email, password hash
 // and sessions for STAFF. Never callers (red line 3).
@@ -380,3 +406,4 @@ export type ReportCandidate = typeof reportCandidates.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type HistoryEvent = typeof historyEvents.$inferSelect;
 export type Configuration = typeof configuration.$inferSelect;
+export type TechnicianTicket = typeof technicianTickets.$inferSelect;

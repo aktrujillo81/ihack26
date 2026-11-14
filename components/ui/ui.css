@@ -204,6 +204,25 @@
   gap: var(--ww-space-3);
 }
 
+@media (max-width: 640px) {
+  .ww-page-header {
+    gap: var(--ww-space-3);
+    margin-bottom: var(--ww-space-5);
+  }
+
+  .ww-page-header-aside {
+    width: 100%;
+  }
+
+  .ww-page-header-aside > * {
+    max-width: 100%;
+  }
+
+  .ww-btn {
+    min-width: var(--ww-target-min);
+  }
+}
+
 /* Flags (Needs review, Unverified): neutral outlined tag with a word, never color. */
 .ww-tag {
   display: inline-flex;

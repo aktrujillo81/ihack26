@@ -20,4 +20,6 @@ export const SEED_ACCOUNTS: readonly SeedAccount[] = [
   { email: "admin@example.org", name: "Demo Org Admin", role: "org_admin", passwordEnv: "SEED_ADMIN_PASSWORD" },
   { email: "responder@example.org", name: "Demo Responder", role: "responder", passwordEnv: "SEED_RESPONDER_PASSWORD" },
   { email: "viewer@example.org", name: "Demo Viewer", role: "viewer", passwordEnv: "SEED_VIEWER_PASSWORD" },
+  // Separate least-privilege account; it intentionally reuses the local responder demo password.
+  { email: "technician@example.org", name: "Demo Technician", role: "technician", passwordEnv: "SEED_RESPONDER_PASSWORD" },
 ];

@@ -837,6 +837,26 @@ numbers or emails (tests scan the data and the stored rows). No credentials.
 
 ---
 
+### 7.1 Technician tickets
+
+Technician tickets are staff maintenance records linked to an in-scope complaint
+and water point. A technician may read the complaint detail and create a ticket;
+the server checks the technician's organization and region before every write.
+
+Creating a ticket is one transaction that locks and validates the complaint and
+water point, inserts `technician_tickets` with the technician's location,
+coordinates, issue summary, and optional notes, updates only the water point's
+location text, coordinates, and `location_source = map_pin`, and appends a
+`technician_ticket_added` history event containing the ticket id. It does not
+change complaint status or overwrite facts derived from phone reports.
+
+Ticket free text is capped at 500 characters for location, 1000 for the issue
+summary, and 4000 for notes. Caller names and phone numbers must not be entered
+or stored. The complaint link has a composite organization / region foreign key
+so cross-scope links are refused by the database. The technician role has
+`view` and `technician_ticket` only; it cannot change status, add ordinary notes,
+pass on, or edit complaints.
+
 ## 8. Configuration
 
 Settings live in `configuration` rows (per organization and region), read by

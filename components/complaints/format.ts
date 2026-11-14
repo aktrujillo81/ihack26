@@ -54,6 +54,8 @@ export function historyText(event: HistoryEvent): string {
       return t("history.reopened");
     case "note_added":
       return t("history.noteAdded");
+    case "technician_ticket_added":
+      return t("history.technicianTicketAdded");
     default:
       return t("history.other");
   }

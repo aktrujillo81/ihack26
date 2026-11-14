@@ -145,9 +145,8 @@ describe("schema D3/D4/D5 constraints", () => {
 /** Applies migrations before the last to a scratch database, inserts legacy rows, then runs the last one's statements. */
 describe("migration 0003 on legacy data", () => {
   const migrationsDir = path.resolve("db/migrations");
-  const journal = JSON.parse(readFileSync(path.join(migrationsDir, "meta/_journal.json"), "utf8")) as { entries: { tag: string }[] };
-  const last = journal.entries[journal.entries.length - 1].tag;
-  const statements = readFileSync(path.join(migrationsDir, `${last}.sql`), "utf8").split("--> statement-breakpoint");
+  const legacyMigration = "0003_ancient_namorita";
+  const statements = readFileSync(path.join(migrationsDir, `${legacyMigration}.sql`), "utf8").split("--> statement-breakpoint");
 
   async function scratch(name: string) {
     const url = new URL(inject("testDatabaseUrl"));
@@ -161,7 +160,8 @@ describe("migration 0003 on legacy data", () => {
     const dir = mkdtempSync(path.join(tmpdir(), "mig-"));
     cpSync(migrationsDir, dir, { recursive: true });
     const j = JSON.parse(readFileSync(path.join(dir, "meta/_journal.json"), "utf8"));
-    j.entries = j.entries.slice(0, -1);
+    const legacyIndex = j.entries.findIndex((entry: { tag: string }) => entry.tag === legacyMigration);
+    j.entries = j.entries.slice(0, legacyIndex);
     writeFileSync(path.join(dir, "meta/_journal.json"), JSON.stringify(j));
     const conn = postgres(url.toString(), { max: 1, onnotice: () => {} });
     await migrate(drizzle(conn), { migrationsFolder: dir });
