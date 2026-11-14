@@ -1,10 +1,10 @@
 import "server-only";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { MAX_NOTE_LENGTH, MAX_PASSED_ON_TO_LENGTH } from "@/lib/config/limits";
 import { getDb } from "@/lib/db";
-import { complaints, historyEvents, notes, users } from "@/lib/db/schema";
+import { complaints, historyEvents, notes, partners, users, waterPoints } from "@/lib/db/schema";
 import type { ComplaintStatus } from "@/lib/domain/types";
 
 import { ALLOWED_TRANSITIONS } from "../actions/transitions";
@@ -108,6 +108,10 @@ async function actorIsActiveStaff(tx: Tx, ctx: DataContext, actorUserId: string)
 }
 
 const clockNow = sql`clock_timestamp()`;
+const locationKey = (value: string): string | null => {
+  const key = value.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return key === "unknown" || key.length === 0 ? null : key;
+};
 
 export interface ChangeStatusInput {
   /** From the validated session. */
@@ -120,6 +124,7 @@ export interface ChangeStatusInput {
   to: ComplaintStatus;
   /** Required when passing on: who it was passed to (free text until the partner directory is used). */
   passedOnNote?: string;
+  partnerId?: string;
 }
 
 /**
@@ -143,12 +148,18 @@ export async function applyStatusChange(input: ChangeStatusInput): Promise<Write
       if (!ALLOWED_TRANSITIONS[row.status].includes(to)) return { status: "invalid" };
 
       const reopening = row.status === "fixed" && to === "open";
+      let partner: { id: string } | undefined;
+      if (input.partnerId !== undefined) {
+        if (!isUuid(input.partnerId)) return { status: "not_found" };
+        [partner] = await tx.select({ id: partners.id }).from(partners).where(and(eq(partners.id, input.partnerId), scopeFilter(partners, ctx), eq(partners.active, true))).limit(1);
+        if (!partner) return { status: "not_found" };
+      }
       const changes =
         to === "passed_on"
-          ? { status: to, passedOnNote: note, passedOnPartnerId: null, fixedAt: null }
+          ? { status: to, passedOnNote: note, passedOnPartnerId: partner?.id ?? null, assignedPartnerId: partner?.id ?? null, assignedAt: partner ? clockNow : null, fixedAt: null }
           : to === "fixed"
             ? { status: to, fixedAt: clockNow }
-            : { status: to, fixedAt: null, passedOnNote: null, passedOnPartnerId: null };
+            : { status: to, fixedAt: null, passedOnNote: null, passedOnPartnerId: null, ...(to === "open" ? { assignedPartnerId: null, assignedAt: null } : {}) };
 
       const [updated] = await tx
         .update(complaints)
@@ -169,6 +180,9 @@ export async function applyStatusChange(input: ChangeStatusInput): Promise<Write
         afterData: { status: to },
         createdAt: clockNow,
       });
+      if (to === "passed_on" && partner) {
+        await tx.insert(historyEvents).values({ organizationId: row.organizationId, regionId: row.regionId, complaintId: row.id, actorUserId, eventType: "provider_assigned", afterData: { assigned: true }, createdAt: clockNow });
+      }
       return { status: "saved", version: updated.version };
     });
   } catch {
@@ -218,4 +232,54 @@ export async function addNote(input: AddNoteInput): Promise<WriteResult> {
     console.error("[data] write_failed");
     return { status: "error" };
   }
+}
+
+export interface EditNoteInput { ctx: DataContext; actorUserId: string; complaintId: string; noteId: string; text: string }
+export async function editNote(input: EditNoteInput): Promise<WriteResult> {
+  const text = typeof input.text === "string" ? input.text.trim() : "";
+  if (!isUuid(input.complaintId) || !isUuid(input.noteId) || !isUuid(input.actorUserId) || !isUsableContext(input.ctx) || text.length === 0 || text.length > MAX_NOTE_LENGTH) return { status: "invalid" };
+  try { return await getDb().transaction(async (tx): Promise<WriteResult> => {
+    const complaint = await lockComplaint(tx, input.ctx, input.complaintId, "share");
+    if (!complaint) return { status: "not_found" };
+    if (!(await actorIsActiveStaff(tx, input.ctx, input.actorUserId))) return { status: "denied" };
+    const [old] = await tx.select().from(notes).where(and(eq(notes.id, input.noteId), eq(notes.complaintId, complaint.id), scopeFilter(notes, input.ctx), isNull(notes.archivedAt))).for("update").limit(1);
+    if (!old) return { status: "not_found" };
+    await tx.update(notes).set({ archivedAt: clockNow, updatedAt: clockNow }).where(eq(notes.id, old.id));
+    const [replacement] = await tx.insert(notes).values({ organizationId: complaint.organizationId, regionId: complaint.regionId, complaintId: complaint.id, authorUserId: input.actorUserId, body: text }).returning({ id: notes.id });
+    await tx.insert(historyEvents).values({ organizationId: complaint.organizationId, regionId: complaint.regionId, complaintId: complaint.id, actorUserId: input.actorUserId, eventType: "note_edited", beforeData: { noteId: old.id }, afterData: { noteId: replacement.id }, createdAt: clockNow });
+    return { status: "saved", version: complaint.version };
+  }); } catch { console.error("[data] write_failed"); return { status: "error" }; }
+}
+
+export interface ArchiveNoteInput { ctx: DataContext; actorUserId: string; complaintId: string; noteId: string }
+export async function archiveNote(input: ArchiveNoteInput): Promise<WriteResult> {
+  if (!isUuid(input.complaintId) || !isUuid(input.noteId) || !isUuid(input.actorUserId) || !isUsableContext(input.ctx)) return { status: "invalid" };
+  try { return await getDb().transaction(async (tx): Promise<WriteResult> => {
+    const complaint = await lockComplaint(tx, input.ctx, input.complaintId, "share");
+    if (!complaint) return { status: "not_found" };
+    if (!(await actorIsActiveStaff(tx, input.ctx, input.actorUserId))) return { status: "denied" };
+    const [old] = await tx.select({ id: notes.id }).from(notes).where(and(eq(notes.id, input.noteId), eq(notes.complaintId, complaint.id), scopeFilter(notes, input.ctx), isNull(notes.archivedAt))).for("update").limit(1);
+    if (!old) return { status: "not_found" };
+    await tx.update(notes).set({ archivedAt: clockNow, updatedAt: clockNow }).where(eq(notes.id, old.id));
+    await tx.insert(historyEvents).values({ organizationId: complaint.organizationId, regionId: complaint.regionId, complaintId: complaint.id, actorUserId: input.actorUserId, eventType: "note_archived", beforeData: { noteId: old.id }, createdAt: clockNow });
+    return { status: "saved", version: complaint.version };
+  }); } catch { console.error("[data] write_failed"); return { status: "error" }; }
+}
+
+export interface UpdateLocationInput { ctx: DataContext; actorUserId: string; complaintId: string; expectedVersion: string; locationText: string; latitude: number | null; longitude: number | null; verify: boolean }
+export async function updateLocation(input: UpdateLocationInput): Promise<WriteResult> {
+  const { latitude, longitude } = input;
+  if (!isUsableContext(input.ctx) || !isUuid(input.complaintId) || !isUuid(input.actorUserId) || !VERSION.test(input.expectedVersion) || input.locationText.trim().length < 3 || input.locationText.length > 500 || (latitude === null) !== (longitude === null) || (latitude !== null && longitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || Number.isNaN(longitude) || longitude < -180 || longitude > 180))) return { status: "invalid" };
+  try { return await getDb().transaction(async (tx): Promise<WriteResult> => {
+    const complaint = await lockComplaint(tx, input.ctx, input.complaintId, "share");
+    if (!complaint) return { status: "not_found" };
+    if (!(await actorIsActiveStaff(tx, input.ctx, input.actorUserId))) return { status: "denied" };
+    if (complaint.version !== input.expectedVersion) return { status: "conflict" };
+    const [point] = await tx.select().from(waterPoints).where(and(eq(waterPoints.id, (await tx.select({ waterPointId: complaints.waterPointId }).from(complaints).where(eq(complaints.id, complaint.id)).limit(1))[0]?.waterPointId ?? ""), scopeFilter(waterPoints, input.ctx))).for("update").limit(1);
+    if (!point) return { status: "not_found" };
+    await tx.update(waterPoints).set({ locationText: input.locationText.trim(), locationKey: locationKey(input.locationText.trim()), latitude: latitude?.toString() ?? null, longitude: longitude?.toString() ?? null, locationSource: latitude === null ? "landmark_only" : "map_pin", verificationState: input.verify ? "verified" : point.verificationState, updatedAt: clockNow }).where(eq(waterPoints.id, point.id));
+    await tx.update(complaints).set({ updatedAt: clockNow }).where(eq(complaints.id, complaint.id));
+    await tx.insert(historyEvents).values({ organizationId: complaint.organizationId, regionId: complaint.regionId, complaintId: complaint.id, waterPointId: point.id, actorUserId: input.actorUserId, eventType: input.verify ? "verified" : "location_edited", beforeData: { locationSource: point.locationSource, verificationState: point.verificationState }, afterData: { locationSource: latitude === null ? "landmark_only" : "map_pin", verificationState: input.verify ? "verified" : point.verificationState }, createdAt: clockNow });
+    return { status: "saved", version: input.expectedVersion };
+  }); } catch { console.error("[data] write_failed"); return { status: "error" }; }
 }

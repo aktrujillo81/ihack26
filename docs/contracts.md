@@ -891,6 +891,36 @@ read only through `lib/config/env.ts` (server-only).
 
 ---
 
+## 8.1 Approved NGO complaint workflow extension
+
+Approved by the human on 2026-11-14. Complaint statuses now include `open`,
+`accepted`, `denied`, `in_progress`, `passed_on`, `fixed` (legacy), and
+`completed`. The supported workflow is `open` -> `accepted` -> `in_progress`
+-> `completed`; `denied` remains in history and may be reopened to `open`.
+`passed_on` records a human-confirmed handoff and does not contact or
+auto-dispatch a provider. `fixed` remains readable for legacy data and can move
+to `completed`.
+
+Responders and Org Admins may change status, edit/verify the linked water point,
+assign an active in-scope partner as the repair provider, and edit/archive
+notes. Viewers are read-only. Provider assignment uses
+`complaints.assigned_partner_id` and `assigned_at`, is scoped to the complaint's
+organization and region, and records `provider_assigned` history; provider
+contact details are never returned.
+
+Location changes update only `water_points.location_text`, coordinates,
+`location_source`, and verification state. Coordinates must be both present or
+both absent and within latitude/longitude bounds. The original report is never
+rewritten. Location edits and verification append `location_edited` or
+`verified` history with codes only.
+
+Notes have nullable `archived_at`. “Delete note” means archive: active reads
+exclude archived notes, while `note_archived` history preserves the event.
+Editing archives the old note, inserts the replacement, and records
+`note_edited`; note text is never copied to history or logs.
+
+Migration: `db/migrations/0004_complaint_workflow.sql`.
+
 ## 9. Unknowns and open questions
 
 | # | What is unknown | Owner | How to answer |

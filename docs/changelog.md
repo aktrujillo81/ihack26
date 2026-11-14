@@ -45,6 +45,10 @@ This file was created on 2026-11-14 during S6. Rows up to PR #32 were filled in 
 | 9:19 AM | #45 | D3b prep | Schema-independent helpers only: provisional validated-report input type, text caps, alias map, runtime fake-report builders and 38 tests. The real save is not included and D3b remains open. | not recorded here |
 | 9:27 AM | #47 | W1, W2, W3, W4 prep | Dashboard app shell, navigation, page header, sign-out wiring and related UI/test updates | not recorded here |
 | (this branch) | D3a | Backend | Replaced the temporary capture endpoint with the authenticated Vapi webhook, closed normalizer hand-off, HMAC call reference, intake defaults, and failing D3b storage stub | Backend, Security, Phone / AI Prompter, UX, Frontend |
+| 2026-11-14 | NGO workflow | Complaint operations | Added approved review/operations statuses, scoped provider assignment, audited water-point location verification/editing, and recoverable note edit/archive | Orchestrator, Backend, Frontend, Security, UX, Phone / AI Prompter |
+| 2026-11-14 | NGO workflow | Location picker | Added an interactive Leaflet map to the complaint location editor; clicks and marker dragging populate coordinates before explicit save | Orchestrator, Frontend, UX |
+| 2026-11-14 | NGO workflow | Location picker | Centered the empty location picker on the configured demo region coordinates | Orchestrator |
+| 2026-11-14 | NGO workflow | Dashboard map | Set the shared dashboard map’s initial view to the configured demo region center | Orchestrator |
 | (this branch) | P1 follow-up | Technician complaint tickets | Technicians can add a scoped field ticket from complaint detail; the ticket links to the complaint, updates the water-point pin/location, and records a history event | Backend, Frontend, Security / Data Handling, Phone / AI Prompter, UX |
 | (this branch) | UI responsive pass | Responsive layouts | Made the shell, navigation, headers, complaint list/detail, technician workspace, maps, and sign-in layout adapt across phone, tablet, and desktop widths | Frontend, UX |
 

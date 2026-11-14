@@ -13,6 +13,8 @@ import { CopySummaryButton } from "./CopySummaryButton";
 import "./detail.css";
 import { actorText, durationText, historyText, peopleText, problemText, schoolClinicText, timeText, typeText } from "./format";
 import { NoteForm } from "./NoteForm";
+import { NoteActions } from "./NoteActions";
+import { LocationEditor } from "./LocationEditor";
 import { TechnicianTicketForm } from "./TechnicianTicketForm";
 import { StateMessage } from "./StateMessage";
 import { StatusControls } from "./StatusControls";
@@ -55,11 +57,14 @@ export function ComplaintDetailView({
   if (result.status !== "ok") {
     return <StateMessage state={result} emptyKey="detail.notFoundOrDenied" retryHref={retryHref} />;
   }
-  const { complaint, waterPoint, reports, notes, history, passedOnTo, technicianTickets } = result.data;
+  const { complaint, waterPoint, reports, notes, history, passedOnTo, partners = [], technicianTickets } = result.data;
   const unverified = waterPoint?.verificationState === "unverified";
   const canChange = can(role, "change_status");
   const canPassOn = can(role, "pass_on");
   const canNote = can(role, "add_note");
+  const canEditNote = can(role, "edit_note");
+  const canArchiveNote = can(role, "archive_note");
+  const canEditLocation = can(role, "edit_location");
   const canAddTicket = can(role, "technician_ticket");
   const technicianView = role === "technician";
   const typeName = waterPoint ? typeText(waterPoint.type) : t("common.unknown");
@@ -83,7 +88,7 @@ export function ComplaintDetailView({
         <div className="ww-detail-actions">
           <CopySummaryButton text={summary} />
           {(canChange || canPassOn) && (
-            <StatusControls complaintId={complaint.id} status={complaint.status} version={complaint.version} canPassOn={canPassOn} canChange={canChange} />
+            <StatusControls complaintId={complaint.id} status={complaint.status} version={complaint.version} canPassOn={canPassOn} canChange={canChange} partners={partners} />
           )}
         </div>
       </header>
@@ -222,6 +227,7 @@ export function ComplaintDetailView({
             ) : (
               <p className="ww-card-note-text">{t("common.needsLocation")}</p>
             )}
+            {canEditLocation && waterPoint && <LocationEditor complaintId={complaint.id} version={complaint.version} waterPoint={waterPoint} />}
           </Panel>
 
           <Panel as="section" aria-label={t("detail.copyableTitle")}>
@@ -247,6 +253,7 @@ export function ComplaintDetailView({
                     <div className="ww-note-meta">
                       {t("detail.pair", { first: note.author ?? t("common.unknown"), second: timeText(note.createdAt) })}
                     </div>
+                    {(canEditNote || canArchiveNote) && <NoteActions complaintId={complaint.id} note={note} />}
                   </li>
                 ))}
               </ul>

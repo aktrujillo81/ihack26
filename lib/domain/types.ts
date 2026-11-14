@@ -23,7 +23,7 @@ export type PeopleAffected = number | Unknown;
 export type ServesSchoolOrClinic = boolean | Unknown;
 
 /** Spec section 7: stored complaint status. `needs_review` is a separate flag. */
-export const COMPLAINT_STATUSES = ["open", "passed_on", "fixed"] as const;
+export const COMPLAINT_STATUSES = ["open", "accepted", "denied", "in_progress", "passed_on", "fixed", "completed"] as const;
 export type ComplaintStatus = (typeof COMPLAINT_STATUSES)[number];
 
 /** WP-2 */
@@ -122,6 +122,8 @@ export interface Complaint extends Scoped {
   passedOnPartnerId: string | null;
   /** Free text of who it was passed to (D1: `passed_on_note`), until the partner directory is used. */
   passedOnNote: string | null;
+  assignedPartnerId?: string | null;
+  assignedAt?: string | null;
   /**
    * An opaque token for the row's current version (D1: `updated_at`, kept to the
    * microsecond). A change must send it back; if the row changed since, the
@@ -140,6 +142,10 @@ export const HISTORY_EVENT_TYPES = [
   "passed_on",
   "reopened",
   "note_added",
+  "note_edited",
+  "note_archived",
+  "location_edited",
+  "provider_assigned",
   "edited",
   "pin_moved",
   "verified",
@@ -170,6 +176,7 @@ export interface Note extends Scoped {
   author: string | null;
   text: string;
   createdAt: string;
+  archivedAt?: string | null;
 }
 
 export interface TechnicianTicket extends Scoped {

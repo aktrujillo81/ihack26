@@ -2,7 +2,7 @@ import { t } from "@/lib/i18n/strings";
 
 import "./ui.css";
 
-const KNOWN = ["open", "passed_on", "fixed"] as const;
+const KNOWN = ["open", "accepted", "denied", "in_progress", "passed_on", "fixed", "completed"] as const;
 export type KnownStatus = (typeof KNOWN)[number];
 
 const isKnown = (value: unknown): value is KnownStatus => typeof value === "string" && (KNOWN as readonly string[]).includes(value);
@@ -14,6 +14,8 @@ export function StatusShape({ kind }: { kind: KnownStatus | "unknown" }) {
       {kind === "open" && <circle className="ww-chip-shape" cx="6" cy="6" r="5" />}
       {kind === "passed_on" && <polygon className="ww-chip-shape" points="6,1 11.5,11 0.5,11" />}
       {kind === "fixed" && <rect className="ww-chip-shape" x="1" y="1" width="10" height="10" />}
+      {(kind === "accepted" || kind === "in_progress" || kind === "completed") && <rect className="ww-chip-shape" x="1" y="1" width="10" height="10" rx="2" />}
+      {kind === "denied" && <path className="ww-chip-shape" d="M2 2l8 8M10 2l-8 8" />}
       {kind === "unknown" && <polygon className="ww-chip-shape" points="6,1 11,6 6,11 1,6" />}
     </svg>
   );

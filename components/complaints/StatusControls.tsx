@@ -8,13 +8,18 @@ import { INITIAL_ACTION_STATE, actionMessageKey, type ActionState } from "@/lib/
 import { nextStatuses } from "@/lib/actions/transitions";
 import { MAX_PASSED_ON_TO_LENGTH } from "@/lib/config/limits";
 import type { ComplaintStatus } from "@/lib/domain/types";
+import type { PartnerView } from "@/lib/data/complaints";
 import { t } from "@/lib/i18n/strings";
 
 import "./complaints.css";
 
 const BUTTON_TEXT = {
+  accepted: "detail.accept",
+  denied: "detail.deny",
+  in_progress: "detail.startWork",
   passed_on: "detail.passOn",
   fixed: "detail.markFixed",
+  completed: "detail.markCompleted",
   open: "detail.reopen",
 } as const;
 
@@ -37,6 +42,7 @@ export function StatusControls({
   version,
   canPassOn,
   canChange,
+  partners,
 }: {
   complaintId: string;
   status: ComplaintStatus;
@@ -44,6 +50,7 @@ export function StatusControls({
   version: string;
   canPassOn: boolean;
   canChange: boolean;
+  partners: PartnerView[];
 }) {
   const [target, setTarget] = useState<ComplaintStatus | null>(null);
   const [passedOnTo, setPassedOnTo] = useState("");
@@ -66,7 +73,7 @@ export function StatusControls({
     <div className="ww-status-controls">
       <div className="ww-controls">
         {options.map((option) => (
-          <Button key={option} variant={option === "fixed" ? "primary" : "secondary"} onClick={() => setTarget(option)} disabled={pending}>
+          <Button key={option} variant={option === "fixed" || option === "completed" || option === "accepted" ? "primary" : "secondary"} onClick={() => setTarget(option)} disabled={pending}>
             {t(BUTTON_TEXT[option])}
           </Button>
         ))}
@@ -92,6 +99,11 @@ export function StatusControls({
               />
               <p>{t("detail.passedOnHelp")}</p>
               <p>{t("detail.noteHelp")}</p>
+              <label htmlFor="partnerId">{t("detail.providerOrganization")}</label>
+              <select id="partnerId" name="partnerId" defaultValue="" disabled={pending}>
+                <option value="">{t("detail.noProvider")}</option>
+                {partners.map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}
+              </select>
             </>
           )}
           <div className="ww-controls">

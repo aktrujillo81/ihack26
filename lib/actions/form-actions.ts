@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "../auth/session";
 import { isUuid } from "../data/derive";
-import { addComplaintNote, changeComplaintStatus } from "./complaints";
+import { addComplaintNote, archiveComplaintNote, changeComplaintStatus, editComplaintNote, updateComplaintLocation } from "./complaints";
 import type { ActionState } from "./state";
 
 /**
@@ -27,10 +27,24 @@ export async function changeStatusAction(_previous: ActionState, formData: FormD
     complaintId: formData.get("complaintId"),
     status: formData.get("status"),
     passedOnTo: formData.get("passedOnTo"),
+    partnerId: formData.get("partnerId"),
     version: formData.get("version"),
   });
   if (state.status === "saved") refresh(formData.get("complaintId"));
   return state;
+}
+
+export async function editNoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const state = await editComplaintNote(await getCurrentSession(), { complaintId: formData.get("complaintId"), noteId: formData.get("noteId"), text: formData.get("text") });
+  if (state.status === "saved") refresh(formData.get("complaintId")); return state;
+}
+export async function archiveNoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const state = await archiveComplaintNote(await getCurrentSession(), { complaintId: formData.get("complaintId"), noteId: formData.get("noteId") });
+  if (state.status === "saved") refresh(formData.get("complaintId")); return state;
+}
+export async function updateLocationAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const state = await updateComplaintLocation(await getCurrentSession(), { complaintId: formData.get("complaintId"), version: formData.get("version"), locationText: formData.get("locationText"), latitude: formData.get("latitude"), longitude: formData.get("longitude"), verify: formData.get("verify") === "true" });
+  if (state.status === "saved") refresh(formData.get("complaintId")); return state;
 }
 
 export async function addNoteAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
