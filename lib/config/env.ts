@@ -14,4 +14,8 @@ export const serverEnv = {
   get databaseUrl() {
     return required("DATABASE_URL");
   },
+  /** Shared secret Vapi sends with each server request. Optional: when unset, Vapi routes refuse every request. */
+  get vapiWebhookSecret(): string | undefined {
+    return process.env.VAPI_WEBHOOK_SECRET || undefined;
+  },
 };
