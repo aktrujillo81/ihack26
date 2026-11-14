@@ -5,6 +5,7 @@
  * contracts section 1 is copied, and the raw call id never leaves the webhook.
  */
 import { INTAKE_TEXT_MAX_LENGTH } from "@/lib/config/intake";
+import { NUMBER_REMOVED_MARKER, scrubNumbers } from "./scrub";
 import {
   DURATIONS,
   ENDED_REASONS,
@@ -15,7 +16,8 @@ import {
   type ValidatedReport,
 } from "./types";
 
-export const NUMBER_REMOVED_MARKER = "[number removed]";
+// One number scrubber for every ingest boundary lives in ./scrub; re-exported so existing imports keep working.
+export { NUMBER_REMOVED_MARKER, scrubNumbers };
 export const STRUCTURED_OUTPUT_NAME = "water_point_report";
 
 /** Exact-match aliases applied to `water_point_type` only, after trimming and lowercasing (contracts 5.1). */
@@ -30,16 +32,6 @@ export type ReportScope = Pick<ValidatedReport, "organizationId" | "regionId">;
 export type NormalizedReport = Omit<ValidatedReport, "providerCallRef">;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-
-// Seven or more digits (any script), with spaces, newlines, non-breaking and zero-width spaces,
-// dots, hyphens, brackets between them, and an optional leading plus or bracket.
-const SEP = String.raw`[\s ​-‍⁠﻿.\-‐-―()\[\]]`;
-const NUMBER_RUN = new RegExp(String.raw`[+(\[]?\p{Nd}(?:${SEP}*\p{Nd}){6,}`, "gu");
-
-/** Replaces any run of 7 or more digits with the fixed marker. Short numbers (an age, a count) are kept. */
-export function scrubNumbers(text: string): string {
-  return text.replace(NUMBER_RUN, NUMBER_REMOVED_MARKER);
-}
 
 /** Scrub first, then trim, then cap (by characters). Never the other way round. */
 function cleanText(value: unknown, max: number): string {

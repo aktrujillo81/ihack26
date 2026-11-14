@@ -2,7 +2,6 @@ import { createHmac, randomBytes, randomUUID } from "node:crypto";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { saveReport as stubSaveReport } from "@/lib/ingest/save-report";
 import type { ValidatedReport } from "@/lib/ingest/types";
 import { createWebhookHandler, type LogCode, type WebhookDeps } from "@/lib/ingest/webhook";
 
@@ -346,16 +345,6 @@ describe("responses from the save function", () => {
     expect([...b.headers].sort()).toEqual([...a.headers].sort());
     expect(repeat.logs).toContain("repeat");
     expect(first.logs).toContain("stored");
-  });
-
-  it("the shipped stub never answers 200: it is 503 store_failed", async () => {
-    const logs: LogCode[] = [];
-    const handle = createWebhookHandler({ secret: SECRET, callRefKey: KEY, loadScope: async () => SCOPE, saveReport: stubSaveReport, log: (c) => logs.push(c) });
-    const res = await handle(post(payload()));
-    expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ ok: false });
-    expect(logs).toContain("store_failed");
-    expect(logs).not.toContain("stored");
   });
 
   it("a failure result is 503; a throw is 500; neither logs the error", async () => {

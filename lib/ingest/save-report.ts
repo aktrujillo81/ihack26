@@ -115,7 +115,11 @@ function cleanReport(report: ValidatedReport): ValidatedReport {
     summary: null,
     languageSpoken: text.languageSpoken === "" ? null : text.languageSpoken,
     needsReview: unusable || report.needsReview,
-    needsReviewReason: unusable ? "unusable_location" : report.needsReviewReason,
+    // Contracts 5.2 priority: a higher reason already set by D3a is never replaced.
+    needsReviewReason:
+      unusable && report.needsReviewReason !== "malformed_payload" && report.needsReviewReason !== "no_structured_data"
+        ? "unusable_location"
+        : report.needsReviewReason,
   };
 }
 
