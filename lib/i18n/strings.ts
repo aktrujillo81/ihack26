@@ -74,6 +74,11 @@ const en = {
   "signIn.invalid": "That email or password is not right.",
   "signIn.noRegion": "Your account is not set up for any region yet. Ask your organization's admin.",
   "signIn.expired": "Your session ended. Please sign in again.",
+  // PROPOSED (not in the original notes; added to docs/ux-screen-notes.md in the same PR):
+  "signIn.notConfigured": "Sign-in is not set up yet.",
+  "nav.complaints": "Complaints",
+  "nav.map": "Map",
+  "nav.signOut": "Sign out",
 
   // Complaint list
   "list.empty": "No complaints yet. When someone reports a problem, it will appear here.",
@@ -136,6 +141,9 @@ type Placeholders<S extends string> = S extends `${string}{${infer P}}${infer Re
 export type ParamsFor<K extends StringKey> = [Placeholders<(typeof en)[K]>] extends [never]
   ? undefined
   : Record<Placeholders<(typeof en)[K]>, string | number>;
+
+/** Keys whose text has no `{placeholder}`, so they can be chosen at runtime and passed to `t(key)`. */
+export type PlainKey = { [K in StringKey]: ParamsFor<K> extends undefined ? K : never }[StringKey];
 
 /** Every locale must define every key. */
 type Table = Record<StringKey, string>;
