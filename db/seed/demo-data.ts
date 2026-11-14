@@ -15,6 +15,7 @@
  *
  * Times are "hours before the seed ran", so the demo looks recent.
  */
+import type { Report } from "../../lib/db/schema";
 import type { Duration, LocationSource, Problem, VerificationState, WaterPointType } from "../../lib/domain/types";
 
 export interface DemoPoint {
@@ -47,6 +48,10 @@ export interface DemoReport {
   transcript: string;
   hoursAgo: number;
   needsReview?: boolean;
+  /** Required whenever needsReview is true (contracts 5.2). */
+  reason?: NonNullable<Report["needsReviewReason"]>;
+  /** Water point keys that fit an ambiguous report (stored as report_candidates). */
+  candidates?: readonly string[];
 }
 
 export interface DemoComplaint {
@@ -142,17 +147,17 @@ export const DEMO_REPORTS: readonly DemoReport[] = [
     summary: "The hand pump past the church in Stonebridge is broken.",
     transcript: talk("Assistant: Where is it?", "Caller: Stonebridge, past the church.", "Assistant: What is wrong?", "Caller: The pump is broken. I do not know how many people use it.", "Assistant: Is that right?", "Caller: Yes.") },
   // Needs review: the caller hung up early.
-  { key: "r10", point: "northgate", complaint: "c_northgate", type: "unknown", locationText: "Northgate, near the bus stop", problem: "unknown", people: null, school: null, duration: "today", hoursAgo: 3, needsReview: true,
+  { key: "r10", point: "northgate", complaint: "c_northgate", type: "unknown", locationText: "Northgate, near the bus stop", problem: "unknown", people: null, school: null, duration: "today", hoursAgo: 3, needsReview: true, reason: "not_confirmed",
     summary: "A water problem near the Northgate bus stop was reported but the call ended early.",
     transcript: talk("Assistant: Where is the water point?", "Caller: Northgate, near the bus stop.", "Caller: Sorry, I have to go.") },
   // Unmatched reports: stored and flagged, never dropped.
-  { key: "r11", point: null, complaint: null, type: "tap", locationText: "Southgate village near the school", problem: "broken", people: 30, school: true, duration: "few_days", hoursAgo: 2, needsReview: true,
+  { key: "r11", point: null, complaint: null, type: "tap", locationText: "Southgate village near the school", problem: "broken", people: 30, school: true, duration: "few_days", hoursAgo: 2, needsReview: true, reason: "ambiguous_match", candidates: ["southgate_west", "southgate_east"],
     summary: "A tap near the Southgate school is broken, but two taps match that description.",
     transcript: talk("Assistant: Where is the tap?", "Caller: Southgate village, near the school.", "Assistant: What is wrong?", "Caller: It is broken.") },
-  { key: "r12", point: null, complaint: null, type: "unknown", locationText: "unknown", problem: "no_water", people: null, school: null, duration: "unknown", hoursAgo: 1, needsReview: true,
+  { key: "r12", point: null, complaint: null, type: "unknown", locationText: "unknown", problem: "no_water", people: null, school: null, duration: "unknown", hoursAgo: 1, needsReview: true, reason: "unusable_location",
     summary: "Someone reported no water but could not describe the location.",
     transcript: talk("Assistant: Where is the water point?", "Caller: I am not sure. It is far from here.") },
-  { key: "r13", point: null, complaint: null, type: "unknown", locationText: "unknown", problem: "unknown", people: null, school: null, duration: "unknown", hoursAgo: 1, needsReview: true,
+  { key: "r13", point: null, complaint: null, type: "unknown", locationText: "unknown", problem: "unknown", people: null, school: null, duration: "unknown", hoursAgo: 1, needsReview: true, reason: "no_structured_data",
     summary: "The call was not about a water problem.",
     transcript: talk("Assistant: Where is the water point?", "Caller: I wanted to ask about something else.") },
 ];

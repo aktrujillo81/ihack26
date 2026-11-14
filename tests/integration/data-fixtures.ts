@@ -77,6 +77,8 @@ export async function buildWorld() {
   const wpArchived = await point(scopeA1, { verificationState: "archived", latitude: "-1.320000", longitude: "36.850000" });
   // Organization A, region 2 and organization B
   const wpA2 = await point(scopeA2, { waterPointType: "other", latitude: "-1.400000", longitude: "36.900000" });
+  // A second region-2 point: at most one active complaint may exist per water point (contracts 4.1 item 8).
+  const wpA2b = await point(scopeA2, { waterPointType: "other", latitude: "-1.410000", longitude: "36.910000" });
   const wpB = await point(scopeB, { waterPointType: "borehole", latitude: "-2.000000", longitude: "37.000000" });
 
   const [partner] = await db
@@ -103,7 +105,7 @@ export async function buildWorld() {
   const cNoReports = await complaint(scopeA1, wpNone.id, { status: "open", priorityScore: 1, reportCount: 0, needsReview: true });
   // A complaint in region 1 that points at a water point in region 2: the water point must not be shown.
   const cCrossPoint = await complaint(scopeA1, wpA2.id, { status: "open", priorityScore: 3 });
-  const cA2 = await complaint(scopeA2, wpA2.id, { status: "open", priorityScore: 9 });
+  const cA2 = await complaint(scopeA2, wpA2b.id, { status: "open", priorityScore: 9 });
   const cB = await complaint(scopeB, wpB.id, { status: "open", priorityScore: 20 });
   // In-scope complaint on a point with no coordinates that is "passed on" to another organization's partner.
   const cCrossPartner = await complaint(scopeA1, wpNoCoords.id, { status: "passed_on", priorityScore: 0, passedOnPartnerId: partnerB.id });
@@ -139,10 +141,10 @@ export async function buildWorld() {
   await report(scopeA1, cPassed.id, wpPassed.id, { problem: "dirty", peopleAffected: 40, servesSchoolOrClinic: false, duration: "today", receivedAt: new Date("2026-11-12T07:00:00Z") });
   await report(scopeA1, cFixed.id, wpFixed.id, { problem: "other", receivedAt: new Date("2026-11-09T07:00:00Z") });
   // Needs review, unmatched.
-  const rReview = await report(scopeA1, null, null, { needsReview: true, locationText: "unknown", summary: SECRET.reviewSummary, transcript: "SECRET-REVIEW-TRANSCRIPT", receivedAt: new Date("2026-11-13T12:00:00Z") });
+  const rReview = await report(scopeA1, null, null, { needsReview: true, needsReviewReason: "unusable_location", locationText: "unknown", summary: SECRET.reviewSummary, transcript: "SECRET-REVIEW-TRANSCRIPT", receivedAt: new Date("2026-11-13T12:00:00Z") });
   // Other region and organization.
-  await report(scopeA2, cA2.id, wpA2.id, { problem: "broken", transcript: "SECRET-REGION-TWO-TRANSCRIPT", receivedAt: new Date("2026-11-14T07:00:00Z") });
-  await report(scopeB, cB.id, wpB.id, { problem: "broken", transcript: SECRET.otherOrgReport, needsReview: true, receivedAt: new Date("2026-11-14T09:00:00Z") });
+  await report(scopeA2, cA2.id, wpA2b.id, { problem: "broken", transcript: "SECRET-REGION-TWO-TRANSCRIPT", receivedAt: new Date("2026-11-14T07:00:00Z") });
+  await report(scopeB, cB.id, wpB.id, { problem: "broken", transcript: SECRET.otherOrgReport, needsReview: true, needsReviewReason: "not_confirmed", receivedAt: new Date("2026-11-14T09:00:00Z") });
 
   // Rows in OTHER scopes that point at our open complaint (the schema allows it). None may ever be shown.
   await report(scopeA2, cOpen.id, wpOpen.id, { problem: "other", peopleAffected: 9999, servesSchoolOrClinic: false, duration: "today", transcript: SECRET.crossReport, receivedAt: new Date("2026-11-10T00:00:00Z") });
@@ -167,7 +169,7 @@ export async function buildWorld() {
   return {
     A, B, regionA2, staffA, staffB, partner, partnerB,
     scopeA1, scopeA2, scopeB,
-    wp: { wpOpen, wpPassed, wpFixed, wpNone, wpBare, wpUnverified, wpNoCoords, wpMerged, wpArchived, wpA2, wpB },
+    wp: { wpOpen, wpPassed, wpFixed, wpNone, wpBare, wpUnverified, wpNoCoords, wpMerged, wpArchived, wpA2, wpA2b, wpB },
     c: { cOpen, cPassed, cFixed, cNoReports, cCrossPoint, cCrossPartner, cForeignOnOurPoint, cA2, cB },
     r: { r1, r2, rReview },
     ctxA1: { organizationId: A.org.id, regionIds: [A.region.id] },
