@@ -1,9 +1,12 @@
+import { spawnSync } from "node:child_process";
+
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { GET, POST } from "@/app/api/auth/[...all]/route";
 import { getSessionFromHeaders, signInWithPassword } from "@/lib/auth/adapter";
 import { decideAccess } from "@/lib/auth/memberships";
+import { deleteExpiredSessions } from "@/lib/auth/session-cleanup";
 import { getAuth } from "@/lib/auth/server";
 import { SESSION_LIFETIME_SECONDS } from "@/lib/config/auth";
 import { getDb } from "@/lib/db";
@@ -319,5 +322,55 @@ describe("rate limit (5 sign-ins per minute per IP)", () => {
         }),
       ).rejects.toMatchObject({ status: "UNAUTHORIZED" });
     }
+  });
+});
+
+describe("expired session rows are deleted (decided by the humans)", () => {
+  const expire = (userId: string) =>
+    getDb().update(session).set({ expiresAt: new Date(Date.now() - 1000) }).where(eq(session.userId, userId));
+  const rowsFor = (userId: string) => getDb().select().from(session).where(eq(session.userId, userId));
+
+  it("a successful sign-in (HTTP or server action) removes every expired row, including other users'", async () => {
+    const a = await createMember("exp-a@test.example");
+    const b = await createMember("exp-b@test.example");
+    await signInOverHttp("exp-a@test.example");
+    await signInOverHttp("exp-b@test.example");
+    await expire(a.user.id);
+    await expire(b.user.id);
+
+    await signInOverHttp("exp-a@test.example");
+    const aRows = await rowsFor(a.user.id);
+    expect(aRows).toHaveLength(1);
+    expect(aRows[0].expiresAt.getTime()).toBeGreaterThan(Date.now());
+    expect(await rowsFor(b.user.id)).toHaveLength(0);
+
+    await expire(a.user.id);
+    expect(await signInWithPassword("exp-b@test.example", PASSWORD, new Headers({ "cf-connecting-ip": freshIp() }))).toBe("ok");
+    expect(await rowsFor(a.user.id)).toHaveLength(0);
+  });
+
+  it("deleteExpiredSessions removes expired rows and keeps live ones", async () => {
+    const a = await createMember("exp-c@test.example");
+    const b = await createMember("exp-d@test.example");
+    await signInOverHttp("exp-c@test.example");
+    await signInOverHttp("exp-d@test.example");
+    await expire(a.user.id);
+    expect(await deleteExpiredSessions()).toBe(1);
+    expect(await rowsFor(a.user.id)).toHaveLength(0);
+    expect(await rowsFor(b.user.id)).toHaveLength(1);
+  });
+
+  it("npm run db:cleanup-sessions deletes expired rows and prints only a count", async () => {
+    const a = await createMember("exp-e@test.example");
+    await signInOverHttp("exp-e@test.example");
+    await expire(a.user.id);
+    const result = spawnSync("npm", ["run", "--silent", "db:cleanup-sessions"], {
+      encoding: "utf8",
+      env: { ...process.env },
+      timeout: 60_000,
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe("[db:cleanup-sessions] Deleted 1 expired session(s).");
+    expect(await rowsFor(a.user.id)).toHaveLength(0);
   });
 });

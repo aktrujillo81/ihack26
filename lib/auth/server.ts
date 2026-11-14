@@ -17,6 +17,7 @@ import { serverEnv } from "@/lib/config/env";
 import { getDb } from "@/lib/db";
 import { account, session, user, verification } from "@/lib/db/schema";
 import { loadActiveAccess } from "./memberships";
+import { deleteExpiredSessions } from "./session-cleanup";
 
 /**
  * Better Auth server (task A1). Server only: holds the secret and the database.
@@ -86,6 +87,14 @@ function createAuth() {
             const latest = new Date(Date.now() + SESSION_LIFETIME_SECONDS * 1000);
             const expiresAt = data.expiresAt < latest ? data.expiresAt : latest;
             return { data: { ...data, expiresAt } };
+          },
+          // Sweep expired rows (everyone's) on each successful sign-in. Never fails the sign-in.
+          after: async () => {
+            try {
+              await deleteExpiredSessions();
+            } catch {
+              console.error("[auth] expired_session_cleanup_failed");
+            }
           },
         },
       },

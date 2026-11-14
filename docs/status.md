@@ -19,7 +19,7 @@ Last updated: 2026-11-14 by the Orchestrator. Read at the start of every session
 
 ## Needs a human
 - Merge A1, then W1 wires `lib/auth/adapter.ts` (snippets in `docs/reviews/A1.md`).
-- Retention for expired session rows (staff IP and user agent). Proposed: delete after 7 days.
+- Retention decided: expired session rows are deleted at expiry (being built in A1).
 - Manual check: sign-in rate limit through the Cloudflare Tunnel.
 
 ## Rules for working on this machine (production host)

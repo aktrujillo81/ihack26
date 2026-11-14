@@ -75,7 +75,12 @@ They carry no organization or region: access lives in `memberships`.
   `updated_at`, `ip_address text null`, `user_agent text null`,
   `user_id → user.id` (cascade). **Holds the signed-in staff member's IP
   address and browser user agent. This is staff data, not caller data.** Rows
-  are deleted on sign-out (a session is not history).
+  are deleted, not kept (a session is not history): on sign-out; when an
+  expired row's own cookie is read (Better Auth); on every successful sign-in,
+  which deletes all rows with `expires_at < now()` for every user; and by
+  `npm run db:cleanup-sessions` (demo reset). Expired rows are refused on read
+  until they are deleted. With no sign-ins, an expired row stays until the next
+  sign-in or cleanup run.
 - `account`: credentials. `provider_id = 'credential'`, `account_id = user.id`,
   `password` = Better Auth scrypt hash. Other columns (OAuth tokens) unused.
 - `verification`: required by Better Auth; unused in this build.

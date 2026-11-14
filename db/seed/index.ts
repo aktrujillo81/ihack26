@@ -6,6 +6,8 @@
  * `server-only` imports resolve. Loads env files with Next.js precedence:
  * shell, then .env.local, then .env.
  */
+export {};
+
 for (const file of [".env.local", ".env"]) {
   try {
     process.loadEnvFile(file);
