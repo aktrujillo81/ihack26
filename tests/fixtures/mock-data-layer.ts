@@ -104,6 +104,7 @@ export function getComplaint(ctx: DataContext, id: string): Promise<DataResult<C
           const partner = scopedById(ctx, mockPartners, complaint.passedOnPartnerId);
           return partner ? toPartnerView(partner) : null;
         })(),
+        technicianTickets: [],
       },
     };
   });

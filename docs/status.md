@@ -2,13 +2,13 @@
 
 Read this first in every session. The Orchestrator keeps it current.
 
-**Last updated:** Sat 2026-11-14, about 9:30 AM Mountain Time, by the Orchestrator.
+**Last updated:** Sat 2026-11-14, by the Orchestrator.
 **Deadline:** 4:00 PM Saturday. Feature freeze time: **unknown** (proposed: 1:30 PM Mountain; the humans set it).
 **Vapi balance:** 4.73 credits of 5.00 (3 paid calls, $0.27). Floor until rehearsals: 2.25. Only Andrew places paid calls, each with a human's OK.
 
 ## Report
 ```
-DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, contract-follow-code documentation (#41), shared UI pieces (#43), and app shell (#47). PR #45 merged D3b's schema-independent helpers only; D3b save is not done. Evidence: merged PRs in docs/changelog.md.
+DONE: S1, S3, S4, S5 (with S5a), S6 (#34), S7, D1 (merged as PROVISIONAL), A1, contract-follow-code documentation (#41), shared UI pieces (#43), app shell (#47), and technician complaint-ticket follow-up on this branch. PR #45 merged D3b's schema-independent helpers only; D3b save is not done. Evidence: merged PRs and task review files in docs/.
 IN PROGRESS: D3a (PR #42), W1 prep (PR #28, open), and the D3/D4/D5 schema work (PR #39, open).
 BLOCKED: D3b save implementation until #39 and #42 are merged. D4, D5, D6, D7, W2 to W5 real data, and Q1 to Q8 remain downstream of the data path.
 NEEDS A HUMAN: see "Needs a human" below.

@@ -150,6 +150,13 @@ describe("complaint detail: controls follow the role matrix", () => {
     expect(out).not.toContain(t("detail.addNote"));
   });
 
+  it("Technician sees the field-ticket action but no coordinator controls", async () => {
+    const out = await controlsFor("technician");
+    expect(out).toContain(t("detail.addTechnicianTicket"));
+    expect(out).not.toContain(t("detail.markFixed"));
+    expect(out).not.toContain(t("detail.addNote"));
+  });
+
   it("Responder and Org Admin see them", async () => {
     for (const role of ["responder", "org_admin"]) {
       const out = await controlsFor(role);

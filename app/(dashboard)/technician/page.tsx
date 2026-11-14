@@ -5,6 +5,7 @@ import { technicianTickets, waterPoints } from "@/lib/db/schema";
 import { createTechnicianTicket } from "./actions";
 import { PinPicker } from "./PinPicker";
 import "./technician.css";
+import { t } from "@/lib/i18n/strings";
 
 export const dynamic = "force-dynamic";
 export default async function TechnicianPage() {
@@ -47,64 +48,64 @@ export default async function TechnicianPage() {
     <main className="ww-tech">
       <header className="ww-page-header">
         <div>
-          <h1 className="ww-page-title">Field tickets</h1>
+          <h1 className="ww-page-title">{t("technician.title")}</h1>
           <p className="ww-page-subtitle">
-            Record a site visit for a water point in your assigned region.
+            {t("technician.subtitle")}
           </p>
         </div>
       </header>
       <section className="ww-panel ww-panel--padded">
         <form action={createTechnicianTicket} className="ww-tech-form">
           <div className="ww-tech-heading">
-            <h2>New maintenance ticket</h2>
-            <p>Fields marked required must be completed before saving.</p>
+            <h2>{t("technician.newTicket")}</h2>
+            <p>{t("technician.requiredHelp")}</p>
           </div>
           <label>
-            Water point{" "}
+            {t("technician.waterPoint")} {" "}
             <select name="waterPointId" required>
-              <option value="">Choose a water point</option>
+              <option value="">{t("technician.chooseWaterPoint")}</option>
               {points.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.type}: {p.location}
+                  {t("technician.pointOption", { type: p.type, location: p.location })}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Location{" "}
+            {t("technician.location")} {" "}
             <input
               name="locationText"
               required
-              placeholder="Village, landmark, or site"
+              placeholder={t("technician.locationPlaceholder")}
             />
           </label>
           <PinPicker />
           <label>
-            What did you find?{" "}
+            {t("technician.issue")} {" "}
             <textarea
               name="issueSummary"
               required
               maxLength={1000}
-              placeholder="Describe the condition and work needed"
+              placeholder={t("technician.issuePlaceholder")}
             />
           </label>
           <label>
-            Notes{" "}
+            {t("technician.notes")} {" "}
             <textarea
               name="notes"
               maxLength={4000}
-              placeholder="Parts used, access notes, or other useful context"
+              placeholder={t("technician.notesPlaceholder")}
             />
           </label>
           <button type="submit" className="ww-btn ww-btn--primary">
-            Create ticket
+            {t("technician.create")}
           </button>
         </form>
       </section>
       <section className="ww-tech-tickets">
-        <h2>My tickets</h2>
+        <h2>{t("technician.myTickets")}</h2>
         {tickets.length === 0 ? (
-          <p className="ww-panel ww-panel--padded">No field tickets yet.</p>
+          <p className="ww-panel ww-panel--padded">{t("technician.empty")}</p>
         ) : (
           <ul>
             {tickets.map((t) => (

@@ -46,7 +46,7 @@ export const PERMISSIONS: Readonly<Record<Role, readonly Action[]>> = {
   viewer: VIEW_ONLY,
   responder: RESPONDER,
   org_admin: ACTIONS,
-  technician: ["technician_ticket"],
+  technician: ["view", "technician_ticket"],
 };
 
 export function isRole(value: unknown): value is Role {

@@ -145,6 +145,7 @@ export const complaints = pgTable("complaints", {
   fixedAt: timestamp("fixed_at", { withTimezone: true }),
   ...timestamps,
 }, (table) => [
+  unique("complaints_scope_id_unique").on(table.organizationId, table.regionId, table.id),
   foreignKey({
     columns: [table.organizationId, table.regionId],
     foreignColumns: [regions.organizationId, regions.id],
@@ -297,6 +298,7 @@ export const technicianTickets = pgTable("technician_tickets", {
 }, (table) => [
   foreignKey({ columns: [table.organizationId, table.regionId], foreignColumns: [regions.organizationId, regions.id], name: "technician_tickets_organization_region_fk" }),
   foreignKey({ columns: [table.organizationId, table.regionId, table.waterPointId], foreignColumns: [waterPoints.organizationId, waterPoints.regionId, waterPoints.id], name: "technician_tickets_water_point_scope_fk" }),
+  foreignKey({ columns: [table.organizationId, table.regionId, table.complaintId], foreignColumns: [complaints.organizationId, complaints.regionId, complaints.id], name: "technician_tickets_complaint_scope_fk" }),
   index("technician_tickets_technician_scope_idx").on(table.technicianUserId, table.organizationId, table.regionId),
   check("technician_tickets_latitude_range", sql`${table.latitude} >= -90 and ${table.latitude} <= 90`),
   check("technician_tickets_longitude_range", sql`${table.longitude} >= -180 and ${table.longitude} <= 180`),

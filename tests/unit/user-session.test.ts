@@ -11,11 +11,11 @@ import { sessionFromUser, type UserRow } from "@/lib/auth/user-session";
 import { ROLES } from "@/lib/domain/types";
 import { ACTIONS, PERMISSIONS } from "@/lib/permissions/matrix";
 
-const NOW = Date.parse("2026-11-14T12:00:00Z");
-const FUTURE = "2026-11-14T20:00:00Z"; // 8 hours after NOW, inside the 12-hour cap
+const NOW = Date.now();
+const FUTURE = new Date(NOW + 8 * 60 * 60 * 1000).toISOString();
 
 /** Copied from the D1 draft: `pgEnum("user_role", [...])` in origin/feat/database-migrations lib/db/schema.ts. */
-const D1_USER_ROLES = ["org_admin", "responder", "viewer"] as const;
+const D1_USER_ROLES = ["org_admin", "responder", "viewer", "technician"] as const;
 
 const row = (over: Partial<Record<keyof UserRow, unknown>> = {}) => ({
   id: "0b6f1d1e-0000-4000-8000-000000000001",

@@ -253,7 +253,7 @@ describe("the stored demo data holds no caller details and respects red line 9",
 
   it("the demo staff exist, and the seed did not change any of them", async () => {
     const staff = await getDb().select().from(users);
-    expect(staff.map((s) => s.role).sort()).toEqual(["org_admin", "responder", "viewer"]);
+    expect(staff.map((s) => s.role).sort()).toEqual(["org_admin", "responder", "technician", "viewer"]);
     expect(staff.every((s) => s.active)).toBe(true);
   });
 });

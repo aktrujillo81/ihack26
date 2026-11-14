@@ -15,6 +15,6 @@ import type { SignInState } from "@/lib/auth/sign-in-state";
  */
 export async function signInAction(_previous: SignInState, formData: FormData): Promise<SignInState> {
   const outcome = await attemptSignIn({ email: formData.get("email"), password: formData.get("password") });
-  if (outcome.status === "signed_in") redirect("/");
+  if (outcome.status === "signed_in") redirect("/complaints");
   return outcome;
 }

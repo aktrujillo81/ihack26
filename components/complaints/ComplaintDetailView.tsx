@@ -13,6 +13,7 @@ import { CopySummaryButton } from "./CopySummaryButton";
 import "./detail.css";
 import { actorText, durationText, historyText, peopleText, problemText, schoolClinicText, timeText, typeText } from "./format";
 import { NoteForm } from "./NoteForm";
+import { TechnicianTicketForm } from "./TechnicianTicketForm";
 import { StateMessage } from "./StateMessage";
 import { StatusControls } from "./StatusControls";
 import { buildSummary } from "./summary";
@@ -54,11 +55,13 @@ export function ComplaintDetailView({
   if (result.status !== "ok") {
     return <StateMessage state={result} emptyKey="detail.notFoundOrDenied" retryHref={retryHref} />;
   }
-  const { complaint, waterPoint, reports, notes, history, passedOnTo } = result.data;
+  const { complaint, waterPoint, reports, notes, history, passedOnTo, technicianTickets } = result.data;
   const unverified = waterPoint?.verificationState === "unverified";
   const canChange = can(role, "change_status");
   const canPassOn = can(role, "pass_on");
   const canNote = can(role, "add_note");
+  const canAddTicket = can(role, "technician_ticket");
+  const technicianView = role === "technician";
   const typeName = waterPoint ? typeText(waterPoint.type) : t("common.unknown");
   const passedOn = passedOnTo?.name ?? complaint.passedOnNote;
   const summary = buildSummary(result.data);
@@ -142,7 +145,7 @@ export function ComplaintDetailView({
             </dl>
           </Panel>
 
-          <Panel as="section" aria-label={t("detail.reportsTitle")}>
+          {technicianView ? <p className="ww-card-note-text">{t("detail.technicianReportsHidden")}</p> : <Panel as="section" aria-label={t("detail.reportsTitle")}>
             <div className="ww-card-head">
               <h2 className="ww-card-title">{t("detail.reportsTitle")}</h2>
               <span className="ww-card-note">
@@ -165,7 +168,7 @@ export function ComplaintDetailView({
                 </li>
               ))}
             </ul>
-          </Panel>
+          </Panel>}
 
           <Panel as="section" aria-label={t("detail.timelineTitle")}>
             <h2 className="ww-card-title">{t("detail.timelineTitle")}</h2>
@@ -179,6 +182,28 @@ export function ComplaintDetailView({
                 </li>
               ))}
             </ul>
+          </Panel>
+
+          <Panel as="section" aria-label={t("detail.technicianTicketsTitle")}>
+            <div className="ww-card-head">
+              <h2 className="ww-card-title">{t("detail.technicianTicketsTitle")}</h2>
+              {canAddTicket && waterPoint && <TechnicianTicketForm complaintId={complaint.id} waterPoint={waterPoint} />}
+            </div>
+            {technicianTickets.length === 0 ? (
+              <p className="ww-empty-note">{t("detail.technicianTicketsEmpty")}</p>
+            ) : (
+              <ul className="ww-notes">
+                {technicianTickets.map((ticket) => (
+                  <li key={ticket.id} className="ww-note">
+                    <div className="ww-note-text">{ticket.issueSummary}</div>
+                    <div className="ww-note-meta">
+                      {t("detail.technicianTicketMeta", { status: ticket.status.replace("_", " "), location: ticket.locationText })}
+                    </div>
+                    {ticket.notes && <div className="ww-note-meta">{ticket.notes}</div>}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Panel>
         </div>
 
