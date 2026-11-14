@@ -287,6 +287,26 @@ hashed with Better Auth's `hashPassword`, never printed. Idempotent: reuses
 existing rows, never changes an existing `users` row, and updates the password
 hashes to the current values. Never calls sign-up.
 
+### Demo data (`npm run db:seed:demo`, a separate command)
+Run **after** `npm run db:seed`. Adds invented demo data to the demo organization
+and region: 13 water points (verified, unverified, merged, archived; with and
+without coordinates; one with no complaint), 7 complaints (every status and every
+problem type; one needs review), 13 reports with transcripts (3 unmatched and
+flagged, never dropped), 3 notes, 2 partners (no contact details) and the history
+events. Times are "hours before the run", so the demo looks recent. Scores follow
+the spec's formula (a unit test recomputes them). No caller details: no names, phone
+numbers or emails (tests scan the data and the stored rows). No credentials.
+- **Refuses production:** before the database module is even loaded it refuses any
+  `DATABASE_URL` on port **5433**, any host that is not this machine, and
+  `NODE_ENV=production`, with exit code 1 and a message that never prints the
+  connection string. There is no override. Use `npm run db:local` (port 5434).
+- **Idempotent:** a marker row (`demo_seed`) in `configuration` stops a second run,
+  including two at the same moment. It never deletes anything (history is
+  append-only, red line 9). To start over, delete the local `.pgdata/` folder.
+- It needs the demo organization, region and accounts from `npm run db:seed`, and
+  stops with that instruction if they are missing.
+- Note for A1's owner: `npm run db:seed` itself has no port guard.
+
 ## Environment variables (names only)
 `DATABASE_URL`, `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`,
 `SEED_ADMIN_PASSWORD`, `SEED_RESPONDER_PASSWORD`, `SEED_VIEWER_PASSWORD`
