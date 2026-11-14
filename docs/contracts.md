@@ -264,15 +264,14 @@ spaces and hyphens mapped to `_` before the check (`Hand pump` becomes
 | `serves_school_or_clinic` | `"true"`/`true` become true, `"false"`/`false` become false, `"unknown"` null. Anything else null plus `invalid_fields`. |
 | `caller_confirmed` | Boolean true or false. Missing or not a boolean: null (never false). |
 | `location_text` | Missing, empty, `unknown`, fewer than 3 characters after scrubbing, or nothing left after scrubbing: stored as the text `unknown`, reason `unusable_location`, no water point created. |
-| `summary`, `language_spoken` | Text or null. Both are scrubbed (below). |
+| `summary`, `language_spoken` | Text or null. Both are scrubbed (below); D3b stores `summary` as null in P0. |
 
 **Number scrub:** in `location_text`, `summary` and `language_spoken` (and in
 any transcript, if one is ever stored), any run of 7 or more digits, with or without separators
 (spaces, dots, hyphens, brackets, a leading plus), is replaced by the fixed
 marker `[number removed]`. A short number such as an age or a count is kept.
 Digits spoken as words ("five five five ...") are not caught: a **remaining
-risk** (section 9). Names cannot be removed reliably: a volunteered name inside `location_text` or
-`summary` is a **remaining risk** (section 9). Text caps (config
+risk** (section 9). D3b does not persist the caller-written `summary` in P0; the dashboard builds its one-line summary from structured fields. A volunteered name inside `location_text` remains an accepted human-approved residual risk. Text caps (config
 `intake.textMaxLength`, defaults 300 for location, 500 for summary, 50 for
 language) shorten longer text; the report is still stored.
 
@@ -469,7 +468,7 @@ Any role. Sort: `priorityScore` desc, `updatedAt` desc, `id` asc. Item:
                   "verificationState": "unverified", "latitude": null, "longitude": null }
 }
 ```
-Covers every DB-1 column. `summary` is on the detail only.
+Covers every DB-1 column. `summary` is null in P0; the dashboard's one-line summary is built from structured fields.
 
 ### 6.3 `GET /api/complaints/{id}` (D6; W3)
 Any role. Returns the complaint (fields above plus

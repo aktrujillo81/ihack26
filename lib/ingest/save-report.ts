@@ -8,7 +8,7 @@ import { DEFAULT_TEXT_MAX_LENGTH } from "@/lib/config/intake-defaults";
 import { getDb } from "@/lib/db";
 import { complaints, configuration, historyEvents, reportCandidates, reports, waterPoints } from "@/lib/db/schema";
 import { deriveComplaintFacts } from "@/lib/data/derive";
-import { scrubIdentityLikeText, scrubNumbers } from "./scrub";
+import { scrubNumbers } from "./scrub";
 import { capFreeText } from "./text-caps";
 import type { ValidatedReport } from "./types";
 
@@ -51,7 +51,7 @@ export async function saveReport(report: ValidatedReport): Promise<SaveReportRes
           servesSchoolOrClinic: cleaned.servesSchoolOrClinic,
           duration: cleaned.duration,
           callerConfirmed: cleaned.callerConfirmed,
-          summary: cleaned.summary,
+          summary: null,
           languageSpoken: cleaned.languageSpoken,
           transcript: null,
           needsReview: cleaned.needsReview,
@@ -103,7 +103,7 @@ function cleanReport(report: ValidatedReport): ValidatedReport {
   const text = capFreeText(
     {
       locationText: scrubNumbers(report.locationText),
-      summary: report.summary === null ? "" : scrubIdentityLikeText(scrubNumbers(report.summary)),
+      summary: "",
       languageSpoken: report.languageSpoken === null ? null : scrubNumbers(report.languageSpoken),
     },
     DEFAULT_TEXT_MAX_LENGTH,
@@ -112,7 +112,7 @@ function cleanReport(report: ValidatedReport): ValidatedReport {
   return {
     ...report,
     locationText: unusable ? "unknown" : text.locationText,
-    summary: text.summary === "" ? null : text.summary,
+    summary: null,
     languageSpoken: text.languageSpoken === "" ? null : text.languageSpoken,
     needsReview: unusable || report.needsReview,
     needsReviewReason: unusable ? "unusable_location" : report.needsReviewReason,

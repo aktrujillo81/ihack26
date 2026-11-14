@@ -37,6 +37,7 @@ describe("saveReport", () => {
     const text = JSON.stringify(rows);
     expect(text).not.toContain(planted.name);
     for (const phone of planted.phones) expect(text).not.toContain(phone);
+    expect((await getDb().select({ summary: reports.summary }).from(reports))).toEqual([{ summary: null }]);
   });
 
   it("preserves location text and matching keys", async () => {
